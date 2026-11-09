@@ -1,0 +1,44 @@
+/* ============================================================
+   CODEX — Formulários
+   ============================================================ */
+
+.input-group {
+    position: relative;
+    width: 100%;
+}
+
+.input-group i {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--cor-marrom-borda);
+    font-size: 1rem;
+    transition: color var(--transicao-media);
+}
+
+.auth-input {
+    width: 100%;
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid var(--cor-marrom-input);
+    border-radius: var(--raio-sm);
+    padding: 0.8rem 1rem 0.8rem 2.5rem;
+    color: var(--cor-texto-claro);
+    font-family: var(--fonte-corpo);
+    font-size: 0.95rem;
+    outline: none;
+    transition: border-color var(--transicao-media), box-shadow var(--transicao-media);
+}
+
+.auth-input:focus {
+    border-color: var(--cor-dourado);
+    box-shadow: var(--sombra-input-foco);
+}
+
+.auth-input:focus + i {
+    color: var(--cor-dourado);
+}
+
+.auth-input::placeholder {
+    color: var(--cor-texto-mudo);
+}

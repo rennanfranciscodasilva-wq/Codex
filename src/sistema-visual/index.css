@@ -1,0 +1,19 @@
+/* ============================================================
+   CODEX — Ponto único de importação do Sistema Visual
+   Importar este arquivo em src/nucleo/app.js
+   ============================================================ */
+
+/* Tokens e base */
+@import './variaveis.css';
+@import './global.css';
+@import './tipografia.css';
+
+/* Componentes do sistema visual */
+@import './componentes/botoes.css';
+@import './componentes/formularios.css';
+@import './componentes/janelas.css';
+@import './componentes/tabelas.css';
+
+/* Componentes funcionais (CSS próprio) */
+@import '../componentes/rodape/rodape.css';
+@import '../componentes/cabecalho/cabecalho.css';

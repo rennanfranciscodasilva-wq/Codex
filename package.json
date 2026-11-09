@@ -1,0 +1,14 @@
+{
+  "name": "codex",
+  "version": "1.0.0",
+  "description": "Codex — plataforma digital para o sistema de RPG Vastura",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "vite": "^5.4.0"
+  }
+}

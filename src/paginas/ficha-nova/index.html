@@ -1,0 +1,98 @@
+<main id="pagina-ficha-nova" class="screen">
+
+    <!-- BLOCO PROTETOR: Fica no topo, recebe o clique no espaço vazio e repassa pro CodeX -->
+    <div class="bloco-protecao-titulo" id="bloco-protecao-titulo"></div>
+
+    <div class="ficha-nova-area">
+        
+        <div class="folha-layout">
+            
+            <!-- Menu de Páginas (Esquerda) -->
+            <div class="folha-menu-lateral esquerdo">
+                <div class="folha-paginas-menu" id="folha-paginas-menu">
+                    <button class="folha-pagina-btn add" id="folha-pagina-add" title="Adicionar Página">
+                        <i class="fas fa-plus"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Folha (Centro) -->
+            <div class="folha-wrapper" id="folha-wrapper">
+                <div class="folha" id="folha-elemento">
+                    
+                    <div class="folha-cabecalho">
+                        <div class="folha-titulos-wrapper">
+                            <input type="text" class="folha-titulo-pagina" id="folha-titulo-pagina" value="Página 1" spellcheck="false">
+                            <div class="folha-descricao-pagina" id="folha-descricao-pagina"></div>
+                        </div>
+                        <div class="indicador-zoom" id="indicador-zoom">100%</div>
+                    </div>
+                    
+                    <div class="folha-conteudo" id="folha-conteudo">
+                        <!-- Conteúdo da página -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Menu de Ferramentas (Direita) -->
+            <div class="folha-menu-lateral direito">
+                
+                <button class="folha-btn-ferramenta" id="btn-toggle-animacao" data-tooltip="Alternar Animação">
+                    <i class="fas fa-film"></i>
+                </button>
+
+                <button class="folha-btn-ferramenta principal" id="btn-modo-edicao" data-tooltip="Modo Edição">
+                    <i class="fas fa-pen"></i>
+                </button>
+
+                <div class="folha-ferramentas-extras" id="folha-ferramentas-extras">
+                    <button class="folha-btn-ferramenta" id="btn-add-campo" data-tooltip="Adicionar Campo">
+                        <i class="fas fa-plus-square"></i>
+                    </button>
+                    <button class="folha-btn-ferramenta" id="btn-colorir" data-tooltip="Colorir">
+                        <i class="fas fa-palette"></i>
+                    </button>
+                </div>
+
+            </div>
+
+        </div>
+    </div>
+
+    <!-- BOTTOM SHEET: CONFIGURAÇÕES DA PÁGINA -->
+    <div class="page-settings-overlay" id="page-settings-overlay">
+        <div class="page-settings-sheet" id="page-settings-sheet">
+            
+            <div class="sheet-header-drag" id="sheet-header-drag">
+                <div class="sheet-drag-handle"></div>
+                <h3 class="sheet-title">Configurações da Página</h3>
+                <button class="sheet-close-btn" id="sheet-close-btn" title="Fechar">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <div class="sheet-body">
+                <div class="sheet-field">
+                    <label>Nome da Página</label>
+                    <input type="text" id="sheet-page-name" class="sheet-input" placeholder="Digite o nome...">
+                </div>
+
+                <div class="sheet-field">
+                    <label>Descrição da Página</label>
+                    <textarea id="sheet-page-desc" class="sheet-input" placeholder="Uma breve descrição..." rows="2"></textarea>
+                </div>
+
+                <div class="sheet-field">
+                    <label>Ícone da Página</label>
+                    <div class="sheet-icons-grid" id="sheet-icons-grid"></div>
+                </div>
+
+                <button class="btn-excluir-pagina" id="btn-excluir-pagina">
+                    <i class="fas fa-trash-alt"></i> Excluir Página
+                </button>
+            </div>
+
+        </div>
+    </div>
+
+</main>

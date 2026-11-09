@@ -1,0 +1,67 @@
+/* ============================================================
+   CODEX — Componente: Rodapé
+   ============================================================ */
+
+.footer-terms {
+    flex-shrink: 0;
+    width: 100%;
+    text-align: center;
+    z-index: var(--z-rodape);
+    font-size: clamp(0.6rem, 1.4vw, 0.85rem);
+    color: var(--cor-texto-fraco);
+    letter-spacing: 0.3px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: clamp(0.4rem, 1.2vw, 1.5rem);
+    flex-wrap: wrap;
+    padding: 0.5rem 1rem 1rem;
+    line-height: 1.4;
+    transition: opacity 0.4s ease;
+}
+
+.footer-terms a {
+    color: #9b8b72;
+    text-decoration: none;
+    transition: color var(--transicao-rapida), text-shadow var(--transicao-rapida);
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    white-space: nowrap;
+}
+
+.footer-terms a:hover,
+.footer-terms a:active {
+    color: var(--cor-dourado);
+    text-shadow: 0 0 8px var(--cor-dourado-medio);
+}
+
+.footer-terms .separator {
+    color: var(--cor-marrom-separador);
+    user-select: none;
+}
+
+.footer-terms .copyright {
+    color: var(--cor-texto-mudo);
+}
+
+@media (max-width: 640px) {
+    .footer-terms {
+        font-size: clamp(0.55rem, 2.2vw, 0.75rem);
+        gap: 0.4rem 0.8rem;
+        padding: 0.3rem 0.5rem 0.8rem;
+    }
+}
+
+@media (max-width: 420px) {
+    .footer-terms .separator { display: none; }
+    .footer-terms { gap: 0.3rem 0.9rem; }
+}
+
+@media (max-height: 550px) and (orientation: landscape) {
+    .footer-terms {
+        font-size: 0.6rem;
+        padding: 0.2rem 0.5rem 0.4rem;
+        gap: 0.3rem 0.7rem;
+    }
+}

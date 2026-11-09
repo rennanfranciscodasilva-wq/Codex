@@ -1,0 +1,45 @@
+/* ============================================================
+   CODEX — Botões
+   ============================================================ */
+
+.btn-primary {
+    font-family: var(--fonte-titulo);
+    font-size: 1rem;
+    font-weight: 700;
+    background: linear-gradient(145deg, var(--cor-dourado-medio), var(--cor-dourado-profundo));
+    border: 1px solid var(--cor-dourado-borda);
+    color: var(--cor-fundo-base);
+    padding: 0.8rem;
+    border-radius: var(--raio-sm);
+    cursor: pointer;
+    transition: transform var(--transicao-rapida), box-shadow var(--transicao-rapida);
+    margin-top: 0.5rem;
+    letter-spacing: 1px;
+}
+
+.btn-primary:hover,
+.btn-primary:active {
+    transform: scale(1.02);
+    box-shadow: 0 0 20px var(--cor-dourado-medio);
+}
+
+.btn-secondary {
+    font-family: var(--fonte-titulo);
+    font-size: 0.9rem;
+    background: transparent;
+    border: 1px solid var(--cor-marrom-borda);
+    color: var(--cor-texto-suave);
+    padding: 0.8rem;
+    border-radius: var(--raio-sm);
+    cursor: pointer;
+    transition: background var(--transicao-rapida),
+                border-color var(--transicao-rapida),
+                color var(--transicao-rapida);
+    letter-spacing: 1px;
+}
+
+.btn-secondary:hover {
+    background: rgba(212, 175, 55, 0.1);
+    border-color: var(--cor-dourado);
+    color: var(--cor-texto-claro);
+}

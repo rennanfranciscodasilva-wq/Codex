@@ -1,0 +1,76 @@
+/* ============================================================
+   CODEX — Variáveis Globais (Design Tokens)
+   Extraído do protótipo b.html — NÃO alterar valores sem revisar
+   ============================================================ */
+
+:root {
+    /* ---------- CORES DE FUNDO ---------- */
+    --cor-fundo-base:        #0e0b08;
+    --cor-fundo-radial-1:    #2a1e12;
+    --cor-fundo-radial-2:    #080604;
+
+    /* ---------- CORES DE TEXTO ---------- */
+    --cor-texto:             #ebdcc9;
+    --cor-texto-titulo:      #ecd9b4;
+    --cor-texto-claro:       #f0e0c4;
+    --cor-texto-suave:       #b8a17a;
+    --cor-texto-fraco:       #7a6a52;
+    --cor-texto-mudo:        #5a4a35;
+
+    /* ---------- DOURADOS ---------- */
+    --cor-dourado-claro:     #f5d742;
+    --cor-dourado:           #d4af37;
+    --cor-dourado-medio:     #b8860b;
+    --cor-dourado-escuro:    #a67c00;
+    --cor-dourado-profundo:  #8b6508;
+    --cor-dourado-borda:     #e4b84a;
+
+    /* ---------- MARRONS ---------- */
+    --cor-marrom-borda:      #7a5b1e;
+    --cor-marrom-fundo-1:    #2d2214;
+    --cor-marrom-fundo-2:    #3d2e1a;
+    --cor-marrom-fundo-3:    #120e08;
+    --cor-marrom-fundo-4:    #1a140b;
+    --cor-marrom-input:      #4a391b;
+    --cor-marrom-separador:  #4f3c1c;
+
+    /* ---------- SOMBRAS / BRILHOS ---------- */
+    --brilho-forte:          0 0 30px #d4af37, 0 0 70px #b8860b, 2px 2px 0 #2e1e0a;
+    --brilho-medio:          0 0 20px #a67c00, 0 0 40px #4e3a16, 2px 2px 0 #2e1e0a;
+    --brilho-suave:          0 0 18px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(212, 175, 55, 0.2) inset;
+    --sombra-painel:         0 10px 30px rgba(0, 0, 0, 0.8);
+    --sombra-input-foco:     0 0 10px rgba(212, 175, 55, 0.2);
+
+    /* ---------- TIPOGRAFIA ---------- */
+    --fonte-titulo:          'Cinzel', serif;
+    --fonte-corpo:           'Inter', sans-serif;
+
+    /* ---------- ESPAÇAMENTOS ---------- */
+    --espaco-xs:             0.3rem;
+    --espaco-sm:             0.5rem;
+    --espaco-md:             1rem;
+    --espaco-lg:             1.5rem;
+    --espaco-xl:             2rem;
+
+    /* ---------- RAIOS ---------- */
+    --raio-sm:               8px;
+    --raio-md:               16px;
+    --raio-circulo:          50%;
+
+    /* ---------- TRANSIÇÕES ---------- */
+    --transicao-rapida:      0.2s ease;
+    --transicao-media:       0.3s ease;
+    --transicao-lenta:       0.6s cubic-bezier(0.5, 0, 0.75, 0);
+
+    /* ---------- Z-INDEX ---------- */
+    --z-fundo:               0;
+    --z-textura:             1;
+    --z-conteudo:            10;
+    --z-painel:              12;
+    --z-orbita:              15;
+    --z-dado-central:        20;
+    --z-interacao:           25;
+    --z-rodape:              30;
+    --z-titulo:              50;
+    --z-auth:                100;
+}
