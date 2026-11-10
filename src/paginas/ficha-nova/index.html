@@ -1,10 +1,8 @@
 <main id="pagina-ficha-nova" class="screen">
 
-    <!-- BLOCO PROTETOR: Fica no topo, recebe o clique no espaço vazio e repassa pro CodeX -->
     <div class="bloco-protecao-titulo" id="bloco-protecao-titulo"></div>
 
     <div class="ficha-nova-area">
-        
         <div class="folha-layout">
             
             <!-- Menu de Páginas (Esquerda) -->
@@ -36,24 +34,26 @@
 
             <!-- Menu de Ferramentas (Direita) -->
             <div class="folha-menu-lateral direito">
-                
                 <button class="folha-btn-ferramenta" id="btn-toggle-animacao" data-tooltip="Alternar Animação">
                     <i class="fas fa-film"></i>
                 </button>
-
                 <button class="folha-btn-ferramenta principal" id="btn-modo-edicao" data-tooltip="Modo Edição">
                     <i class="fas fa-pen"></i>
                 </button>
-
                 <div class="folha-ferramentas-extras" id="folha-ferramentas-extras">
+                    <button class="folha-btn-ferramenta" id="btn-modo-layout" data-tooltip="Modo Livre">
+                        <i class="fas fa-arrows-up-down-left-right"></i>
+                    </button>
                     <button class="folha-btn-ferramenta" id="btn-add-campo" data-tooltip="Adicionar Campo">
                         <i class="fas fa-plus-square"></i>
                     </button>
-                    <button class="folha-btn-ferramenta" id="btn-colorir" data-tooltip="Colorir">
+                    <button class="folha-btn-ferramenta" id="btn-modo-colorir" data-tooltip="Ativar Modo Colorir">
                         <i class="fas fa-palette"></i>
                     </button>
+                    <button class="folha-btn-ferramenta" id="btn-abrir-popup-colorir" data-tooltip="Abrir Cores e Figuras" style="display: none;">
+                        <i class="fas fa-sliders-h"></i>
+                    </button>
                 </div>
-
             </div>
 
         </div>
@@ -62,7 +62,6 @@
     <!-- BOTTOM SHEET: CONFIGURAÇÕES DA PÁGINA -->
     <div class="page-settings-overlay" id="page-settings-overlay">
         <div class="page-settings-sheet" id="page-settings-sheet">
-            
             <div class="sheet-header-drag" id="sheet-header-drag">
                 <div class="sheet-drag-handle"></div>
                 <h3 class="sheet-title">Configurações da Página</h3>
@@ -70,28 +69,241 @@
                     <i class="fas fa-times"></i>
                 </button>
             </div>
-
             <div class="sheet-body">
                 <div class="sheet-field">
                     <label>Nome da Página</label>
                     <input type="text" id="sheet-page-name" class="sheet-input" placeholder="Digite o nome...">
                 </div>
-
                 <div class="sheet-field">
                     <label>Descrição da Página</label>
                     <textarea id="sheet-page-desc" class="sheet-input" placeholder="Uma breve descrição..." rows="2"></textarea>
                 </div>
-
                 <div class="sheet-field">
                     <label>Ícone da Página</label>
                     <div class="sheet-icons-grid" id="sheet-icons-grid"></div>
                 </div>
-
                 <button class="btn-excluir-pagina" id="btn-excluir-pagina">
                     <i class="fas fa-trash-alt"></i> Excluir Página
                 </button>
             </div>
+        </div>
+    </div>
 
+    <!-- BOTTOM SHEET: CONFIGURAÇÕES DO CAMPO -->
+    <div class="page-settings-overlay" id="campo-settings-overlay">
+        <div class="page-settings-sheet" id="campo-settings-sheet">
+            <div class="sheet-header-drag" id="campo-sheet-header-drag">
+                <div class="sheet-drag-handle"></div>
+                <h3 class="sheet-title">Configurações do Campo</h3>
+                <button class="sheet-close-btn" id="campo-sheet-close-btn" title="Fechar">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="sheet-body">
+                <div class="sheet-field">
+                    <label>Nome do Campo</label>
+                    <input type="text" id="campo-sheet-nome" class="sheet-input" placeholder="Digite o nome...">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- BOTTOM SHEET: CONFIGURAÇÕES DO BLOCO -->
+    <div class="page-settings-overlay" id="bloco-settings-overlay">
+        <div class="page-settings-sheet" id="bloco-settings-sheet">
+            <div class="sheet-header-drag" id="bloco-sheet-header-drag">
+                <div class="sheet-drag-handle"></div>
+                <h3 class="sheet-title">Configurações do Bloco</h3>
+                <button class="sheet-close-btn" id="bloco-sheet-close-btn" title="Fechar">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="sheet-body">
+                <div class="sheet-field">
+                    <label>Tipo de Bloco</label>
+                    <select id="bloco-sheet-tipo" class="sheet-input">
+                        <option value="textual">Textual</option>
+                        <option value="numerico">Numérico</option>
+                        <option value="imagem">Imagem</option>
+                    </select>
+                </div>
+
+                <div class="sheet-field" id="bloco-sheet-modelo-textual-wrapper">
+                    <label>Modelo Textual</label>
+                    <select id="bloco-sheet-modelo-textual" class="sheet-input">
+                        <option value="padrao">Padrão</option>
+                        <option value="padrao_expansivel">Padrão Expansível</option>
+                        <option value="titulo">Com Título</option>
+                        <option value="titulo_expansivel">Com Título Expansível</option>
+                        <option value="titulo_editavel">Com Título Editável</option>
+                        <option value="titulo_editavel_expansivel">Título Editável Expansível</option>
+                    </select>
+                </div>
+
+                <div class="sheet-field" id="bloco-sheet-modelo-numerico-wrapper" style="display: none;">
+                    <label>Modelo Numérico</label>
+                    <select id="bloco-sheet-modelo-numerico" class="sheet-input">
+                        <option value="padrao">Padrão</option>
+                        <option value="titulo">Com Título</option>
+                        <option value="titulo_editavel">Com Título Editável</option>
+                    </select>
+                </div>
+
+                <div id="bloco-sheet-alinhamento-wrapper" style="display: none; flex-direction: column; gap: 10px;">
+                    <div class="sheet-field">
+                        <label>Alinhamento do Título</label>
+                        <select id="bloco-sheet-align-titulo" class="sheet-input">
+                            <option value="left">Esquerda</option>
+                            <option value="center">Centro</option>
+                            <option value="right">Direita</option>
+                        </select>
+                    </div>
+                    <div class="sheet-field">
+                        <label>Alinhamento do Conteúdo</label>
+                        <select id="bloco-sheet-align-conteudo" class="sheet-input">
+                            <option value="left">Esquerda</option>
+                            <option value="center">Centro</option>
+                            <option value="right">Direita</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="sheet-field" id="bloco-sheet-modificador-wrapper" style="display: none;">
+                    <label>Modificador</label>
+                    <select id="bloco-sheet-modificador" class="sheet-input">
+                        <option value="sem">Sem modificador</option>
+                        <option value="com">Com modificador</option>
+                    </select>
+                </div>
+
+                <div id="bloco-sheet-mod-campos" style="display: none; flex-direction: column; gap: 10px;">
+                    <div class="sheet-field">
+                        <label>Valor Médio <span class="ajuda-icon" title="O ponto zero. Ex: 10.">?</span></label>
+                        <input type="number" id="bloco-sheet-mod-medio" class="sheet-input" value="10">
+                    </div>
+                    <div class="sheet-field">
+                        <label>Bônus a Cada <span class="ajuda-icon" title="Quantos pontos precisa para mudar o modificador. Ex: 2.">?</span></label>
+                        <input type="number" id="bloco-sheet-mod-cada" class="sheet-input" value="2">
+                    </div>
+                    <div class="sheet-field">
+                        <label>Bônus de <span class="ajuda-icon" title="Quanto o modificador ganha. Ex: 1.">?</span></label>
+                        <input type="number" id="bloco-sheet-mod-bonus" class="sheet-input" value="1">
+                    </div>
+                    <div class="sheet-field">
+                        <label>Posição do Modificador</label>
+                        <select id="bloco-sheet-mod-posicao" class="sheet-input">
+                            <option value="lado">Ao lado</option>
+                            <option value="embaixo">Embaixo</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="sheet-field" id="bloco-sheet-automacao-wrapper" style="display: none; flex-direction: column; gap: 10px; border-top: 1px solid rgba(212, 175, 55, 0.2); padding-top: 10px;">
+                    <label>Automatização</label>
+                    <button type="button" id="btn-add-formula" class="btn-primary" style="font-size: 0.85rem; padding: 0.6rem; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                        <i class="fas fa-plus"></i> Adicionar nova fórmula
+                    </button>
+                    <div id="bloco-sheet-formula-resumo" style="display: none; background: rgba(0,0,0,0.3); padding: 10px; border-radius: 8px; border: 1px solid rgba(184, 134, 11, 0.3);">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                            <span style="font-size: 0.8rem; color: var(--cor-dourado);">Fórmula configurada</span>
+                            <span style="font-size: 0.7rem; color: #4CAF50; background: rgba(76, 175, 80, 0.1); padding: 2px 6px; border-radius: 4px;">Ativa</span>
+                        </div>
+                        <div id="bloco-sheet-formula-texto" style="font-size: 0.9rem; color: var(--cor-texto-claro); display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px;"></div>
+                        <div style="display: flex; gap: 10px; font-size: 0.8rem;">
+                            <a href="#" id="btn-edit-formula" style="color: var(--cor-dourado-claro); text-decoration: none;">Editar fórmula</a>
+                            <span style="color: var(--cor-texto-suave);">·</span>
+                            <a href="#" id="btn-remove-formula" style="color: #ff8a8a; text-decoration: none;">Remover fórmula</a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="sheet-field" id="bloco-sheet-url-wrapper" style="display: none;">
+                    <label>URL da Imagem</label>
+                    <input type="text" id="bloco-sheet-url" class="sheet-input" placeholder="https://exemplo.com/imagem.png">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- BOTTOM SHEET: EDITOR DE FÓRMULA -->
+    <div class="page-settings-overlay" id="formula-settings-overlay">
+        <div class="page-settings-sheet" id="formula-settings-sheet" style="width: 600px; max-width: 95vw;">
+            <div class="sheet-header-drag" id="formula-sheet-header-drag">
+                <div class="sheet-drag-handle"></div>
+                <h3 class="sheet-title">Criar Automatização</h3>
+                <button class="sheet-close-btn" id="formula-sheet-close-btn" title="Fechar">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="sheet-body" style="overflow: hidden;">
+                <div id="formula-builder" class="formula-builder-bar">
+                    <span class="formula-placeholder">Selecione campos e operadores abaixo...</span>
+                </div>
+
+                <div class="formula-editor-layout">
+                    <div class="formula-campos-list" id="formula-campos-list"></div>
+                    <div class="formula-operators">
+                        <button class="op-btn" data-op="+">+</button>
+                        <button class="op-btn" data-op="-">−</button>
+                        <button class="op-btn" data-op="*">×</button>
+                        <button class="op-btn" data-op="/">÷</button>
+                    </div>
+                </div>
+
+                <div style="text-align: right; margin-top: 15px;">
+                    <button type="button" id="btn-salvar-formula" class="btn-primary">Salvar Fórmula</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- BOTTOM SHEET: COLORIR E DECORAR (NOVO SELECT DE CAMADAS) -->
+    <div class="page-settings-overlay" id="decoracao-overlay">
+        <div class="page-settings-sheet" id="decoracao-sheet" style="width: 360px;">
+            <div class="sheet-header-drag" id="decoracao-header-drag">
+                <div class="sheet-drag-handle"></div>
+                <h3 class="sheet-title">Colorir</h3>
+                <button class="sheet-close-btn" id="decoracao-close-btn" title="Fechar">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="sheet-body">
+                <div class="sheet-field">
+                    <label>Cor</label>
+                    <div style="display: flex; gap: 10px; align-items: center; justify-content: center;">
+                        <div id="decoracao-picker-wrapper" class="color-wheel">
+                            <div id="decoracao-picker-cursor" class="color-wheel-cursor"></div>
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 10px; align-items: center; margin-top: 8px;">
+                        <input type="text" id="decoracao-hex" class="sheet-input" value="#d4af37" readonly style="flex: 1; text-align: center; font-family: monospace;">
+                        <button type="button" id="btn-conta-gotas" class="btn-secondary" style="font-size: 0.8rem; padding: 0.5rem;">
+                            <i class="fas fa-eye-dropper"></i> Conta-gotas
+                        </button>
+                    </div>
+                </div>
+
+                <div class="sheet-field">
+                    <label>Profundidade da Camada</label>
+                    <select id="decoracao-camada" class="sheet-input">
+                        <option value="0.5">Atrás da Página (Fundo)</option>
+                        <option value="1.5">Atrás dos Campos</option>
+                        <option value="2.5">Atrás dos Componentes dos Campos</option>
+                        <option value="3.5">Atrás dos Blocos</option>
+                        <option value="4.5">Atrás dos Componentes dos Blocos</option>
+                    </select>
+                </div>
+
+                <div class="sheet-field">
+                    <label>Figuras (Arraste para a folha ou clique)</label>
+                    <div id="decoracao-formas-grid" class="formas-grid">
+                        <!-- Preenchido via JS -->
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 

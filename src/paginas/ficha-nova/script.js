@@ -4,7 +4,12 @@
 
 import { criarCabecalho } from '../../componentes/cabecalho/cabecalho.js';
 import { iniciarZoom } from './modulos/zoom.js';
-import { iniciarPaginas, atualizarModoEdicao } from './modulos/paginas.js';
+import {
+    iniciarPaginas,
+    atualizarModoEdicao,
+    acionarAdicionarCampo
+} from './modulos/paginas.js';
+import { iniciarDecoracao } from './modulos/decoracao.js';
 
 export function montarPagina(container) {
     const pagina = container.querySelector('#pagina-ficha-nova');
@@ -18,12 +23,12 @@ export function montarPagina(container) {
     if (pagina.dataset.eventosAtivos === 'true') return;
     pagina.dataset.eventosAtivos = 'true';
 
-    // 1. Inicializa o Zoom
+    // 1. Zoom
     const wrapper = pagina.querySelector('#folha-wrapper');
-    wrapper.style.zoom = 0.5; // Zoom base em 50%
+    wrapper.style.zoom = 0.5;
     iniciarZoom(pagina, wrapper);
 
-    // 2. Inicializa o Sistema de Páginas
+    // 2. Sistema de páginas
     iniciarPaginas({
         menu: pagina.querySelector('#folha-paginas-menu'),
         btnAdd: pagina.querySelector('#folha-pagina-add'),
@@ -31,47 +36,94 @@ export function montarPagina(container) {
         conteudo: pagina.querySelector('#folha-conteudo')
     });
 
-    // 3. Lógica do Modo Edição
+    // 3. Modo Edição
     const btnModoEdicao = pagina.querySelector('#btn-modo-edicao');
     const menuDireito = pagina.querySelector('.folha-menu-lateral.direito');
 
     const aplicarModoEdicao = (ativo) => {
-        if (ativo) {
-            pagina.classList.add('modo-edicao');
-            menuDireito.classList.add('editando');
-        } else {
-            pagina.classList.remove('modo-edicao');
-            menuDireito.classList.remove('editando');
+        pagina.classList.toggle('modo-edicao', ativo);
+        menuDireito.classList.toggle('editando', ativo);
+        
+        if (!ativo && pagina.classList.contains('modo-colorir')) {
+            desativarModoColorir();
         }
-        atualizarModoEdicao(); 
+        
+        atualizarModoEdicao();
     };
 
     aplicarModoEdicao(false);
 
     if (btnModoEdicao) {
         btnModoEdicao.addEventListener('click', () => {
-            const estaAtivo = pagina.classList.contains('modo-edicao');
-            aplicarModoEdicao(!estaAtivo);
+            aplicarModoEdicao(!pagina.classList.contains('modo-edicao'));
         });
     }
 
-    // 4. Ferramentas Extras
+    // 4. Ferramentas
     const btnAddCampo = pagina.querySelector('#btn-add-campo');
-    const btnColorir = pagina.querySelector('#btn-colorir');
+    const btnModoColorir = pagina.querySelector('#btn-modo-colorir');
+    const btnAbrirPopUpColorir = pagina.querySelector('#btn-abrir-popup-colorir');
+    
+    iniciarDecoracao(); 
+
+    function ativarModoColorir() {
+        pagina.classList.add('modo-colorir');
+        btnModoColorir.classList.add('ativo');
+        btnAbrirPopUpColorir.style.display = 'flex';
+    }
+
+    function desativarModoColorir() {
+        pagina.classList.remove('modo-colorir');
+        btnModoColorir.classList.remove('ativo');
+        btnAbrirPopUpColorir.style.display = 'none';
+        const sheet = document.querySelector('#decoracao-sheet');
+        if (sheet) sheet.classList.remove('active');
+    }
+
+    if (btnModoColorir) {
+        btnModoColorir.addEventListener('click', () => {
+            if (!pagina.classList.contains('modo-edicao')) {
+                alert("Ative o Modo Edição primeiro!");
+                return;
+            }
+            if (pagina.classList.contains('modo-colorir')) {
+                desativarModoColorir();
+            } else {
+                ativarModoColorir();
+            }
+        });
+    }
+
+    if (btnAbrirPopUpColorir) {
+        btnAbrirPopUpColorir.addEventListener('click', () => {
+            const sheet = document.querySelector('#decoracao-sheet');
+            if (!sheet.style.left) {
+                sheet.style.right = '2rem'; sheet.style.bottom = '2rem'; sheet.style.top = 'auto'; sheet.style.left = 'auto';
+            }
+            sheet.classList.toggle('active');
+        });
+    }
 
     if (btnAddCampo) {
-        btnAddCampo.addEventListener('click', () => {
-            alert("A ferramenta de adicionar campo será implementada em breve!");
+        btnAddCampo.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            if (!pagina.classList.contains('modo-edicao')) {
+                alert("Ative o Modo Edição primeiro!");
+                return;
+            }
+            if (pagina.classList.contains('modo-colorir')) {
+                alert("Desative o Modo Colorir para adicionar campos!");
+                return;
+            }
+            
+            // Chama a função do módulo paginas.js para criar o painel
+            acionarAdicionarCampo();
         });
     }
 
-    if (btnColorir) {
-        btnColorir.addEventListener('click', () => {
-            alert("O seletor de cores será implementado em breve!");
-        });
-    }
-
-    // 5. O BLOCO PROTETOR: Clicar no espaço vazio volta para a Home
+    // 5. Bloco protetor
     const blocoProtecao = pagina.querySelector('#bloco-protecao-titulo');
     if (blocoProtecao) {
         blocoProtecao.addEventListener('click', () => {
@@ -80,6 +132,4 @@ export function montarPagina(container) {
     }
 }
 
-export function desmontarPagina() {
-    // Nada para limpar
-}
+export function desmontarPagina() {}

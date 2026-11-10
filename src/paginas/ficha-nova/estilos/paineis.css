@@ -1,0 +1,137 @@
+/* ============================================================
+   CODEX — Painéis e Blocos
+   ============================================================ */
+
+/* CAMADA 2: Painéis (Campos) */
+#pagina-ficha-nova .painel {
+    position: absolute !important; 
+    z-index: 20 !important; 
+    display: flex; flex-direction: column;
+    background: #e8dcc0 !important; /* Cor Sólida */
+    border: 1px solid rgba(120, 90, 40, 0.45); border-radius: 6px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08); min-width: 180px; min-height: 120px; box-sizing: border-box;
+}
+
+/* CAMADA 3: Componentes do Campo */
+#pagina-ficha-nova .painel-header {
+    position: relative; display: flex; align-items: center;
+    z-index: 22 !important; 
+    padding: 0.4rem 3.5rem 0.4rem 0.5rem; border-bottom: 1px solid rgba(120, 90, 40, 0.25);
+    cursor: grab; flex-shrink: 0; user-select: none; box-sizing: border-box; width: 100%;
+    background: #e8dcc0;
+}
+
+/* CAMADA 4: Blocos */
+#pagina-ficha-nova .bloco {
+    position: absolute !important; 
+    z-index: 30 !important; 
+    display: flex; flex-direction: column;
+    background: #f4ecd8 !important; 
+    border: 1px solid rgba(120, 90, 40, 0.2); border-radius: 4px;
+    box-sizing: border-box; overflow: visible;
+}
+#pagina-ficha-nova .bloco-header {
+    position: relative; display: flex; align-items: center;
+    z-index: 32 !important;
+    padding: 0.4rem 3.5rem 0.4rem 0.5rem; border-bottom: 1px solid rgba(120, 90, 40, 0.25);
+    cursor: grab; flex-shrink: 0; user-select: none; box-sizing: border-box; width: 100%;
+    background: #f4ecd8;
+}
+
+#pagina-ficha-nova .painel-titulo,
+#pagina-ficha-nova .bloco-titulo {
+    flex: 1; width: 100%; background: transparent; border: none; outline: none;
+    font-family: var(--fonte-titulo); font-size: 0.95rem; font-weight: 700;
+    color: #3d2e0a; padding: 2px 0; cursor: inherit; white-space: nowrap;
+    overflow: hidden; text-overflow: ellipsis;
+}
+
+/* Botões de Configuração */
+#pagina-ficha-nova .painel-btn-add-bloco,
+#pagina-ficha-nova .bloco-btn-add-bloco,
+#pagina-ficha-nova .painel-engrenagem,
+#pagina-ficha-nova .bloco-engrenagem {
+    position: absolute; top: 50%; transform: translateY(-50%);
+    background: transparent; border: none; color: rgba(120, 90, 40, 0.7);
+    cursor: pointer; padding: 2px; font-size: 0.9rem; transition: color 0.2s, transform 0.2s; display: none;
+}
+#pagina-ficha-nova .painel-btn-add-bloco { right: 24px; }
+#pagina-ficha-nova .painel-engrenagem { right: 6px; }
+#pagina-ficha-nova .bloco-btn-add-bloco { right: 24px; }
+#pagina-ficha-nova .bloco-engrenagem { right: 6px; }
+
+#pagina-ficha-nova.modo-edicao .painel-btn-add-bloco,
+#pagina-ficha-nova.modo-edicao .bloco-btn-add-bloco,
+#pagina-ficha-nova.modo-edicao .painel-engrenagem,
+#pagina-ficha-nova.modo-edicao .bloco-engrenagem { display: inline-block; }
+
+/* CAMADA 3: Conteúdo do Campo */
+#pagina-ficha-nova .painel-conteudo {
+    flex: 1 1 auto; min-height: 0; overflow: visible; 
+    position: relative; 
+    z-index: 21 !important; 
+    padding: 10px;
+    font-family: var(--fonte-corpo); font-size: 0.9rem; color: #3d2e0a;
+}
+
+/* CAMADA 5: Componentes Internos do Bloco */
+#pagina-ficha-nova .bloco-interno {
+    display: flex; flex-direction: column; height: 100%; width: 100%;
+    position: relative; overflow: visible !important;
+    z-index: 40 !important; 
+}
+#pagina-ficha-nova .bloco-textarea {
+    flex: 1; width: 100%; height: 100%; background: transparent; border: none; outline: none;
+    padding: 6px; font-family: var(--fonte-corpo); font-size: 0.85rem; color: #3d2e0a;
+    min-height: 0; box-sizing: border-box; resize: none;
+    position: relative; z-index: 41 !important;
+}
+
+/* Bordas de Resize */
+#pagina-ficha-nova .painel-borda,
+#pagina-ficha-nova .bloco-borda { position: absolute; z-index: 50 !important; display: none; }
+#pagina-ficha-nova.modo-edicao .painel-borda,
+#pagina-ficha-nova.modo-edicao .bloco-borda { display: block; }
+#pagina-ficha-nova .painel-borda-topo,
+#pagina-ficha-nova .painel-borda-base,
+#pagina-ficha-nova .bloco-borda-topo,
+#pagina-ficha-nova .bloco-borda-base { left: 4px; right: 4px; height: 8px; cursor: ns-resize; }
+#pagina-ficha-nova .painel-borda-esq,
+#pagina-ficha-nova .painel-borda-dir,
+#pagina-ficha-nova .bloco-borda-esq,
+#pagina-ficha-nova .bloco-borda-dir { top: 4px; bottom: 4px; width: 8px; cursor: ew-resize; }
+#pagina-ficha-nova .painel-borda-topo { top: -4px; }
+#pagina-ficha-nova .painel-borda-base { bottom: -4px; }
+#pagina-ficha-nova .painel-borda-esq { left: -4px; }
+#pagina-ficha-nova .painel-borda-dir { right: -4px; }
+#pagina-ficha-nova .bloco-borda-topo { top: -4px; }
+#pagina-ficha-nova .bloco-borda-base { bottom: -4px; }
+#pagina-ficha-nova .bloco-borda-esq { left: -4px; }
+#pagina-ficha-nova .bloco-borda-dir { right: -4px; }
+
+/* Bloco de Título e Numérico */
+#pagina-ficha-nova .bloco-titulo-wrapper {
+    position: absolute; bottom: 100%; left: -1px; z-index: 5;
+    width: min(100%, max(150px, 50%)); background: rgba(120, 90, 40, 0.15);
+    border: 1px solid rgba(120, 90, 40, 0.3); border-bottom: none;
+    border-top-left-radius: 6px; border-top-right-radius: 12px; padding: 4px 10px;
+    margin-bottom: -1px; box-sizing: border-box; display: flex; align-items: center;
+}
+#pagina-ficha-nova .bloco-titulo-input {
+    background: transparent; border: none; outline: none; font-family: var(--fonte-titulo);
+    font-size: 0.75rem; font-weight: 700; color: #4a3a1a; width: 100%;
+}
+#pagina-ficha-nova .bloco-numerico-wrapper {
+    display: flex; align-items: center; width: 100%; height: 100%; gap: 8px;
+    padding: 6px; box-sizing: border-box; overflow: hidden;
+}
+#pagina-ficha-nova .bloco-input-numerico {
+    width: 60px; height: 32px; background: transparent; border: 1px solid rgba(120, 90, 40, 0.3);
+    border-radius: 4px; font-family: var(--fonte-titulo); font-size: 1.1rem; font-weight: bold;
+    text-align: center; color: #3d2e0a; outline: none; padding: 0;
+}
+#pagina-ficha-nova .bloco-modificador-display {
+    display: flex; align-items: center; justify-content: center; min-width: 32px; height: 32px;
+    padding: 0 6px; background: rgba(255, 255, 255, 0.4); border: 1px solid rgba(120, 90, 40, 0.2);
+    border-radius: 16px; font-family: var(--fonte-titulo); font-size: 1.1rem; font-weight: bold; color: #6b4f1d;
+}

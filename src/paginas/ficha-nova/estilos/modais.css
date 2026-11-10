@@ -1,0 +1,78 @@
+/* ============================================================
+   CODEX — Modais e Janelas (Bottom Sheets)
+   ============================================================ */
+
+.page-settings-overlay {
+    position: fixed; top: 0; left: 0; width: 0; height: 0;
+    z-index: 1000; pointer-events: none; 
+}
+.page-settings-sheet {
+    pointer-events: auto; position: fixed; bottom: 2rem; right: 2rem;
+    width: 320px; max-height: 85vh; background: #1a140b; border: 1px solid rgba(184, 134, 11, 0.3);
+    border-radius: 16px; padding: 0; box-shadow: 0 10px 40px rgba(0,0,0,0.8), 0 0 0 1px rgba(255,255,255,0.05) inset;
+    display: flex; flex-direction: column;
+    opacity: 0; visibility: hidden; transform: translateY(150%);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease, visibility 0.3s;
+    touch-action: none; 
+}
+.page-settings-sheet.active { opacity: 1; visibility: visible; transform: translateY(0); }
+
+.sheet-header-drag {
+    padding: 1.2rem 1.2rem 0.5rem; cursor: grab; display: flex;
+    flex-direction: column; align-items: center; flex-shrink: 0; position: relative;
+}
+.sheet-close-btn {
+    position: absolute; top: 1rem; right: 1rem; background: transparent; border: none;
+    color: var(--cor-texto-suave); font-size: 1.2rem; cursor: pointer;
+    transition: color 0.2s, transform 0.2s; padding: 4px;
+}
+.sheet-drag-handle {
+    width: 50px; height: 5px; background: rgba(212, 175, 55, 0.4);
+    border-radius: 5px; margin-bottom: 0.8rem;
+}
+.sheet-title { font-family: var(--fonte-titulo); color: var(--cor-dourado); font-size: 1.1rem; text-align: center; margin: 0; }
+.sheet-body {
+    padding: 0 1.2rem 1.2rem; overflow-y: auto; display: flex;
+    flex-direction: column; gap: 1rem;
+}
+.sheet-field { display: flex; flex-direction: column; gap: 0.4rem; }
+.sheet-field label { color: var(--cor-texto-suave); font-size: 0.85rem; font-family: var(--fonte-corpo); }
+.sheet-input {
+    background: rgba(0, 0, 0, 0.4); border: 1px solid var(--cor-marrom-borda);
+    color: var(--cor-texto-claro); padding: 0.8rem; border-radius: 8px;
+    font-family: var(--fonte-corpo); font-size: 1rem; outline: none;
+}
+.sheet-icons-grid { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; padding: 0.5rem 0; }
+.sheet-icon-btn {
+    width: 32px; height: 32px; border-radius: 50%; background: rgba(255,255,255,0.05);
+    border: 2px solid transparent; color: var(--cor-texto-suave); font-size: 0.9rem;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+}
+.btn-excluir-pagina {
+    margin-top: 0.5rem; padding: 0.8rem; background: rgba(180, 40, 40, 0.2);
+    border: 1px solid #b42828; color: #ff8a8a; border-radius: 8px;
+    font-family: var(--fonte-titulo); font-size: 1rem; cursor: pointer;
+}
+
+/* Editor de Fórmulas */
+.formula-builder-bar {
+    display: flex; flex-wrap: wrap; gap: 8px; min-height: 50px;
+    padding: 10px; background: rgba(0, 0, 0, 0.4);
+    border: 2px dashed rgba(212, 175, 55, 0.4); border-radius: 8px;
+    margin-bottom: 15px; align-items: center;
+}
+.formula-item { padding: 6px 12px; border-radius: 4px; font-size: 0.9rem; cursor: pointer; }
+.formula-item.campo { background: rgba(212, 175, 55, 0.15); border: 1px solid rgba(212, 175, 55, 0.4); color: var(--cor-dourado-claro); }
+.formula-item.operador { background: transparent; font-size: 1.2rem; font-weight: bold; color: #fff; padding: 0 8px; }
+.formula-editor-layout { display: flex; gap: 15px; height: 250px; }
+.formula-campos-list { flex: 1; overflow-y: auto; background: rgba(0, 0, 0, 0.2); border-radius: 8px; padding: 10px; }
+.formula-field-btn {
+    display: block; width: 100%; text-align: left; background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1); color: var(--cor-texto-claro);
+    padding: 8px; border-radius: 6px; margin-bottom: 6px; cursor: pointer;
+}
+.formula-operators { display: flex; flex-direction: column; gap: 8px; width: 60px; }
+.op-btn {
+    flex: 1; background: rgba(212, 175, 55, 0.1); border: 1px solid rgba(212, 175, 55, 0.3);
+    color: var(--cor-dourado); font-size: 1.2rem; border-radius: 8px; cursor: pointer;
+}
