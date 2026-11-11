@@ -69,8 +69,6 @@ export function iniciarPaginas(elementos) {
         estado.paginaAtivaId = estado.paginas[0].id;
     }
 
-    // Restaurado para criar página em branco
-    refs.btnAdd.title = "Nova Página";
     refs.btnAdd.addEventListener('click', adicionarPagina);
     
     configurarBottomSheet();
@@ -79,6 +77,7 @@ export function iniciarPaginas(elementos) {
     configurarTooltipsDireita();
     configurarBotaoLimpar();
     configurarAtalhosTeclado();
+    configurarJSON(); // SISTEMA DE IMPORTAR/EXPORTAR
     
     configurarSheetCampo(() => renderizarPaineis());
     configurarSheetBloco(() => renderizarPaineis());
@@ -104,6 +103,88 @@ export function estaEmModoEdicao() {
 
 export function getPaginaAtiva() {
     return estado.paginas.find(p => p.id === estado.paginaAtivaId);
+}
+
+/* --- SISTEMA JSON (IMPORTAR / EXPORTAR) --- */
+function configurarJSON() {
+    const btnExportar = document.querySelector('#btn-exportar-ficha');
+    const btnImportar = document.querySelector('#btn-importar-ficha');
+
+    if (!btnExportar || !btnImportar) return;
+
+    // --- EXPORTAR ---
+    btnExportar.addEventListener('click', (e) => {
+        e.preventDefault();
+        
+        // Pega o nome da página ativa para usar no arquivo
+        const pagAtiva = getPaginaAtiva();
+        let nomeArquivo = "Ficha de Personagem"; // Nome padrão
+        
+        if (pagAtiva && pagAtiva.nome) {
+            // Remove caracteres inválidos para nomes de arquivo (\, /, :, *, ?, ", <, >, |)
+            nomeArquivo = pagAtiva.nome.replace(/[\\/:*?"<>|]/g, "").trim();
+        }
+
+        const dados = {
+            app: 'CODEX',
+            versao: '1.0',
+            data: new Date().toISOString(),
+            paginas: estado.paginas,
+            paginaAtivaId: estado.paginaAtivaId
+        };
+        
+        const jsonString = JSON.stringify(dados, null, 2);
+        const blob = new Blob([jsonString], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${nomeArquivo}.json`; // Usa o nome da página
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    });
+
+    // --- IMPORTAR (CRIANDO INPUT DINAMICAMENTE) ---
+    btnImportar.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation(); 
+
+        const inputFile = document.createElement('input');
+        inputFile.type = 'file';
+        inputFile.accept = '.json';
+        
+        inputFile.addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                try {
+                    const dados = JSON.parse(ev.target.result);
+                    if (!dados.paginas || !Array.isArray(dados.paginas)) {
+                        return alert("Arquivo JSON inválido.");
+                    }
+
+                    if (confirm("Deseja substituir a ficha atual por este arquivo?")) {
+                        estado.paginas = dados.paginas;
+                        estado.paginaAtivaId = dados.paginaAtivaId || dados.paginas[0].id;
+                        
+                        salvarEstado();
+                        renderizarMenu();
+                        carregarConteudoPaginaAtiva();
+                        alert("Ficha importada com sucesso!");
+                    }
+                } catch (err) {
+                    alert("Erro ao ler o JSON: " + err.message);
+                }
+            };
+            reader.readAsText(file);
+        });
+
+        inputFile.click();
+    });
 }
 
 /* --- GERAR NOME ÚNICO --- */
@@ -325,7 +406,7 @@ function excluirPagina(id) {
     renderizarMenu();
 }
 
-function renderizarMenu() {
+export function renderizarMenu() {
     refs.menu.innerHTML = '';
     estado.paginas.forEach((pag, index) => {
         const isAtiva = pag.id === estado.paginaAtivaId;
@@ -337,7 +418,7 @@ function renderizarMenu() {
         btn.addEventListener('click', () => trocarPagina(pag.id));
         btn.addEventListener('contextmenu', (e) => {
             e.preventDefault();
-            e.stopPropagation(); // Impede o pan de câmera
+            e.stopPropagation();
             if (estaEmModoEdicao()) abrirBottomSheet(pag.id);
         });
         refs.menu.appendChild(btn);

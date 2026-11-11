@@ -24,12 +24,11 @@
     box-sizing: border-box;
 }
 
-/* Link do CodeX */
-#pagina-ficha-nova .ficha-header-fixo a {
+#pagina-ficha-nova .ficha-header-fixo #btn-voltar-home {
     transition: transform 0.2s ease, filter 0.2s ease;
 }
 
-#pagina-ficha-nova .ficha-header-fixo a:hover {
+#pagina-ficha-nova .ficha-header-fixo #btn-voltar-home:hover {
     transform: scale(1.05);
     filter: brightness(1.2);
 }
@@ -221,6 +220,27 @@
 }
 #pagina-ficha-nova.modo-edicao .btn-limpar-ficha {
     display: flex;
+}
+
+/* --- BOTÕES DE IMPORTAR E EXPORTAR --- */
+#pagina-ficha-nova .btn-acao-header {
+    background: rgba(212, 175, 55, 0.1); 
+    border: 1px solid rgba(212, 175, 55, 0.4);
+    color: var(--cor-dourado); 
+    padding: 6px 12px; 
+    border-radius: 6px; 
+    font-size: 0.9rem; 
+    cursor: pointer; 
+    transition: all 0.2s;
+    display: flex; /* Sempre visíveis */
+    align-items: center; 
+    justify-content: center;
+}
+#pagina-ficha-nova .btn-acao-header:hover {
+    background: rgba(212, 175, 55, 0.25); 
+    color: #fff; 
+    border-color: var(--cor-dourado);
+    box-shadow: 0 0 10px rgba(240, 196, 74, 0.3);
 }
 
 #pagina-ficha-nova .folha-conteudo {

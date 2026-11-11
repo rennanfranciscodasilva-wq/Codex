@@ -29,9 +29,21 @@
                         </div>
                         
                         <div class="folha-cabecalho-acoes">
+                            <!-- BOTÕES DE EXPORTAR E IMPORTAR JSON -->
+                            <button id="btn-exportar-ficha" class="btn-acao-header" title="Exportar Ficha (JSON)">
+                                <i class="fas fa-file-export"></i>
+                            </button>
+                            <button id="btn-importar-ficha" class="btn-acao-header" title="Importar Ficha (JSON)">
+                                <i class="fas fa-file-import"></i>
+                            </button>
+                            <!-- INPUT INVISÍVEL PARA O IMPORTAR FUNCIONAR -->
+                            <input type="file" id="input-importar-json" accept=".json" style="position: absolute; width: 1px; height: 1px; opacity: 0; z-index: -1;">
+
+                            <!-- BOTÃO LIMPAR -->
                             <button id="btn-limpar-ficha" class="btn-limpar-ficha" title="Limpar Ficha">
                                 <i class="fas fa-broom"></i> Limpar
                             </button>
+                            
                             <div class="indicador-zoom" id="indicador-zoom">50%</div>
                         </div>
                     </div>
