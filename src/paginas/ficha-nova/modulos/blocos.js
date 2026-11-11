@@ -2,13 +2,14 @@
    MÓDULO: BLOCOS (Ficha Nova)
    ============================================================ */
 
-import { estaEmModoEdicao, estado, GRID } from './paginas.js';
-import { configurarEditorFormula } from './automacao.js';
+import { estaEmModoEdicao, estado, GRID, salvarEstado, gerarId, areaTransferenciaCodex } from './paginas.js';
+import { configurarEditorFormula, calcularFormula, formulaEventBus } from './automacao.js';
 
-const BLOCO_LARG_MIN = 80;
-const BLOCO_ALT_MIN = 40;
+const BLOCO_LARG_MIN = 100;
+const BLOCO_ALT_MIN = 100; // Aumentado para caber título, conteúdo e rodapé
 
 let blocoSendoEditadoId = null;
+let painelPaiIdTemp = null;
 
 export function renderizarBloco(bloco, painelPaiId, renderizarPaineisCallback) {
     const el = document.createElement('div');
@@ -28,10 +29,7 @@ export function renderizarBloco(bloco, painelPaiId, renderizarPaineisCallback) {
         el.classList.add('expansivel');
     }
 
-    const conteudoInterno = document.createElement('div');
-    conteudoInterno.className = 'bloco-interno';
-
-    // --- TÍTULO ---
+    // --- TÍTULO (Topo) ---
     if (bloco.tipo === 'textual' || bloco.tipo === 'numerico') {
         if (bloco.modelo.includes('titulo')) {
             const tituloWrapper = document.createElement('div');
@@ -70,6 +68,7 @@ export function renderizarBloco(bloco, painelPaiId, renderizarPaineisCallback) {
                     
                     const onMove = (ev) => {
                         const folha = document.querySelector('#pagina-ficha-nova .folha');
+                        if (!folha) return;
                         const zoomAtual = parseFloat(folha.style.zoom || '1') || 1;
                         let novaLargura = startWidth + (ev.clientX - startX) / zoomAtual;
                         if (novaLargura < 150) novaLargura = 150;
@@ -83,6 +82,7 @@ export function renderizarBloco(bloco, painelPaiId, renderizarPaineisCallback) {
                     const onUp = () => {
                         document.removeEventListener('pointermove', onMove);
                         document.removeEventListener('pointerup', onUp);
+                        salvarEstado();
                     };
                     document.addEventListener('pointermove', onMove);
                     document.addEventListener('pointerup', onUp);
@@ -90,17 +90,28 @@ export function renderizarBloco(bloco, painelPaiId, renderizarPaineisCallback) {
             });
 
             tituloWrapper.appendChild(inputTitulo);
-            conteudoInterno.appendChild(tituloWrapper);
+            el.appendChild(tituloWrapper);
         }
     }
 
     // --- CONTEÚDO ---
+    const conteudoInterno = document.createElement('div');
+    conteudoInterno.className = 'bloco-interno';
+
     if (bloco.tipo === 'textual') {
         const textarea = document.createElement('textarea');
         textarea.className = 'bloco-textarea';
         textarea.value = bloco.texto || '';
         textarea.placeholder = 'Escreva aqui...';
         textarea.style.textAlign = bloco.alignConteudo;
+        
+        textarea.addEventListener('input', (e) => {
+            bloco.texto = e.target.value;
+        });
+
+        textarea.addEventListener('change', () => {
+            salvarEstado();
+        });
         
         textarea.addEventListener('pointerdown', (e) => {
             const isExpansivel = bloco.modelo && bloco.modelo.includes('expansivel');
@@ -116,9 +127,10 @@ export function renderizarBloco(bloco, painelPaiId, renderizarPaineisCallback) {
                     
                     const onMove = (ev) => {
                         const folha = document.querySelector('#pagina-ficha-nova .folha');
+                        if (!folha) return;
                         const zoomAtual = parseFloat(folha.style.zoom || '1') || 1;
                         let novaAltura = startHeight + (ev.clientY - startY) / zoomAtual;
-                        if (novaAltura < 40) novaAltura = 40;
+                        if (novaAltura < BLOCO_ALT_MIN) novaAltura = BLOCO_ALT_MIN;
                         
                         el.style.height = novaAltura + 'px';
                         bloco.altura = Math.round(novaAltura);
@@ -127,14 +139,13 @@ export function renderizarBloco(bloco, painelPaiId, renderizarPaineisCallback) {
                     const onUp = () => {
                         document.removeEventListener('pointermove', onMove);
                         document.removeEventListener('pointerup', onUp);
+                        salvarEstado();
                     };
                     document.addEventListener('pointermove', onMove);
                     document.addEventListener('pointerup', onUp);
                     return; 
                 }
             }
-            if (!estaEmModoEdicao() || document.activeElement === textarea) return;
-            iniciarArrastoBloco(e, bloco, painelPaiId);
         });
 
         conteudoInterno.appendChild(textarea);
@@ -149,16 +160,23 @@ export function renderizarBloco(bloco, painelPaiId, renderizarPaineisCallback) {
         inputNum.type = 'number';
         inputNum.className = 'bloco-input-numerico';
         
-        if (bloco.formula && bloco.formula.length > 0) {
-            inputNum.value = calcularFormula(bloco.formula);
-            inputNum.readOnly = true;
-            inputNum.style.background = 'rgba(0,0,0,0.05)';
-            inputNum.title = "Valor calculado automaticamente";
-        } else {
-            inputNum.value = bloco.valorNumerico || '';
-        }
-        inputNum.placeholder = '0';
-        
+        const atualizarValorCalculado = () => {
+            if (bloco.formula && bloco.formula.length > 0) {
+                const resultado = calcularFormula(bloco.formula);
+                inputNum.value = (resultado === '' || resultado === 'Erro') ? 0 : resultado;
+                inputNum.readOnly = true;
+                inputNum.style.background = 'rgba(0,0,0,0.05)';
+                inputNum.title = "Valor calculado automaticamente";
+            } else {
+                inputNum.value = bloco.valorNumerico || '';
+                inputNum.readOnly = !estaEmModoEdicao();
+                inputNum.style.background = 'transparent';
+                inputNum.title = "";
+            }
+        };
+
+        atualizarValorCalculado();
+
         const modDisplay = document.createElement('div');
         modDisplay.className = 'bloco-modificador-display';
 
@@ -182,15 +200,33 @@ export function renderizarBloco(bloco, painelPaiId, renderizarPaineisCallback) {
             modDisplay.style.color = mod > 0 ? '#2e7d32' : (mod < 0 ? '#c62828' : '#6b4f1d');
         };
 
-        inputNum.addEventListener('input', (e) => {
+        inputNum.addEventListener('change', (e) => {
+            if (bloco.formula && bloco.formula.length > 0) return;
             bloco.valorNumerico = e.target.value;
+            calcularModificador();
+            salvarEstado();
+            if (typeof formulaEventBus !== 'undefined') {
+                formulaEventBus.dispatchEvent(new Event('formulaAtualizada'));
+            }
+        });
+
+        inputNum.addEventListener('input', (e) => {
+            if (bloco.formula && bloco.formula.length > 0) return;
             calcularModificador();
         });
 
         inputNum.addEventListener('pointerdown', (e) => {
-            if (inputNum.readOnly || !estaEmModoEdicao() || document.activeElement === inputNum) return;
-            iniciarArrastoBloco(e, bloco, painelPaiId);
+            e.stopPropagation(); 
         });
+
+        if (typeof formulaEventBus !== 'undefined') {
+            formulaEventBus.addEventListener('formulaAtualizada', () => {
+                if (document.body.contains(el)) {
+                    atualizarValorCalculado();
+                    calcularModificador();
+                }
+            });
+        }
 
         numWrapper.appendChild(inputNum);
         numWrapper.appendChild(modDisplay);
@@ -209,53 +245,68 @@ export function renderizarBloco(bloco, painelPaiId, renderizarPaineisCallback) {
 
     el.appendChild(conteudoInterno);
 
+    // --- RODAPÉ (Footer com Botões) ---
+    const footer = document.createElement('div');
+    footer.className = 'bloco-footer';
+
+    const btnCopiar = document.createElement('button');
+    btnCopiar.className = 'bloco-btn-acao bloco-copiar';
+    btnCopiar.title = 'Copiar Bloco';
+    btnCopiar.innerHTML = '<i class="fas fa-copy"></i>';
+    btnCopiar.addEventListener('pointerdown', (e) => e.stopPropagation());
+    btnCopiar.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (!estaEmModoEdicao()) return;
+        
+        // CORREÇÃO: Mutando as propriedades do objeto importado
+        areaTransferenciaCodex.tipo = 'bloco';
+        areaTransferenciaCodex.dados = JSON.parse(JSON.stringify(bloco));
+        alert("Bloco copiado! Selecione o campo de destino e aperte Ctrl+V.");
+    });
+
+    const btnExcluir = document.createElement('button');
+    btnExcluir.className = 'bloco-btn-acao bloco-excluir';
+    btnExcluir.title = 'Excluir Bloco';
+    btnExcluir.innerHTML = '<i class="fas fa-trash-alt"></i>';
+    btnExcluir.addEventListener('pointerdown', (e) => e.stopPropagation());
+    btnExcluir.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (!estaEmModoEdicao()) return;
+        excluirBloco(painelPaiId, bloco.id, renderizarPaineisCallback);
+    });
+
+    const btnEngrenagem = document.createElement('button');
+    btnEngrenagem.className = 'bloco-btn-acao bloco-engrenagem';
+    btnEngrenagem.title = 'Configurar Bloco';
+    btnEngrenagem.innerHTML = '<i class="fas fa-cog"></i>';
+    btnEngrenagem.addEventListener('pointerdown', (e) => e.stopPropagation());
+    btnEngrenagem.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (!estaEmModoEdicao()) return;
+        window.abrirBottomSheetBloco(painelPaiId, bloco.id);
+    });
+
+    footer.appendChild(btnCopiar);
+    footer.appendChild(btnExcluir);
+    footer.appendChild(btnEngrenagem);
+    el.appendChild(footer);
+
     // --- ARRASTAR ---
     el.addEventListener('pointerdown', (e) => {
         if (!estaEmModoEdicao()) {
             if (!bloco.modelo || !bloco.modelo.includes('expansivel')) return;
         }
-        if (e.target.tagName === 'TEXTAREA' || e.target.tagName === 'INPUT' || e.target.classList.contains('bloco-borda')) {
+        
+        if (e.target.tagName === 'TEXTAREA' || e.target.tagName === 'INPUT' || e.target.classList.contains('bloco-titulo-input')) {
             return;
         }
 
-        const isEngrenagem = e.target.closest('.bloco-engrenagem');
-
-        if (isEngrenagem) {
-            let moveu = false;
-            const startX = e.clientX;
-            const startY = e.clientY;
-
-            const onMove = (ev) => {
-                if (Math.hypot(ev.clientX - startX, ev.clientY - startY) > 5) {
-                    moveu = true;
-                    document.removeEventListener('pointermove', onMove);
-                    document.removeEventListener('pointerup', onUp);
-                    iniciarArrastoBloco(e, bloco, painelPaiId);
-                }
-            };
-            const onUp = () => {
-                document.removeEventListener('pointermove', onMove);
-                document.removeEventListener('pointerup', onUp);
-            };
-
-            document.addEventListener('pointermove', onMove);
-            document.addEventListener('pointerup', onUp);
+        if (e.target.classList.contains('bloco-borda') || e.target.closest('.bloco-btn-acao')) {
             return;
         }
+
         iniciarArrastoBloco(e, bloco, painelPaiId);
     });
-
-    // --- ENGRENAGEM ---
-    const engrenagem = document.createElement('button');
-    engrenagem.className = 'bloco-engrenagem';
-    engrenagem.title = 'Configurar Bloco';
-    engrenagem.innerHTML = '<i class="fas fa-cog"></i>';
-    engrenagem.addEventListener('click', (e) => {
-        e.stopPropagation();
-        if (!estaEmModoEdicao()) return;
-        window.abrirBottomSheetBloco(painelPaiId, bloco.id);
-    });
-    el.appendChild(engrenagem);
 
     // --- BORDAS ---
     ['topo', 'base', 'esq', 'dir'].forEach(lado => {
@@ -275,6 +326,33 @@ export function renderizarBloco(bloco, painelPaiId, renderizarPaineisCallback) {
     });
 
     return el;
+}
+
+/* ---------- EXCLUSÃO DE BLOCO ---------- */
+
+function excluirBloco(painelPaiId, blocoId, renderizarPaineisCallback) {
+    const pag = estado.paginas.find(p => p.id === estado.paginaAtivaId);
+    if (!pag) return;
+    const painel = pag.paineis.find(p => p.id === painelPaiId);
+    if (!painel || !painel.blocos) return;
+
+    const bloco = painel.blocos.find(b => b.id === blocoId);
+    if (!bloco) return;
+
+    const nome = bloco.tituloBloco || bloco.texto || '(sem título)';
+    const label = nome.length > 30 ? nome.slice(0, 30) + '…' : nome;
+    if (!confirm(`Excluir o bloco "${label}"?`)) return;
+
+    if (blocoSendoEditadoId === blocoId) {
+        blocoSendoEditadoId = null;
+        painelPaiIdTemp = null;
+        document.querySelector('#bloco-settings-sheet')?.classList.remove('active');
+    }
+
+    painel.blocos = painel.blocos.filter(b => b.id !== blocoId);
+    salvarEstado();
+    if (renderizarPaineisCallback) renderizarPaineisCallback();
+    if (typeof formulaEventBus !== 'undefined') formulaEventBus.dispatchEvent(new Event('formulaAtualizada'));
 }
 
 export function configurarSheetBloco(renderizarPaineisCallback) {
@@ -304,7 +382,6 @@ export function configurarSheetBloco(renderizarPaineisCallback) {
     const inputUrl = document.querySelector('#bloco-sheet-url');
     const wrapAutomacao = document.querySelector('#bloco-sheet-automacao-wrapper');
 
-    // Elementos de Automação
     const btnAddFormula = document.querySelector('#btn-add-formula');
     const resumoFormula = document.querySelector('#bloco-sheet-formula-resumo');
     const textoFormula = document.querySelector('#bloco-sheet-formula-texto');
@@ -313,45 +390,38 @@ export function configurarSheetBloco(renderizarPaineisCallback) {
 
     if (!sheet || !selectTipo) return;
 
-    // Inicializa o Editor de Fórmulas
     configurarEditorFormula(() => {
         if (renderizarPaineisCallback) renderizarPaineisCallback();
         atualizarResumoFormula(); 
     });
 
     let isDragging = false, startX = 0, startY = 0, initialX = 0, initialY = 0;
-
     const onPointerDown = (e) => {
         if (e.target.closest('input, button, textarea, select')) return;
         isDragging = true; startX = e.clientX; startY = e.clientY;
-        const rect = sheet.getBoundingClientRect();
-        initialX = rect.left; initialY = rect.top;
-        sheet.style.transition = 'none';
-        sheet.setPointerCapture(e.pointerId);
+        const rect = sheet.getBoundingClientRect(); initialX = rect.left; initialY = rect.top;
+        sheet.style.transition = 'none'; sheet.setPointerCapture(e.pointerId);
     };
     const onPointerMove = (e) => {
         if (!isDragging) return;
-        sheet.style.left = `${initialX + (e.clientX - startX)}px`;
-        sheet.style.top = `${initialY + (e.clientY - startY)}px`;
+        sheet.style.left = `${initialX + (e.clientX - startX)}px`; sheet.style.top = `${initialY + (e.clientY - startY)}px`;
         sheet.style.bottom = 'auto'; sheet.style.right = 'auto';
     };
     const onPointerUp = (e) => {
         if (!isDragging) return;
-        isDragging = false;
-        sheet.style.transition = 'transform 0.3s cubic-bezier(0.4,0,0.2,1), opacity 0.3s ease, visibility 0.3s ease';
+        isDragging = false; sheet.style.transition = 'transform 0.3s cubic-bezier(0.4,0,0.2,1), opacity 0.3s ease, visibility 0.3s ease';
         sheet.releasePointerCapture(e.pointerId);
     };
 
     if (dragHandle) {
         dragHandle.addEventListener('pointerdown', onPointerDown);
-        sheet.addEventListener('pointermove', onPointerMove);
-        sheet.addEventListener('pointerup', onPointerUp);
+        sheet.addEventListener('pointermove', onPointerMove); sheet.addEventListener('pointerup', onPointerUp);
     }
     
     if (btnClose) {
         btnClose.addEventListener('click', () => { 
             sheet.classList.remove('active'); 
-            blocoSendoEditadoId = null; 
+            blocoSendoEditadoId = null; painelPaiIdTemp = null;
         });
     }
 
@@ -388,7 +458,7 @@ export function configurarSheetBloco(renderizarPaineisCallback) {
 
     if (btnAddFormula) {
         btnAddFormula.addEventListener('click', () => {
-            window.abrirEditorFormula(window._painelPaiIdTemp, blocoSendoEditadoId, null);
+            window.abrirEditorFormula(painelPaiIdTemp, blocoSendoEditadoId, null);
         });
     }
 
@@ -396,9 +466,12 @@ export function configurarSheetBloco(renderizarPaineisCallback) {
         btnEditFormula.addEventListener('click', (e) => {
             e.preventDefault();
             const pag = estado.paginas.find(p => p.id === estado.paginaAtivaId);
-            const p = pag.paineis.find(p => p.id === window._painelPaiIdTemp);
+            if (!pag) return;
+            const p = pag.paineis.find(p => p.id === painelPaiIdTemp);
+            if (!p) return;
             const b = p.blocos.find(b => b.id === blocoSendoEditadoId);
-            window.abrirEditorFormula(window._painelPaiIdTemp, blocoSendoEditadoId, b.formula);
+            if (!b) return;
+            window.abrirEditorFormula(painelPaiIdTemp, blocoSendoEditadoId, b.formula);
         });
     }
 
@@ -407,9 +480,14 @@ export function configurarSheetBloco(renderizarPaineisCallback) {
             e.preventDefault();
             if(confirm("Deseja remover a automatização deste bloco?")) {
                 const pag = estado.paginas.find(p => p.id === estado.paginaAtivaId);
-                const p = pag.paineis.find(p => p.id === window._painelPaiIdTemp);
+                if (!pag) return;
+                const p = pag.paineis.find(p => p.id === painelPaiIdTemp);
+                if (!p) return;
                 const b = p.blocos.find(b => b.id === blocoSendoEditadoId);
+                if (!b) return;
                 b.formula = [];
+                salvarEstado();
+                if (typeof formulaEventBus !== 'undefined') formulaEventBus.dispatchEvent(new Event('formulaAtualizada'));
                 atualizarResumoFormula();
                 if (renderizarPaineisCallback) renderizarPaineisCallback();
             }
@@ -417,11 +495,14 @@ export function configurarSheetBloco(renderizarPaineisCallback) {
     }
 
     function atualizarResumoFormula() {
-        if (!blocoSendoEditadoId || !window._painelPaiIdTemp || !resumoFormula || !btnAddFormula || !textoFormula) return;
+        if (!blocoSendoEditadoId || !painelPaiIdTemp || !resumoFormula || !btnAddFormula || !textoFormula) return;
         
         const pag = estado.paginas.find(p => p.id === estado.paginaAtivaId);
-        const p = pag.paineis.find(p => p.id === window._painelPaiIdTemp);
+        if (!pag) return;
+        const p = pag.paineis.find(p => p.id === painelPaiIdTemp);
+        if (!p) return;
         const b = p.blocos.find(b => b.id === blocoSendoEditadoId);
+        if (!b) return;
         
         if (b.formula && b.formula.length > 0) {
             btnAddFormula.style.display = 'none';
@@ -441,13 +522,14 @@ export function configurarSheetBloco(renderizarPaineisCallback) {
 
     window.abrirBottomSheetBloco = (painelId, blocoId) => {
         const pag = estado.paginas.find(p => p.id === estado.paginaAtivaId);
+        if (!pag) return;
         const p = pag.paineis.find(p => p.id === painelId);
         if (!p || !p.blocos) return;
         const b = p.blocos.find(b => b.id === blocoId);
         if (!b) return;
         
         blocoSendoEditadoId = blocoId;
-        window._painelPaiIdTemp = painelId;
+        painelPaiIdTemp = painelId;
 
         selectTipo.value = b.tipo || 'textual';
         
@@ -480,7 +562,8 @@ export function configurarSheetBloco(renderizarPaineisCallback) {
 
     function salvarConfiguracoes() {
         const pag = estado.paginas.find(p => p.id === estado.paginaAtivaId);
-        const p = pag.paineis.find(p => p.id === window._painelPaiIdTemp);
+        if (!pag) return;
+        const p = pag.paineis.find(p => p.id === painelPaiIdTemp);
         if (!p) return;
         const b = p.blocos.find(b => b.id === blocoSendoEditadoId);
         if (!b) return;
@@ -502,42 +585,8 @@ export function configurarSheetBloco(renderizarPaineisCallback) {
             b.urlImagem = inputUrl.value;
         }
         
+        salvarEstado();
         if (renderizarPaineisCallback) renderizarPaineisCallback(); 
-    }
-}
-
-function calcularFormula(formula) {
-    if (!formula || formula.length === 0) return '';
-    let strFormula = '';
-    
-    formula.forEach(item => {
-        if (item.tipo === 'operador') {
-            let op = item.valor;
-            if (op === '×') op = '*';
-            if (op === '÷') op = '/';
-            strFormula += ` ${op} `;
-        } else {
-            const pagOrigem = estado.paginas.find(p => p.paineis.some(pai => pai.id === item.painelId));
-            const painelOrigem = pagOrigem ? pagOrigem.paineis.find(p => p.id === item.painelId) : null;
-            const blocoOrigem = painelOrigem ? painelOrigem.blocos.find(b => b.id === item.blocoId) : null;
-            
-            let valor = 0;
-            if (blocoOrigem) {
-                if (blocoOrigem.formula && blocoOrigem.formula.length > 0) {
-                    valor = parseFloat(calcularFormula(blocoOrigem.formula)) || 0;
-                } else {
-                    valor = parseFloat(blocoOrigem.valorNumerico) || 0;
-                }
-            }
-            strFormula += valor;
-        }
-    });
-
-    try {
-        const resultado = new Function('return ' + strFormula)();
-        return isNaN(resultado) ? 0 : resultado;
-    } catch (e) {
-        return 'Erro';
     }
 }
 
@@ -546,6 +595,7 @@ function calcularFormula(formula) {
 function iniciarArrastoBloco(e, bloco, painelPaiId) {
     e.preventDefault();
     const pag = estado.paginas.find(p => p.id === estado.paginaAtivaId);
+    if (!pag) return;
     const painel = pag.paineis.find(p => p.id === painelPaiId);
     if (!painel) return;
     
@@ -554,6 +604,7 @@ function iniciarArrastoBloco(e, bloco, painelPaiId) {
     if (!elBloco || !elArea) return;
 
     const folha = document.querySelector('#pagina-ficha-nova .folha');
+    if (!folha) return;
     const zoomAtual = parseFloat(folha.style.zoom || '1') || 1;
     const startX = e.clientX, startY = e.clientY, origX = bloco.x, origY = bloco.y;
 
@@ -580,6 +631,7 @@ function iniciarArrastoBloco(e, bloco, painelPaiId) {
     const onUp = () => {
         document.removeEventListener('pointermove', onMove);
         document.removeEventListener('pointerup', onUp);
+        salvarEstado();
     };
     document.addEventListener('pointermove', onMove);
     document.addEventListener('pointerup', onUp);
@@ -588,6 +640,7 @@ function iniciarArrastoBloco(e, bloco, painelPaiId) {
 function iniciarResizeBloco(e, bloco, lado, painelPaiId) {
     e.preventDefault(); e.stopPropagation();
     const pag = estado.paginas.find(p => p.id === estado.paginaAtivaId);
+    if (!pag) return;
     const painel = pag.paineis.find(p => p.id === painelPaiId);
     if (!painel) return;
     const elBloco = document.querySelector(`.painel[data-painel-id="${painelPaiId}"] .bloco[data-bloco-id="${bloco.id}"]`);
@@ -595,6 +648,7 @@ function iniciarResizeBloco(e, bloco, lado, painelPaiId) {
     if (!elBloco || !elArea) return;
 
     const folha = document.querySelector('#pagina-ficha-nova .folha');
+    if (!folha) return;
     const zoomAtual = parseFloat(folha.style.zoom || '1') || 1;
     const startX = e.clientX, startY = e.clientY;
     const orig = { x: bloco.x, y: bloco.y, largura: bloco.largura, altura: bloco.altura };
@@ -627,6 +681,7 @@ function iniciarResizeBloco(e, bloco, lado, painelPaiId) {
     const onUp = () => {
         document.removeEventListener('pointermove', onMove);
         document.removeEventListener('pointerup', onUp);
+        salvarEstado();
     };
     document.addEventListener('pointermove', onMove);
     document.addEventListener('pointerup', onUp);

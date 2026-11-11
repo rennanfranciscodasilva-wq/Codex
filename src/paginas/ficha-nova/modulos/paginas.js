@@ -17,13 +17,19 @@ export const GRID = 20;
 export const PAD_X = 40;
 export const PAD_Y = 30;
 
+export const areaTransferenciaCodex = { tipo: null, dados: null };
+
+export function gerarId(prefixo) {
+    return prefixo + Date.now().toString() + Math.random().toString(36).substring(2, 6);
+}
+
 const ICONES_DISPONIVEIS = [
     'fa-book', 'fa-scroll', 'fa-fire', 'fa-hat-wizard',
     'fa-dragon', 'fa-shield-alt', 'fa-gem', 'fa-feather-alt',
     'fa-skull', 'fa-tree', 'fa-dice-d20', 'fa-wand-magic-sparkles',
     'fa-flask', 'fa-eye', 'fa-hand-fist', 'fa-heart',
     'fa-compass', 'fa-map', 'fa-crown', 'fa-key',
-    'fa-sword', 'fa-moon'
+    'fa-khanda', 'fa-moon'
 ];
 
 export let estado = {
@@ -41,9 +47,20 @@ let paginaSendoEditadaId = null;
 export function iniciarPaginas(elementos) {
     refs = elementos;
 
+    const cache = localStorage.getItem('codex_ficha_dados');
+    if (cache) {
+        try {
+            const dados = JSON.parse(cache);
+            estado.paginas = dados.paginas || [];
+            estado.paginaAtivaId = dados.paginaAtivaId || null;
+        } catch (e) {
+            console.warn("Cache corrompido, iniciando nova ficha.");
+        }
+    }
+
     if (estado.paginas.length === 0) {
         estado.paginas.push({
-            id: Date.now().toString(),
+            id: gerarId('pag_'),
             nome: 'Página 1',
             icone: 'fa-book',
             descricao: '',
@@ -52,19 +69,27 @@ export function iniciarPaginas(elementos) {
         estado.paginaAtivaId = estado.paginas[0].id;
     }
 
+    // Restaurado para criar página em branco
+    refs.btnAdd.title = "Nova Página";
     refs.btnAdd.addEventListener('click', adicionarPagina);
     
-    configurarBottomSheet(); // Menu da Página
+    configurarBottomSheet();
     configurarBotaoAnimacao();
     configurarBotaoLayout();
     configurarTooltipsDireita();
+    configurarBotaoLimpar();
+    configurarAtalhosTeclado();
     
-    // Configura os menus dos módulos externos
     configurarSheetCampo(() => renderizarPaineis());
     configurarSheetBloco(() => renderizarPaineis());
 
     renderizarMenu();
     carregarConteudoPaginaAtiva();
+}
+
+export function salvarEstado() {
+    const dados = { paginas: estado.paginas, paginaAtivaId: estado.paginaAtivaId };
+    localStorage.setItem('codex_ficha_dados', JSON.stringify(dados));
 }
 
 export function atualizarModoEdicao() {
@@ -79,6 +104,135 @@ export function estaEmModoEdicao() {
 
 export function getPaginaAtiva() {
     return estado.paginas.find(p => p.id === estado.paginaAtivaId);
+}
+
+/* --- GERAR NOME ÚNICO --- */
+function gerarNomeUnico(nomeBase, lista) {
+    if (!lista || lista.length === 0) return nomeBase;
+    let nome = nomeBase;
+    let count = 1;
+    while (lista.some(item => item.titulo === nome || item.nome === nome)) {
+        nome = `${nomeBase} ${count}`;
+        count++;
+    }
+    return nome;
+}
+
+/* --- SISTEMA COPIAR/COLAR --- */
+export function copiarPagina(id) {
+    const pag = estado.paginas.find(p => p.id === id);
+    if (!pag) return;
+    areaTransferenciaCodex.tipo = 'pagina';
+    areaTransferenciaCodex.dados = JSON.parse(JSON.stringify(pag));
+    alert("Página copiada! Aperte Ctrl+V na folha para colar.");
+}
+
+export function duplicarPaginaAtual() {
+    if (animando || !estaEmModoEdicao()) return;
+    if (estado.paginas.length >= MAX_PAGINAS) return alert(`Limite de ${MAX_PAGINAS} páginas.`);
+    
+    const pagAtual = getPaginaAtiva();
+    if (!pagAtual) return;
+
+    const novaPag = JSON.parse(JSON.stringify(pagAtual));
+    novaPag.id = gerarId('pag_');
+    novaPag.nome = gerarNomeUnico(pagAtual.nome, estado.paginas);
+    
+    novaPag.paineis.forEach(p => {
+        p.id = gerarId('p_');
+        p.titulo = gerarNomeUnico(p.titulo, pagAtual.paineis);
+        p.blocos.forEach(b => { b.id = gerarId('b_'); });
+    });
+    
+    estado.paginas.push(novaPag);
+    salvarEstado();
+    trocarPagina(novaPag.id);
+    fecharBottomSheet();
+}
+
+function configurarAtalhosTeclado() {
+    let campoSelecionadoId = null;
+
+    document.addEventListener('pointerdown', (e) => {
+        const painelEl = e.target.closest('.painel');
+        if (painelEl) {
+            document.querySelectorAll('.painel.selecionado').forEach(p => p.classList.remove('selecionado'));
+            painelEl.classList.add('selecionado');
+            campoSelecionadoId = painelEl.dataset.painelId;
+        } else if (!e.target.closest('.folha-menu-lateral')) {
+            document.querySelectorAll('.painel.selecionado').forEach(p => p.classList.remove('selecionado'));
+            campoSelecionadoId = null;
+        }
+    });
+
+    document.addEventListener('keydown', (e) => {
+        if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'v') {
+            if (!estaEmModoEdicao() || !areaTransferenciaCodex.tipo) return;
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+
+            e.preventDefault();
+            colarElemento(campoSelecionadoId);
+        }
+    });
+}
+
+function colarElemento(campoSelecionadoId) {
+    const item = areaTransferenciaCodex;
+    if (!item || !item.tipo) return;
+
+    if (item.tipo === 'pagina') {
+        if (estado.paginas.length >= MAX_PAGINAS) return alert("Limite de páginas atingido.");
+        const novaPag = JSON.parse(JSON.stringify(item.dados));
+        novaPag.id = gerarId('pag_');
+        novaPag.nome = gerarNomeUnico(novaPag.nome, estado.paginas);
+        
+        novaPag.paineis.forEach(p => {
+            p.id = gerarId('p_');
+            p.titulo = gerarNomeUnico(p.titulo, novaPag.paineis);
+            p.x += 20; p.y += 20;
+            p.blocos.forEach(b => { b.id = gerarId('b_'); });
+        });
+        
+        estado.paginas.push(novaPag);
+        salvarEstado();
+        trocarPagina(novaPag.id);
+
+    } else if (item.tipo === 'campo') {
+        if (!campoSelecionadoId) {
+            const pag = getPaginaAtiva();
+            if (!pag) return;
+            const novoCampo = JSON.parse(JSON.stringify(item.dados));
+            novoCampo.id = gerarId('p_');
+            novoCampo.titulo = gerarNomeUnico(novoCampo.titulo, pag.paineis);
+            novoCampo.blocos.forEach(b => { b.id = gerarId('b_'); });
+            
+            const slot = encontrarPrimeiroSlotLivre(pag.paineis, novoCampo.largura, novoCampo.altura);
+            novoCampo.x = slot.x; novoCampo.y = slot.y;
+
+            pag.paineis.push(novoCampo);
+            salvarEstado();
+            renderizarPaineis();
+        } else {
+            alert("Para colar um campo, clique na folha vazia primeiro.");
+        }
+
+    } else if (item.tipo === 'bloco') {
+        if (!campoSelecionadoId) {
+            alert("Selecione o campo onde deseja colar o bloco primeiro.");
+            return;
+        }
+        const pag = getPaginaAtiva();
+        const painel = pag.paineis.find(p => p.id === campoSelecionadoId);
+        if (!painel) return;
+
+        const novoBloco = JSON.parse(JSON.stringify(item.dados));
+        novoBloco.id = gerarId('b_');
+        novoBloco.x += 10; novoBloco.y += 10;
+
+        painel.blocos.push(novoBloco);
+        salvarEstado();
+        renderizarPaineis();
+    }
 }
 
 /* RENDERIZAÇÃO DA PÁGINA */
@@ -125,13 +279,14 @@ function adicionarPagina() {
     if (estado.paginas.length >= MAX_PAGINAS) return alert(`Limite de ${MAX_PAGINAS} páginas.`);
 
     const novaPagina = {
-        id: Date.now().toString(),
-        nome: `Página ${estado.paginas.length + 1}`,
+        id: gerarId('pag_'),
+        nome: gerarNomeUnico(`Página ${estado.paginas.length + 1}`, estado.paginas),
         icone: ICONES_DISPONIVEIS[Math.floor(Math.random() * ICONES_DISPONIVEIS.length)],
         descricao: '',
         paineis: []
     };
     estado.paginas.push(novaPagina);
+    salvarEstado();
     trocarPagina(novaPagina.id);
 }
 
@@ -139,6 +294,7 @@ function trocarPagina(id) {
     if (estado.paginaAtivaId === id || animando) return;
     if (!estado.animacaoAtiva) {
         estado.paginaAtivaId = id;
+        salvarEstado();
         renderizarMenu();
         carregarConteudoPaginaAtiva();
         return;
@@ -148,6 +304,7 @@ function trocarPagina(id) {
     folha.classList.add('virando-pagina');
     setTimeout(() => {
         estado.paginaAtivaId = id;
+        salvarEstado();
         renderizarMenu();
         carregarConteudoPaginaAtiva();
         folha.classList.remove('virando-pagina');
@@ -163,6 +320,7 @@ function excluirPagina(id) {
         estado.paginaAtivaId = estado.paginas[0].id;
         carregarConteudoPaginaAtiva();
     }
+    salvarEstado();
     fecharBottomSheet();
     renderizarMenu();
 }
@@ -179,12 +337,30 @@ function renderizarMenu() {
         btn.addEventListener('click', () => trocarPagina(pag.id));
         btn.addEventListener('contextmenu', (e) => {
             e.preventDefault();
+            e.stopPropagation(); // Impede o pan de câmera
             if (estaEmModoEdicao()) abrirBottomSheet(pag.id);
         });
         refs.menu.appendChild(btn);
     });
     refs.menu.appendChild(refs.btnAdd);
     refs.btnAdd.style.display = estado.paginas.length >= MAX_PAGINAS ? 'none' : 'flex';
+}
+
+function configurarBotaoLimpar() {
+    const btnLimpar = document.querySelector('#btn-limpar-ficha');
+    if (!btnLimpar) return;
+
+    btnLimpar.addEventListener('click', () => {
+        if (!estaEmModoEdicao()) return;
+        
+        if (confirm("Tem certeza que deseja apagar TUDO nesta ficha?")) {
+            estado.paginas.forEach(pag => {
+                pag.paineis = [];
+            });
+            salvarEstado();
+            renderizarPaineis();
+        }
+    });
 }
 
 function configurarBottomSheet() {
@@ -195,8 +371,12 @@ function configurarBottomSheet() {
     const inputDesc = document.querySelector('#sheet-page-desc');
     const gridIcones = document.querySelector('#sheet-icons-grid');
     const btnExcluir = document.querySelector('#btn-excluir-pagina');
+    const btnCopiarPag = document.querySelector('#btn-copiar-pagina');
+    const btnDuplicarPag = document.querySelector('#btn-duplicar-pagina');
     
     if (!sheet) return;
+
+    gridIcones.innerHTML = '';
 
     let isDragging = false, startX = 0, startY = 0, initialX = 0, initialY = 0;
     const onPointerDown = (e) => {
@@ -225,20 +405,35 @@ function configurarBottomSheet() {
         btnIcone.innerHTML = `<i class="fas ${icone}"></i>`;
         btnIcone.addEventListener('click', () => {
             const pag = estado.paginas.find(p => p.id === paginaSendoEditadaId);
-            if (pag) { pag.icone = icone; renderizarMenu(); }
+            if (pag) { pag.icone = icone; salvarEstado(); renderizarMenu(); }
         });
         gridIcones.appendChild(btnIcone);
     });
 
     inputNome.addEventListener('input', (e) => {
         const pag = estado.paginas.find(p => p.id === paginaSendoEditadaId);
-        if (pag) { pag.nome = e.target.value; refs.inputTitulo.value = pag.nome; }
+        if (pag) { pag.nome = e.target.value; refs.inputTitulo.value = pag.nome; salvarEstado(); }
     });
 
     inputDesc.addEventListener('input', (e) => {
         const pag = estado.paginas.find(p => p.id === paginaSendoEditadaId);
-        if (pag) { pag.descricao = e.target.value; carregarConteudoPaginaAtiva(); }
+        if (pag) { pag.descricao = e.target.value; carregarConteudoPaginaAtiva(); salvarEstado(); }
     });
+
+    if (btnCopiarPag) {
+        btnCopiarPag.addEventListener('click', () => {
+            if (paginaSendoEditadaId) {
+                copiarPagina(paginaSendoEditadaId);
+                fecharBottomSheet();
+            }
+        });
+    }
+
+    if (btnDuplicarPag) {
+        btnDuplicarPag.addEventListener('click', () => {
+            duplicarPaginaAtual();
+        });
+    }
 
     btnExcluir.addEventListener('click', () => { if (paginaSendoEditadaId) excluirPagina(paginaSendoEditadaId); });
     btnClose.addEventListener('click', fecharBottomSheet);
@@ -293,9 +488,10 @@ function configurarTooltipsDireita() {
 export function acionarAdicionarCampo() {
     if (!estaEmModoEdicao()) return;
     const pag = getPaginaAtiva();
+    if (!pag) return;
     const novo = {
-        id: 'p_' + Date.now().toString(),
-        titulo: 'Novo Campo',
+        id: gerarId('p_'),
+        titulo: gerarNomeUnico('Novo Campo', pag.paineis),
         x: PAD_X, y: PAD_Y,
         largura: 320, altura: 220,
         blocos: []
@@ -303,5 +499,6 @@ export function acionarAdicionarCampo() {
     const slot = encontrarPrimeiroSlotLivre(pag.paineis, novo.largura, novo.altura);
     novo.x = slot.x; novo.y = slot.y;
     pag.paineis.push(novo);
+    salvarEstado(); 
     renderizarPaineis();
 }

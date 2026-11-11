@@ -1,21 +1,25 @@
 <main id="pagina-ficha-nova" class="screen">
 
-    <div class="bloco-protecao-titulo" id="bloco-protecao-titulo"></div>
+    <!-- Container do Cabeçalho Fixo -->
+    <header class="ficha-header-fixo" id="home-btn-container">
+        <!-- O JS injeta o CodeX aqui -->
+    </header>
 
     <div class="ficha-nova-area">
-        <div class="folha-layout">
-            
-            <!-- Menu de Páginas (Esquerda) -->
-            <div class="folha-menu-lateral esquerdo">
-                <div class="folha-paginas-menu" id="folha-paginas-menu">
-                    <button class="folha-pagina-btn add" id="folha-pagina-add" title="Adicionar Página">
-                        <i class="fas fa-plus"></i>
-                    </button>
+        <!-- Wrapper do Zoom (Tudo aqui dentro cresce/diminui junto) -->
+        <div class="folha-wrapper" id="folha-wrapper">
+            <div class="folha-layout">
+                
+                <!-- Menu Esquerdo -->
+                <div class="folha-menu-lateral esquerdo">
+                    <div class="folha-paginas-menu" id="folha-paginas-menu">
+                        <button class="folha-pagina-btn add" id="folha-pagina-add" title="Nova Página">
+                            <i class="fas fa-plus"></i>
+                        </button>
+                    </div>
                 </div>
-            </div>
 
-            <!-- Folha (Centro) -->
-            <div class="folha-wrapper" id="folha-wrapper">
+                <!-- Folha Central -->
                 <div class="folha" id="folha-elemento">
                     
                     <div class="folha-cabecalho">
@@ -23,39 +27,39 @@
                             <input type="text" class="folha-titulo-pagina" id="folha-titulo-pagina" value="Página 1" spellcheck="false">
                             <div class="folha-descricao-pagina" id="folha-descricao-pagina"></div>
                         </div>
-                        <div class="indicador-zoom" id="indicador-zoom">100%</div>
+                        
+                        <div class="folha-cabecalho-acoes">
+                            <button id="btn-limpar-ficha" class="btn-limpar-ficha" title="Limpar Ficha">
+                                <i class="fas fa-broom"></i> Limpar
+                            </button>
+                            <div class="indicador-zoom" id="indicador-zoom">50%</div>
+                        </div>
                     </div>
                     
                     <div class="folha-conteudo" id="folha-conteudo">
                         <!-- Conteúdo da página -->
                     </div>
                 </div>
-            </div>
 
-            <!-- Menu de Ferramentas (Direita) -->
-            <div class="folha-menu-lateral direito">
-                <button class="folha-btn-ferramenta" id="btn-toggle-animacao" data-tooltip="Alternar Animação">
-                    <i class="fas fa-film"></i>
-                </button>
-                <button class="folha-btn-ferramenta principal" id="btn-modo-edicao" data-tooltip="Modo Edição">
-                    <i class="fas fa-pen"></i>
-                </button>
-                <div class="folha-ferramentas-extras" id="folha-ferramentas-extras">
-                    <button class="folha-btn-ferramenta" id="btn-modo-layout" data-tooltip="Modo Livre">
-                        <i class="fas fa-arrows-up-down-left-right"></i>
+                <!-- Menu Direito -->
+                <div class="folha-menu-lateral direito">
+                    <button class="folha-btn-ferramenta" id="btn-toggle-animacao" data-tooltip="Alternar Animação">
+                        <i class="fas fa-film"></i>
                     </button>
-                    <button class="folha-btn-ferramenta" id="btn-add-campo" data-tooltip="Adicionar Campo">
-                        <i class="fas fa-plus-square"></i>
+                    <button class="folha-btn-ferramenta principal" id="btn-modo-edicao" data-tooltip="Modo Edição">
+                        <i class="fas fa-pen"></i>
                     </button>
-                    <button class="folha-btn-ferramenta" id="btn-modo-colorir" data-tooltip="Ativar Modo Colorir">
-                        <i class="fas fa-palette"></i>
-                    </button>
-                    <button class="folha-btn-ferramenta" id="btn-abrir-popup-colorir" data-tooltip="Abrir Cores e Figuras" style="display: none;">
-                        <i class="fas fa-sliders-h"></i>
-                    </button>
+                    <div class="folha-ferramentas-extras" id="folha-ferramentas-extras">
+                        <button class="folha-btn-ferramenta" id="btn-modo-layout" data-tooltip="Modo Livre">
+                            <i class="fas fa-arrows-up-down-left-right"></i>
+                        </button>
+                        <button class="folha-btn-ferramenta" id="btn-add-campo" data-tooltip="Adicionar Campo">
+                            <i class="fas fa-plus-square"></i>
+                        </button>
+                    </div>
                 </div>
-            </div>
 
+            </div>
         </div>
     </div>
 
@@ -82,9 +86,18 @@
                     <label>Ícone da Página</label>
                     <div class="sheet-icons-grid" id="sheet-icons-grid"></div>
                 </div>
-                <button class="btn-excluir-pagina" id="btn-excluir-pagina">
-                    <i class="fas fa-trash-alt"></i> Excluir Página
-                </button>
+                
+                <div class="sheet-acoes-pagina" style="flex-wrap: wrap;">
+                    <button type="button" class="btn-copiar-pagina" id="btn-copiar-pagina">
+                        <i class="fas fa-copy"></i> Copiar
+                    </button>
+                    <button type="button" class="btn-copiar-pagina" id="btn-duplicar-pagina" style="background: rgba(46, 125, 50, 0.1); border-color: #2e7d32; color: #a5d6a7;">
+                        <i class="fas fa-clone"></i> Duplicar
+                    </button>
+                    <button class="btn-excluir-pagina" id="btn-excluir-pagina">
+                        <i class="fas fa-trash-alt"></i> Excluir
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -254,54 +267,6 @@
 
                 <div style="text-align: right; margin-top: 15px;">
                     <button type="button" id="btn-salvar-formula" class="btn-primary">Salvar Fórmula</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- BOTTOM SHEET: COLORIR E DECORAR (NOVO SELECT DE CAMADAS) -->
-    <div class="page-settings-overlay" id="decoracao-overlay">
-        <div class="page-settings-sheet" id="decoracao-sheet" style="width: 360px;">
-            <div class="sheet-header-drag" id="decoracao-header-drag">
-                <div class="sheet-drag-handle"></div>
-                <h3 class="sheet-title">Colorir</h3>
-                <button class="sheet-close-btn" id="decoracao-close-btn" title="Fechar">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            
-            <div class="sheet-body">
-                <div class="sheet-field">
-                    <label>Cor</label>
-                    <div style="display: flex; gap: 10px; align-items: center; justify-content: center;">
-                        <div id="decoracao-picker-wrapper" class="color-wheel">
-                            <div id="decoracao-picker-cursor" class="color-wheel-cursor"></div>
-                        </div>
-                    </div>
-                    <div style="display: flex; gap: 10px; align-items: center; margin-top: 8px;">
-                        <input type="text" id="decoracao-hex" class="sheet-input" value="#d4af37" readonly style="flex: 1; text-align: center; font-family: monospace;">
-                        <button type="button" id="btn-conta-gotas" class="btn-secondary" style="font-size: 0.8rem; padding: 0.5rem;">
-                            <i class="fas fa-eye-dropper"></i> Conta-gotas
-                        </button>
-                    </div>
-                </div>
-
-                <div class="sheet-field">
-                    <label>Profundidade da Camada</label>
-                    <select id="decoracao-camada" class="sheet-input">
-                        <option value="0.5">Atrás da Página (Fundo)</option>
-                        <option value="1.5">Atrás dos Campos</option>
-                        <option value="2.5">Atrás dos Componentes dos Campos</option>
-                        <option value="3.5">Atrás dos Blocos</option>
-                        <option value="4.5">Atrás dos Componentes dos Blocos</option>
-                    </select>
-                </div>
-
-                <div class="sheet-field">
-                    <label>Figuras (Arraste para a folha ou clique)</label>
-                    <div id="decoracao-formas-grid" class="formas-grid">
-                        <!-- Preenchido via JS -->
-                    </div>
                 </div>
             </div>
         </div>

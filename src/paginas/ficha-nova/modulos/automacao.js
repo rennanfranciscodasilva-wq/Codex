@@ -4,6 +4,9 @@
 
 import { estado, getPaginaAtiva } from './paginas.js';
 
+// CRIAÇÃO DO BARRAMENTO DE EVENTOS (Para atualizar a tela em tempo real)
+export const formulaEventBus = new EventTarget();
+
 let formulaAtual = []; 
 let blocoAlvoId = null;
 let painelAlvoId = null;
@@ -60,17 +63,23 @@ export function configurarEditorFormula(onSalvar) {
             if (!validarFormula()) return;
             
             const pag = getPaginaAtiva();
+            if (!pag) return;
             const painel = pag.paineis.find(p => p.id === painelAlvoId);
+            if (!painel) return;
             const bloco = painel.blocos.find(b => b.id === blocoAlvoId);
+            if (!bloco) return;
             
-            // Prevenção de ciclo direto (bloco depender de si mesmo)
-            const usaEleMesmo = formulaAtual.some(item => item.tipo === 'campo' && item.blocoId === blocoAlvoId);
-            if (usaEleMesmo) {
-                alert("Erro: O bloco não pode depender de si mesmo.");
+            // Prevenção de ciclos indiretos
+            if (detectarCiclo(blocoAlvoId, formulaAtual, blocoAlvoId)) {
+                alert("Erro: a fórmula cria uma dependência circular (o bloco depende, direta ou indiretamente, de si mesmo).");
                 return;
             }
 
             bloco.formula = [...formulaAtual];
+            
+            // AVISA A TELA INTEIRA QUE UMA FÓRMULA MUDOU
+            formulaEventBus.dispatchEvent(new Event('formulaAtualizada'));
+            
             if (callbackSalvar) callbackSalvar();
             fechar();
         });
@@ -90,7 +99,6 @@ export function configurarEditorFormula(onSalvar) {
         renderizarCamposDisponiveis();
         renderizarFormula();
 
-        // Reseta o estilo de posicionamento caso a janela tenha sido arrastada antes
         if (!sheet.style.left) {
             sheet.style.left = '50%'; 
             sheet.style.transform = 'translateX(-50%)';
@@ -105,6 +113,8 @@ export function configurarEditorFormula(onSalvar) {
     function fechar() {
         sheet.classList.remove('active');
         formulaAtual = [];
+        blocoAlvoId = null;
+        painelAlvoId = null;
     }
 
     function renderizarCamposDisponiveis() {
@@ -116,7 +126,6 @@ export function configurarEditorFormula(onSalvar) {
             
             pag.paineis.forEach(painel => {
                 painel.blocos.forEach(bloco => {
-                    // Apenas numéricos e que não sejam ele mesmo
                     if (bloco.tipo === 'numerico' && bloco.id !== blocoAlvoId) {
                         numericos.push({ painelId: painel.id, blocoId: bloco.id, nome: bloco.tituloBloco || 'Sem Título' });
                     }
@@ -126,7 +135,7 @@ export function configurarEditorFormula(onSalvar) {
             if (numericos.length > 0) {
                 const group = document.createElement('div');
                 group.className = 'formula-group';
-                group.innerHTML = `<div class="formula-group-title">Página: ${pag.nome}</div>`;
+                group.innerHTML = `<div class="formula-group-title">Página: ${escapeHtml(pag.nome)}</div>`;
                 
                 numericos.forEach(b => {
                     const btn = document.createElement('button');
@@ -162,7 +171,6 @@ export function configurarEditorFormula(onSalvar) {
             el.className = item.tipo === 'campo' ? 'formula-item campo' : 'formula-item operador';
             el.textContent = item.tipo === 'campo' ? item.nome : item.valor;
             
-            // Remoção com botão direito (context menu)
             el.oncontextmenu = (e) => {
                 e.preventDefault();
                 if (confirm("Deseja realmente remover este elemento?")) {
@@ -191,5 +199,86 @@ export function configurarEditorFormula(onSalvar) {
             }
         }
         return true;
+    }
+}
+
+function detectarCiclo(alvoId, formula, origemId, visitados = new Set()) {
+    if (!formula || formula.length === 0) return false;
+    if (visitados.has(origemId)) return false;
+    visitados.add(origemId);
+
+    for (const item of formula) {
+        if (item.tipo !== 'campo') continue;
+        if (item.blocoId === alvoId) return true;
+
+        const blocoRef = encontrarBlocoPorId(item.painelId, item.blocoId);
+        if (blocoRef && blocoRef.formula && blocoRef.formula.length > 0) {
+            if (detectarCiclo(alvoId, blocoRef.formula, blocoRef.id, visitados)) return true;
+        }
+    }
+    return false;
+}
+
+function encontrarBlocoPorId(painelId, blocoId) {
+    for (const pag of estado.paginas) {
+        const painel = pag.paineis.find(p => p.id === painelId);
+        if (painel) {
+            const bloco = painel.blocos.find(b => b.id === blocoId);
+            if (bloco) return bloco;
+        }
+    }
+    return null;
+}
+
+function escapeHtml(str) {
+    if (typeof str !== 'string') return '';
+    return str
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
+export function calcularFormula(formula, visitados = new Set()) {
+    if (!formula || formula.length === 0) return '';
+    let strFormula = '';
+    
+    formula.forEach(item => {
+        if (item.tipo === 'operador') {
+            let op = item.valor;
+            if (op === '×') op = '*';
+            if (op === '÷') op = '/';
+            if (!['+', '-', '*', '/'].includes(op)) return;
+            strFormula += ` ${op} `;
+        } else {
+            const blocoOrigem = encontrarBlocoPorId(item.painelId, item.blocoId);
+            
+            let valor = 0;
+            if (blocoOrigem) {
+                if (blocoOrigem.formula && blocoOrigem.formula.length > 0) {
+                    if (visitados.has(blocoOrigem.id)) return;
+                    visitados.add(blocoOrigem.id);
+                    const parcial = calcularFormula(blocoOrigem.formula, visitados);
+                    visitados.delete(blocoOrigem.id);
+                    valor = parseFloat(parcial) || 0;
+                } else {
+                    valor = parseFloat(blocoOrigem.valorNumerico) || 0;
+                }
+            }
+            strFormula += String(Number.isFinite(valor) ? valor : 0);
+        }
+    });
+
+    if (!/^[\d\s+\-*/().]+$/.test(strFormula)) {
+        return 'Erro';
+    }
+
+    try {
+        const resultado = Function('"use strict"; return (' + strFormula + ');')();
+        if (typeof resultado !== 'number' || !isFinite(resultado)) return 'Erro';
+        return resultado;
+    } catch (e) {
+        return 'Erro';
     }
 }

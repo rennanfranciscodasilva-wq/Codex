@@ -3,49 +3,85 @@
    ============================================================ */
 
 #pagina-ficha-nova {
-    display: flex; flex-direction: column; align-items: center;
+    display: flex; flex-direction: column; align-items: stretch;
     height: 100vh; height: 100dvh;
     overflow: hidden; position: relative; 
+    background: var(--cor-fundo-base);
 }
 
-/* Barras de Proteção */
-#pagina-ficha-nova::before,
-#pagina-ficha-nova::after {
-    content: ""; position: absolute; left: 0; width: 100%; height: 80px;
-    background: transparent; z-index: 90; pointer-events: none;
-}
-#pagina-ficha-nova::before { top: 0; }
-#pagina-ficha-nova::after { bottom: 0; }
-
-/* Cabeçalho CodeX */
-#pagina-ficha-nova .codex-title {
-    position: fixed; top: 2rem; left: 50%; transform: translateX(-50%);
-    z-index: 1; margin: 0; background: transparent; border: none; padding: 0;
-    color: var(--cor-texto-titulo); text-shadow: var(--brilho-medio); pointer-events: auto; 
-}
-#pagina-ficha-nova .bloco-protecao-titulo {
-    position: fixed; top: 0; left: 0; width: 100%; height: 150px;
-    z-index: 15; cursor: pointer; 
+/* ============================================================
+   CABEÇALHO FIXO (Barra Superior Exclusiva)
+   ============================================================ */
+#pagina-ficha-nova .ficha-header-fixo {
+    flex-shrink: 0;
+    width: 100%; 
+    height: 140px; 
+    display: flex; align-items: center; justify-content: center; 
+    background: var(--cor-fundo-base); 
+    border-bottom: 1px solid rgba(212, 175, 55, 0.15); 
+    z-index: 99999; 
+    position: relative; 
+    box-sizing: border-box;
 }
 
-/* Área de Trabalho */
+/* Link do CodeX */
+#pagina-ficha-nova .ficha-header-fixo a {
+    transition: transform 0.2s ease, filter 0.2s ease;
+}
+
+#pagina-ficha-nova .ficha-header-fixo a:hover {
+    transform: scale(1.05);
+    filter: brightness(1.2);
+}
+
+/* ============================================================
+   ÁREA DE TRABALHO
+   ============================================================ */
 #pagina-ficha-nova .ficha-nova-area {
-    display: flex; justify-content: center; align-items: flex-start;
-    width: 100%; flex: 1 1 auto; padding: 160px 1rem 0;
-    position: relative; z-index: 10; overflow-y: auto; overflow-x: hidden;
-    scrollbar-width: thin; scrollbar-color: #b8860b transparent;
-}
-#pagina-ficha-nova .folha-layout {
-    display: flex; flex-direction: row; align-items: flex-start;
-    justify-content: center; gap: 1.5rem; width: 100%; max-width: 1500px; position: relative;
+    display: flex; 
+    flex-direction: column; 
+    align-items: center;
+    width: 100%; 
+    flex: 1 1 auto; 
+    padding: 40px 0 100px 0; 
+    position: relative; 
+    z-index: 10; 
+    overflow: auto; 
+    scrollbar-width: thin; 
+    scrollbar-color: #b8860b transparent;
 }
 
-/* Menus Laterais */
+/* Wrapper do Zoom */
+#pagina-ficha-nova .folha-wrapper {
+    display: flex;
+    justify-content: center; 
+    align-items: flex-start;
+    min-width: min-content; 
+    margin: auto; 
+    padding: 0 40px; 
+}
+
+/* Layout Interno: Menus e Folha */
+#pagina-ficha-nova .folha-layout {
+    display: flex; 
+    flex-direction: row; 
+    align-items: flex-start;
+    justify-content: center; 
+    gap: 1.5rem; 
+    position: relative;
+    width: max-content; 
+}
+
+/* ============================================================
+   MENUS LATERAIS
+   ============================================================ */
 #pagina-ficha-nova .folha-menu-lateral {
     display: flex; flex-direction: column; align-items: center; gap: 12px;
     padding: 1rem 0.5rem; border-radius: 40px; background: rgba(14, 11, 8, 0.6);
     border: 1px solid rgba(212, 175, 55, 0.2); backdrop-filter: blur(8px);
-    flex-shrink: 0; position: sticky; top: 0; 
+    flex-shrink: 0; 
+    position: sticky; 
+    top: 0; 
     z-index: 9999; overflow: visible; 
 }
 #pagina-ficha-nova .folha-paginas-menu {
@@ -79,12 +115,6 @@
 #pagina-ficha-nova .folha-pagina-btn.add:hover {
     border-style: solid; color: var(--cor-dourado); background: rgba(212, 175, 55, 0.1);
 }
-#pagina-ficha-nova .folha-pagina-numero {
-    position: absolute; bottom: -4px; right: -4px; background: var(--cor-fundo-base);
-    border: 1px solid var(--cor-marrom-borda); border-radius: 50%; width: 18px; height: 18px;
-    display: flex; align-items: center; justify-content: center; font-family: var(--fonte-titulo);
-    font-size: 0.6rem; font-weight: bold; color: var(--cor-dourado);
-}
 
 /* Modo Edição e Ferramentas Extras */
 #pagina-ficha-nova .folha-menu-lateral.direito.editando .folha-btn-ferramenta.principal {
@@ -102,8 +132,7 @@
     max-height: 400px; opacity: 1; visibility: visible; margin: -16px; margin-top: -0.5rem;
 }
 #pagina-ficha-nova #btn-toggle-animacao.ativo,
-#pagina-ficha-nova #btn-modo-layout.ativo,
-#pagina-ficha-nova #btn-modo-colorir.ativo {
+#pagina-ficha-nova #btn-modo-layout.ativo {
     background: radial-gradient(circle at 35% 30%, var(--cor-dourado-medio), var(--cor-marrom-fundo-2));
     color: var(--cor-dourado-claro); border-color: var(--cor-dourado-claro);
     box-shadow: 0 0 15px rgba(240, 196, 74, 0.5);
@@ -114,7 +143,6 @@
 }
 
 /* Tooltips */
-#pagina-ficha-nova .folha-pagina-tooltip,
 #pagina-ficha-nova .folha-btn-tooltip {
     position: absolute; background: rgba(14, 11, 8, 0.95); color: var(--cor-dourado-claro);
     padding: 4px 10px; border-radius: 6px; border: 1px solid rgba(212, 175, 55, 0.3);
@@ -122,19 +150,16 @@
     opacity: 0; pointer-events: none; transition: opacity 0.2s ease, transform 0.2s ease;
     z-index: 9999; visibility: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.5);
 }
-#pagina-ficha-nova .folha-pagina-tooltip { left: 100%; top: 50%; transform: translateY(-50%) scale(0.9); margin-left: 12px; }
 #pagina-ficha-nova .folha-btn-tooltip { right: 100%; top: 50%; transform: translateY(-50%) scale(0.9); margin-right: 12px; }
-#pagina-ficha-nova .folha-pagina-btn:hover .folha-pagina-tooltip,
 #pagina-ficha-nova .folha-menu-lateral.direito .folha-btn-ferramenta:hover .folha-btn-tooltip {
     opacity: 1; transform: translateY(-50%) scale(1); visibility: visible;
 }
 
-/* Folha */
-#pagina-ficha-nova .folha-wrapper { flex: 1; display: flex; justify-content: center; align-items: flex-start; }
-
+/* ============================================================
+   FOLHA
+   ============================================================ */
 #pagina-ficha-nova .folha {
-    position: relative; width: 100%; max-width: 1200px; height: 1100px; 
-    /* O MUNDO 3D FOI REMOVIDO AQUI */
+    position: relative; width: 1200px; height: 1100px;
     background-color: #e8dcc0;
     background-image:
         radial-gradient(circle at 20% 15%, rgba(160, 130, 80, 0.12) 0%, transparent 40%),
@@ -145,24 +170,8 @@
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15), 0 12px 36px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(120, 90, 40, 0.25) inset;
     display: flex; flex-direction: column; overflow: hidden;
     z-index: 1;
+    flex-shrink: 0; 
 }
-
-/* CONTÊINERES DE CAMADAS (As "prateleiras" do DOM) */
-#pagina-ficha-nova .camada-0-5,
-#pagina-ficha-nova .camada-1-5,
-#pagina-ficha-nova .camada-2-5,
-#pagina-ficha-nova .camada-3-5,
-#pagina-ficha-nova .camada-4-5 {
-    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-    pointer-events: none; /* O container não bloqueia cliques */
-    z-index: 0; 
-}
-/* A figura dentro do container recebe o clique */
-#pagina-ficha-nova.modo-colorir .camada-0-5,
-#pagina-ficha-nova.modo-colorir .camada-1-5,
-#pagina-ficha-nova.modo-colorir .camada-2-5,
-#pagina-ficha-nova.modo-colorir .camada-3-5,
-#pagina-ficha-nova.modo-colorir .camada-4-5 { pointer-events: auto; }
 
 #pagina-ficha-nova .folha::before {
     content: ""; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
@@ -175,7 +184,7 @@
 #pagina-ficha-nova .folha-cabecalho {
     display: flex; justify-content: space-between; align-items: flex-start;
     padding: 2rem 2rem 0; flex-shrink: 0; position: relative; 
-    z-index: 10 !important; /* CAMADA 1 */
+    z-index: 10 !important;
 }
 #pagina-ficha-nova .folha-titulos-wrapper { flex: 1; display: flex; flex-direction: column; gap: 0.2rem; }
 #pagina-ficha-nova .folha-titulo-pagina {
@@ -188,12 +197,32 @@
     display: none; font-family: var(--fonte-corpo); font-size: clamp(0.8rem, 1.5vw, 1rem);
     color: rgba(61, 46, 10, 0.7); margin-top: 0.2rem; padding-bottom: 0.5rem; line-height: 1.3;
 }
+
+#pagina-ficha-nova .folha-cabecalho-acoes {
+    display: flex; align-items: center; gap: 10px; margin-left: 1.5rem;
+}
+
 #pagina-ficha-nova .indicador-zoom {
-    margin-left: 1.5rem; background: rgba(61, 46, 10, 0.1); border: 1px solid rgba(120, 90, 40, 0.4);
+    background: rgba(61, 46, 10, 0.1); border: 1px solid rgba(120, 90, 40, 0.4);
     color: #6b4f1d; padding: 4px 10px; border-radius: 6px; font-family: var(--fonte-titulo);
     font-size: 0.9rem; font-weight: 700; pointer-events: none; white-space: nowrap;
     box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
 }
+
+#pagina-ficha-nova .btn-limpar-ficha {
+    background: rgba(180, 40, 40, 0.1); border: 1px solid rgba(180, 40, 40, 0.4);
+    color: #c62828; padding: 5px 12px; border-radius: 6px; font-family: var(--fonte-titulo);
+    font-size: 0.85rem; font-weight: bold; cursor: pointer; transition: all 0.2s;
+    display: none; align-items: center; gap: 6px;
+}
+#pagina-ficha-nova .btn-limpar-ficha:hover {
+    background: rgba(180, 40, 40, 0.2); color: #ff5252; border-color: #ff5252;
+    box-shadow: 0 0 10px rgba(255, 82, 82, 0.3);
+}
+#pagina-ficha-nova.modo-edicao .btn-limpar-ficha {
+    display: flex;
+}
+
 #pagina-ficha-nova .folha-conteudo {
     flex: 1 1 auto; padding: 30px 40px !important; box-sizing: border-box;
     overflow-y: auto; overflow-x: hidden; min-height: 0;
@@ -226,12 +255,4 @@
     #pagina-ficha-nova .folha-menu-lateral { flex-direction: row; padding: 0.5rem 1rem; order: -1; position: relative; }
     #pagina-ficha-nova .folha-ferramentas-extras { flex-direction: row; max-height: none; max-width: 0; }
     #pagina-ficha-nova .folha-menu-lateral.direito.editando .folha-ferramentas-extras { max-width: 300px; margin-top: 0; margin-left: 0.5rem; }
-    #pagina-ficha-nova::before, #pagina-ficha-nova::after { height: 60px; }
-    #pagina-ficha-nova .ficha-nova-area { padding: 120px 0.5rem 0; }
-}
-@media (max-width: 640px) {
-    #pagina-ficha-nova .codex-title { top: 1rem; }
-    #pagina-ficha-nova .folha { height: 800px; } 
-    #pagina-ficha-nova .folha-cabecalho { padding: 1.5rem 1.5rem 0; }
-    #pagina-ficha-nova .folha-conteudo { padding: 0 1.5rem 1.5rem; }
 }

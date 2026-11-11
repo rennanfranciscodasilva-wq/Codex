@@ -2,22 +2,30 @@
    CODEX — Página: Ficha Nova (Maestro)
    ============================================================ */
 
-import { criarCabecalho } from '../../componentes/cabecalho/cabecalho.js';
 import { iniciarZoom } from './modulos/zoom.js';
 import {
     iniciarPaginas,
     atualizarModoEdicao,
     acionarAdicionarCampo
 } from './modulos/paginas.js';
-import { iniciarDecoracao } from './modulos/decoracao.js';
+
+let _handlerModoEdicao = null;
+let _handlerAddCampo = null;
 
 export function montarPagina(container) {
     const pagina = container.querySelector('#pagina-ficha-nova');
     if (!pagina) return;
 
-    if (!pagina.querySelector('#home-btn')) {
-        const titulo = criarCabecalho({ rotaHome: '/inicio' });
-        pagina.insertBefore(titulo, pagina.firstChild);
+    // --- INJEÇÃO DIRETA E FORÇADA ---
+    const homeBtnContainer = pagina.querySelector('#home-btn-container');
+    if (homeBtnContainer) {
+        // Sobrescreve o HTML independente de ter algo lá ou não
+        homeBtnContainer.innerHTML = `
+            <a href="#/inicio" style="text-decoration: none; display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; height: 100%;">
+                <h1 style="font-family: 'Cinzel', serif; font-size: 4rem; color: #d4af37; text-shadow: 0 0 20px rgba(240, 196, 74, 0.8); margin: 0; line-height: 1; font-weight: 900;">CODEX</h1>
+                <span style="font-family: 'Cinzel', serif; font-size: 1.2rem; color: #f0c44a; letter-spacing: 8px; margin-top: 10px;">⚔ RPG ⚔</span>
+            </a>
+        `;
     }
 
     if (pagina.dataset.eventosAtivos === 'true') return;
@@ -25,7 +33,7 @@ export function montarPagina(container) {
 
     // 1. Zoom
     const wrapper = pagina.querySelector('#folha-wrapper');
-    wrapper.style.zoom = 0.5;
+    if (!wrapper) return;
     iniciarZoom(pagina, wrapper);
 
     // 2. Sistema de páginas
@@ -39,97 +47,119 @@ export function montarPagina(container) {
     // 3. Modo Edição
     const btnModoEdicao = pagina.querySelector('#btn-modo-edicao');
     const menuDireito = pagina.querySelector('.folha-menu-lateral.direito');
+    if (!btnModoEdicao || !menuDireito) return;
 
     const aplicarModoEdicao = (ativo) => {
         pagina.classList.toggle('modo-edicao', ativo);
         menuDireito.classList.toggle('editando', ativo);
-        
-        if (!ativo && pagina.classList.contains('modo-colorir')) {
-            desativarModoColorir();
-        }
-        
         atualizarModoEdicao();
     };
 
     aplicarModoEdicao(false);
 
-    if (btnModoEdicao) {
-        btnModoEdicao.addEventListener('click', () => {
-            aplicarModoEdicao(!pagina.classList.contains('modo-edicao'));
-        });
-    }
+    _handlerModoEdicao = () => {
+        aplicarModoEdicao(!pagina.classList.contains('modo-edicao'));
+    };
+    btnModoEdicao.addEventListener('click', _handlerModoEdicao);
 
-    // 4. Ferramentas
+    // 4. Ferramentas (Apenas Adicionar Campo)
     const btnAddCampo = pagina.querySelector('#btn-add-campo');
-    const btnModoColorir = pagina.querySelector('#btn-modo-colorir');
-    const btnAbrirPopUpColorir = pagina.querySelector('#btn-abrir-popup-colorir');
-    
-    iniciarDecoracao(); 
-
-    function ativarModoColorir() {
-        pagina.classList.add('modo-colorir');
-        btnModoColorir.classList.add('ativo');
-        btnAbrirPopUpColorir.style.display = 'flex';
-    }
-
-    function desativarModoColorir() {
-        pagina.classList.remove('modo-colorir');
-        btnModoColorir.classList.remove('ativo');
-        btnAbrirPopUpColorir.style.display = 'none';
-        const sheet = document.querySelector('#decoracao-sheet');
-        if (sheet) sheet.classList.remove('active');
-    }
-
-    if (btnModoColorir) {
-        btnModoColorir.addEventListener('click', () => {
-            if (!pagina.classList.contains('modo-edicao')) {
-                alert("Ative o Modo Edição primeiro!");
-                return;
-            }
-            if (pagina.classList.contains('modo-colorir')) {
-                desativarModoColorir();
-            } else {
-                ativarModoColorir();
-            }
-        });
-    }
-
-    if (btnAbrirPopUpColorir) {
-        btnAbrirPopUpColorir.addEventListener('click', () => {
-            const sheet = document.querySelector('#decoracao-sheet');
-            if (!sheet.style.left) {
-                sheet.style.right = '2rem'; sheet.style.bottom = '2rem'; sheet.style.top = 'auto'; sheet.style.left = 'auto';
-            }
-            sheet.classList.toggle('active');
-        });
-    }
-
     if (btnAddCampo) {
-        btnAddCampo.addEventListener('click', (e) => {
+        _handlerAddCampo = (e) => {
             e.preventDefault();
             e.stopPropagation();
-            
             if (!pagina.classList.contains('modo-edicao')) {
                 alert("Ative o Modo Edição primeiro!");
                 return;
             }
-            if (pagina.classList.contains('modo-colorir')) {
-                alert("Desative o Modo Colorir para adicionar campos!");
-                return;
-            }
-            
-            // Chama a função do módulo paginas.js para criar o painel
             acionarAdicionarCampo();
-        });
+        };
+        btnAddCampo.addEventListener('click', _handlerAddCampo);
     }
 
-    // 5. Bloco protetor
-    const blocoProtecao = pagina.querySelector('#bloco-protecao-titulo');
-    if (blocoProtecao) {
-        blocoProtecao.addEventListener('click', () => {
-            window.location.hash = '#/inicio';
-        });
-    }
+    // 5. Arrastar Câmera com Botão Direito (Panning)
+    configurarArrastarCamera(pagina);
 }
 
-export function desmontarPagina() {}
+/* --- FUNÇÃO: ARRASTAR CÂMERA (PAN) --- */
+function configurarArrastarCamera(pagina) {
+    const area = pagina.querySelector('.ficha-nova-area');
+    const folha = pagina.querySelector('#folha-elemento');
+    if (!area || !folha) return;
+
+    let isDown = false;
+    let startX, startY;
+    let scrollLeft, scrollTop;
+
+    folha.addEventListener('contextmenu', (e) => {
+        e.preventDefault(); 
+    });
+
+    area.addEventListener('pointerdown', (e) => {
+        const isRightClick = e.button === 2;
+        const isTouch = e.pointerType === 'touch';
+        
+        if (!isRightClick && !isTouch) return;
+
+        if (e.target.closest('.painel, .bloco, button, input, textarea, .folha-menu-lateral, .ficha-header-fixo')) {
+            return;
+        }
+
+        isDown = true;
+        area.style.cursor = 'grabbing';
+        
+        startX = e.pageX - area.offsetLeft;
+        startY = e.pageY - area.offsetTop;
+        scrollLeft = area.scrollLeft;
+        scrollTop = area.scrollTop;
+
+        e.preventDefault(); 
+    });
+
+    area.addEventListener('pointermove', (e) => {
+        if (!isDown) return;
+        
+        const x = e.pageX - area.offsetLeft;
+        const y = e.pageY - area.offsetTop;
+        
+        const walkX = (x - startX) * 1.5; 
+        const walkY = (y - startY) * 1.5;
+        
+        area.scrollLeft = scrollLeft - walkX;
+        area.scrollTop = scrollTop - walkY;
+    });
+
+    const pararArrasto = () => {
+        isDown = false;
+        area.style.cursor = 'default';
+    };
+
+    area.addEventListener('pointerup', pararArrasto);
+    area.addEventListener('pointerleave', pararArrasto);
+}
+
+export function desmontarPagina() {
+    const pagina = document.querySelector('#pagina-ficha-nova');
+    if (!pagina) return;
+
+    if (_handlerModoEdicao) {
+        const btn = pagina.querySelector('#btn-modo-edicao');
+        if (btn) btn.removeEventListener('click', _handlerModoEdicao);
+        _handlerModoEdicao = null;
+    }
+    if (_handlerAddCampo) {
+        const btn = pagina.querySelector('#btn-add-campo');
+        if (btn) btn.removeEventListener('click', _handlerAddCampo);
+        _handlerAddCampo = null;
+    }
+
+    ['#page-settings-sheet', '#campo-settings-sheet', '#bloco-settings-sheet', '#formula-settings-sheet'].forEach(sel => {
+        document.querySelector(sel)?.classList.remove('active');
+    });
+
+    pagina.classList.remove('modo-edicao');
+    const menuDireito = pagina.querySelector('.folha-menu-lateral.direito');
+    if (menuDireito) menuDireito.classList.remove('editando');
+
+    pagina.dataset.eventosAtivos = 'false';
+}
