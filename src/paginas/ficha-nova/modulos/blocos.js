@@ -160,6 +160,12 @@ export function renderizarBloco(bloco, painelPaiId, renderizarPaineisCallback) {
         inputNum.type = 'number';
         inputNum.className = 'bloco-input-numerico';
         
+        // --- CORREÇÃO BUG 2: Garante que o clique vai para o input ---
+        inputNum.style.pointerEvents = 'auto';
+        inputNum.style.cursor = 'text';
+        inputNum.style.zIndex = '100';
+        inputNum.style.userSelect = 'text';
+        
         const atualizarValorCalculado = () => {
             if (bloco.formula && bloco.formula.length > 0) {
                 const resultado = calcularFormula(bloco.formula);
@@ -215,8 +221,14 @@ export function renderizarBloco(bloco, painelPaiId, renderizarPaineisCallback) {
             calcularModificador();
         });
 
+        // --- CORREÇÃO BUG 2: Impede que o pointerdown do bloco se propague ---
         inputNum.addEventListener('pointerdown', (e) => {
             e.stopPropagation(); 
+        });
+        
+        inputNum.addEventListener('click', (e) => {
+            e.stopPropagation();
+            inputNum.focus();
         });
 
         if (typeof formulaEventBus !== 'undefined') {
@@ -235,12 +247,84 @@ export function renderizarBloco(bloco, painelPaiId, renderizarPaineisCallback) {
         setTimeout(calcularModificador, 0);
 
     } else if (bloco.tipo === 'imagem') {
+        const imgWrapper = document.createElement('div');
+        imgWrapper.className = 'bloco-imagem-wrapper';
+        imgWrapper.style.width = '100%';
+        imgWrapper.style.height = '100%';
+        imgWrapper.style.overflow = 'hidden';
+        imgWrapper.style.position = 'relative';
+        imgWrapper.style.display = 'flex';
+        imgWrapper.style.alignItems = 'center';
+        imgWrapper.style.justifyContent = 'center';
+        imgWrapper.style.pointerEvents = 'auto';
+
         const img = document.createElement('img');
         img.className = 'bloco-imagem';
         img.src = bloco.urlImagem || '';
         img.alt = 'Imagem';
+        img.draggable = false;
+        
+        // --- MELHORIA BLOCO DE IMAGEM (Zoom e Pan) ---
+        // Propriedades da imagem para controle
+        if (!bloco.imgZoom) bloco.imgZoom = 1;
+        if (!bloco.imgX) bloco.imgX = 0;
+        if (!bloco.imgY) bloco.imgY = 0;
+
+        img.style.transform = `scale(${bloco.imgZoom}) translate(${bloco.imgX}px, ${bloco.imgY}px)`;
+        img.style.maxWidth = 'none'; // Permite estourar o container para dar zoom
+        img.style.cursor = estaEmModoEdicao() ? 'grab' : 'move';
+        img.style.transition = 'transform 0.1s ease-out';
+
+        // Interações apenas FORA do modo edição
+        img.addEventListener('pointerdown', (e) => {
+            if (estaEmModoEdicao()) return;
+            e.stopPropagation(); // Impede o pan da ficha
+
+            img.style.cursor = 'grabbing';
+            let startX = e.clientX;
+            let startY = e.clientY;
+            let origX = bloco.imgX;
+            let origY = bloco.imgY;
+
+            const onMove = (ev) => {
+                const zoom = bloco.imgZoom || 1;
+                bloco.imgX = origX + (ev.clientX - startX) / zoom;
+                bloco.imgY = origY + (ev.clientY - startY) / zoom;
+                img.style.transform = `scale(${bloco.imgZoom}) translate(${bloco.imgX}px, ${bloco.imgY}px)`;
+            };
+
+            const onUp = () => {
+                img.style.cursor = 'move';
+                document.removeEventListener('pointermove', onMove);
+                document.removeEventListener('pointerup', onUp);
+                salvarEstado();
+            };
+
+            document.addEventListener('pointermove', onMove);
+            document.addEventListener('pointerup', onUp);
+        });
+
+        // Zoom com Scroll (Shift + Scroll)
+        imgWrapper.addEventListener('wheel', (e) => {
+            if (estaEmModoEdicao() || !e.shiftKey) return;
+            e.preventDefault(); // Impede o zoom da ficha
+
+            const delta = e.deltaY > 0 ? -0.1 : 0.1;
+            let novoZoom = (bloco.imgZoom || 1) + delta;
+            
+            // Limites de zoom para não sumir com a imagem
+            if (novoZoom < 0.1) novoZoom = 0.1;
+            if (novoZoom > 5) novoZoom = 5;
+
+            bloco.imgZoom = novoZoom;
+            img.style.transform = `scale(${bloco.imgZoom}) translate(${bloco.imgX}px, ${bloco.imgY}px)`;
+            salvarEstado();
+        }, { passive: false });
+
         if (!bloco.urlImagem) img.style.display = 'none';
-        conteudoInterno.appendChild(img);
+        
+        imgWrapper.appendChild(img);
+        conteudoInterno.appendChild(imgWrapper);
     }
 
     el.appendChild(conteudoInterno);
@@ -258,7 +342,6 @@ export function renderizarBloco(bloco, painelPaiId, renderizarPaineisCallback) {
         e.stopPropagation();
         if (!estaEmModoEdicao()) return;
         
-        // CORREÇÃO: Mutando as propriedades do objeto importado
         areaTransferenciaCodex.tipo = 'bloco';
         areaTransferenciaCodex.dados = JSON.parse(JSON.stringify(bloco));
         alert("Bloco copiado! Selecione o campo de destino e aperte Ctrl+V.");
@@ -291,7 +374,7 @@ export function renderizarBloco(bloco, painelPaiId, renderizarPaineisCallback) {
     footer.appendChild(btnEngrenagem);
     el.appendChild(footer);
 
-    // --- ARRASTAR ---
+    // --- ARRASTAR BLOCO ---
     el.addEventListener('pointerdown', (e) => {
         if (!estaEmModoEdicao()) {
             if (!bloco.modelo || !bloco.modelo.includes('expansivel')) return;
@@ -300,6 +383,9 @@ export function renderizarBloco(bloco, painelPaiId, renderizarPaineisCallback) {
         if (e.target.tagName === 'TEXTAREA' || e.target.tagName === 'INPUT' || e.target.classList.contains('bloco-titulo-input')) {
             return;
         }
+        
+        // Permite que o clique na imagem seja tratado pelo evento da imagem
+        if (bloco.tipo === 'imagem' && e.target.tagName === 'IMG') return;
 
         if (e.target.classList.contains('bloco-borda') || e.target.closest('.bloco-btn-acao')) {
             return;

@@ -24,11 +24,18 @@ export function montarPagina(container) {
     const homeBtnContainer = pagina.querySelector('#home-btn-container');
     if (homeBtnContainer) {
         homeBtnContainer.innerHTML = `
-            <a href="#/inicio" style="text-decoration: none; display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; height: 100%;">
-                <h1 style="font-family: 'Cinzel', serif; font-size: 4rem; color: #d4af37; text-shadow: 0 0 20px rgba(240, 196, 74, 0.8); margin: 0; line-height: 1; font-weight: 900;">CODEX</h1>
-                <span style="font-family: 'Cinzel', serif; font-size: 1.2rem; color: #f0c44a; letter-spacing: 8px; margin-top: 10px;">⚔ RPG ⚔</span>
-            </a>
+            <div id="btn-voltar-home" style="display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; height: 100%; cursor: pointer;">
+                <h1 style="font-family: 'Cinzel', serif; font-size: 4rem; color: #d4af37; text-shadow: 0 0 20px rgba(240, 196, 74, 0.8); margin: 0; line-height: 1; font-weight: 900; pointer-events: none;">CODEX</h1>
+                <span style="font-family: 'Cinzel', serif; font-size: 1.2rem; color: #f0c44a; letter-spacing: 8px; margin-top: 10px; pointer-events: none;">⚔ RPG ⚔</span>
+            </div>
         `;
+
+        const btnVoltar = homeBtnContainer.querySelector('#btn-voltar-home');
+        if (btnVoltar) {
+            btnVoltar.addEventListener('click', () => {
+                window.location.hash = '#/inicio';
+            });
+        }
     }
 
     if (pagina.dataset.eventosAtivos === 'true') return;
@@ -82,79 +89,6 @@ export function montarPagina(container) {
 
     // 5. Arrastar Câmera (Pan)
     configurarArrastarCamera(pagina);
-
-    // 6. Sistema de Importar/Exportar JSON
-    configurarJSON(pagina);
-}
-
-/* --- SISTEMA DE JSON --- */
-function configurarJSON(pagina) {
-    const btnExportar = pagina.querySelector('#btn-exportar-ficha');
-    const btnImportar = pagina.querySelector('#btn-importar-ficha');
-    const inputFile = pagina.querySelector('#input-importar-json');
-
-    // EXPORTAR
-    if (btnExportar) {
-        btnExportar.addEventListener('click', (e) => {
-            e.preventDefault();
-            const dados = {
-                app: 'CODEX',
-                versao: '1.0',
-                data: new Date().toISOString(),
-                paginas: estado.paginas,
-                paginaAtivaId: estado.paginaAtivaId
-            };
-            const jsonString = JSON.stringify(dados, null, 2);
-            const blob = new Blob([jsonString], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `ficha-codex-${Date.now()}.json`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-        });
-    }
-
-    // IMPORTAR
-    if (btnImportar && inputFile) {
-        btnImportar.addEventListener('click', (e) => {
-            e.preventDefault();
-            e.stopPropagation(); 
-            inputFile.click(); // Aciona o input invisível
-        });
-
-        inputFile.addEventListener('change', (e) => {
-            const file = e.target.files[0];
-            if (!file) return;
-
-            const reader = new FileReader();
-            reader.onload = (ev) => {
-                try {
-                    const dados = JSON.parse(ev.target.result);
-                    if (!dados.paginas || !Array.isArray(dados.paginas)) {
-                        return alert("Arquivo JSON inválido.");
-                    }
-
-                    if (confirm("Deseja substituir a ficha atual por este arquivo?")) {
-                        estado.paginas = dados.paginas;
-                        estado.paginaAtivaId = dados.paginaAtivaId || dados.paginas[0].id;
-                        
-                        salvarEstado();
-                        renderizarMenu();
-                        renderizarPaineis();
-                        alert("Ficha importada com sucesso!");
-                    }
-                } catch (err) {
-                    alert("Erro ao ler o JSON: " + err.message);
-                }
-                inputFile.value = '';
-            };
-            reader.readAsText(file);
-        });
-    }
 }
 
 /* --- FUNÇÃO: ARRASTAR CÂMERA (PAN) --- */

@@ -19,16 +19,17 @@
     display: flex; align-items: center; justify-content: center; 
     background: var(--cor-fundo-base); 
     border-bottom: 1px solid rgba(212, 175, 55, 0.15); 
-    z-index: 99999; 
+    z-index: 99999; /* Acima de absolutamente tudo */
     position: relative; 
     box-sizing: border-box;
+    pointer-events: auto;
 }
 
-#pagina-ficha-nova .ficha-header-fixo #btn-voltar-home {
+#pagina-ficha-nova #btn-voltar-home {
     transition: transform 0.2s ease, filter 0.2s ease;
 }
 
-#pagina-ficha-nova .ficha-header-fixo #btn-voltar-home:hover {
+#pagina-ficha-nova #btn-voltar-home:hover {
     transform: scale(1.05);
     filter: brightness(1.2);
 }
@@ -232,7 +233,7 @@
     font-size: 0.9rem; 
     cursor: pointer; 
     transition: all 0.2s;
-    display: flex; /* Sempre visíveis */
+    display: flex; 
     align-items: center; 
     justify-content: center;
 }
@@ -275,4 +276,50 @@
     #pagina-ficha-nova .folha-menu-lateral { flex-direction: row; padding: 0.5rem 1rem; order: -1; position: relative; }
     #pagina-ficha-nova .folha-ferramentas-extras { flex-direction: row; max-height: none; max-width: 0; }
     #pagina-ficha-nova .folha-menu-lateral.direito.editando .folha-ferramentas-extras { max-width: 300px; margin-top: 0; margin-left: 0.5rem; }
+}
+/* ============================================================
+   CORREÇÃO BUG 5: BOTÕES DO MODAL DE CONFIGURAÇÃO DA PÁGINA
+   ============================================================ */
+#pagina-ficha-nova .sheet-acoes-pagina {
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
+    width: 100%;
+    flex-wrap: wrap;
+}
+
+#pagina-ficha-nova .btn-copiar-pagina,
+#pagina-ficha-nova .btn-excluir-pagina {
+    flex: 1;
+    min-width: 80px;
+    padding: 0.8rem;
+    border-radius: 8px;
+    font-family: var(--fonte-titulo);
+    font-size: 0.9rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: all 0.2s;
+}
+
+#pagina-ficha-nova .btn-copiar-pagina {
+    background: rgba(212, 175, 55, 0.1);
+    border: 1px solid var(--cor-dourado);
+    color: var(--cor-dourado-claro);
+}
+#pagina-ficha-nova .btn-copiar-pagina:hover {
+    background: rgba(212, 175, 55, 0.25);
+    color: #fff;
+}
+
+#pagina-ficha-nova .btn-excluir-pagina {
+    background: rgba(180, 40, 40, 0.1);
+    border: 1px solid #b42828;
+    color: #ff8a8a;
+}
+#pagina-ficha-nova .btn-excluir-pagina:hover {
+    background: rgba(180, 40, 40, 0.25);
+    color: #fff;
 }

@@ -77,7 +77,19 @@ export function iniciarPaginas(elementos) {
     configurarTooltipsDireita();
     configurarBotaoLimpar();
     configurarAtalhosTeclado();
-    configurarJSON(); // SISTEMA DE IMPORTAR/EXPORTAR
+    configurarJSON();
+
+    // CORREÇÃO BUG 4: Sincroniza o input do título da folha com o estado
+    if (refs.inputTitulo) {
+        refs.inputTitulo.addEventListener('input', (e) => {
+            const pag = getPaginaAtiva();
+            if (pag) {
+                pag.nome = e.target.value;
+                salvarEstado();
+                renderizarMenu();
+            }
+        });
+    }
     
     configurarSheetCampo(() => renderizarPaineis());
     configurarSheetBloco(() => renderizarPaineis());
@@ -105,52 +117,91 @@ export function getPaginaAtiva() {
     return estado.paginas.find(p => p.id === estado.paginaAtivaId);
 }
 
-/* --- SISTEMA JSON (IMPORTAR / EXPORTAR) --- */
+/* --- CORREÇÃO BUG 3: BOTÃO DE ANIMAÇÃO COM CLONE --- */
+function configurarBotaoAnimacao() {
+    const btn = document.querySelector('#btn-toggle-animacao');
+    if (!btn) return;
+    
+    if (estado.animacaoAtiva) btn.classList.add('ativo');
+
+    // Clona o botão para remover listeners antigos
+    const novoBtn = btn.cloneNode(true);
+    btn.parentNode.replaceChild(novoBtn, btn);
+
+    novoBtn.addEventListener('click', () => {
+        estado.animacaoAtiva = !estado.animacaoAtiva;
+        novoBtn.classList.toggle('ativo');
+        // Salva o estado da animação
+        const cache = localStorage.getItem('codex_ficha_dados');
+        if (cache) {
+            try {
+                const dados = JSON.parse(cache);
+                dados.animacaoAtiva = estado.animacaoAtiva;
+                localStorage.setItem('codex_ficha_dados', JSON.stringify(dados));
+            } catch(e) {}
+        }
+    });
+}
+
+/* --- CORREÇÃO BUG 1: BOTÃO DE LAYOUT COM FORÇA --- */
+function configurarBotaoLayout() {
+    const btn = document.querySelector('#btn-modo-layout');
+    if (!btn) return;
+    
+    if (estado.modoLayout === 'grid') btn.classList.add('ativo');
+
+    const novoBtn = btn.cloneNode(true);
+    btn.parentNode.replaceChild(novoBtn, btn);
+
+    novoBtn.addEventListener('click', () => {
+        estado.modoLayout = estado.modoLayout === 'livre' ? 'grid' : 'livre';
+        novoBtn.classList.toggle('ativo', estado.modoLayout === 'grid');
+        const folha = document.querySelector('#pagina-ficha-nova .folha');
+        if (folha) folha.classList.toggle('layout-grid', estado.modoLayout === 'grid');
+    });
+}
+
+/* --- SISTEMA JSON --- */
 function configurarJSON() {
     const btnExportar = document.querySelector('#btn-exportar-ficha');
     const btnImportar = document.querySelector('#btn-importar-ficha');
 
     if (!btnExportar || !btnImportar) return;
 
-    // --- EXPORTAR ---
-    btnExportar.addEventListener('click', (e) => {
+    const novoExport = btnExportar.cloneNode(true);
+    btnExportar.parentNode.replaceChild(novoExport, btnExportar);
+    
+    const novoImport = btnImportar.cloneNode(true);
+    btnImportar.parentNode.replaceChild(novoImport, btnImportar);
+
+    novoExport.addEventListener('click', (e) => {
         e.preventDefault();
-        
-        // Pega o nome da página ativa para usar no arquivo
         const pagAtiva = getPaginaAtiva();
-        let nomeArquivo = "Ficha de Personagem"; // Nome padrão
-        
+        let nomeArquivo = "Ficha de Personagem";
         if (pagAtiva && pagAtiva.nome) {
-            // Remove caracteres inválidos para nomes de arquivo (\, /, :, *, ?, ", <, >, |)
             nomeArquivo = pagAtiva.nome.replace(/[\\/:*?"<>|]/g, "").trim();
         }
 
         const dados = {
-            app: 'CODEX',
-            versao: '1.0',
-            data: new Date().toISOString(),
-            paginas: estado.paginas,
-            paginaAtivaId: estado.paginaAtivaId
+            app: 'CODEX', versao: '1.0', data: new Date().toISOString(),
+            paginas: estado.paginas, paginaAtivaId: estado.paginaAtivaId
         };
-        
         const jsonString = JSON.stringify(dados, null, 2);
         const blob = new Blob([jsonString], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
         
         const a = document.createElement('a');
         a.href = url;
-        a.download = `${nomeArquivo}.json`; // Usa o nome da página
+        a.download = `${nomeArquivo}.json`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
     });
 
-    // --- IMPORTAR (CRIANDO INPUT DINAMICAMENTE) ---
-    btnImportar.addEventListener('click', (e) => {
+    novoImport.addEventListener('click', (e) => {
         e.preventDefault();
         e.stopPropagation(); 
-
         const inputFile = document.createElement('input');
         inputFile.type = 'file';
         inputFile.accept = '.json';
@@ -158,7 +209,6 @@ function configurarJSON() {
         inputFile.addEventListener('change', (event) => {
             const file = event.target.files[0];
             if (!file) return;
-
             const reader = new FileReader();
             reader.onload = (ev) => {
                 try {
@@ -166,11 +216,9 @@ function configurarJSON() {
                     if (!dados.paginas || !Array.isArray(dados.paginas)) {
                         return alert("Arquivo JSON inválido.");
                     }
-
                     if (confirm("Deseja substituir a ficha atual por este arquivo?")) {
                         estado.paginas = dados.paginas;
                         estado.paginaAtivaId = dados.paginaAtivaId || dados.paginas[0].id;
-                        
                         salvarEstado();
                         renderizarMenu();
                         carregarConteudoPaginaAtiva();
@@ -182,7 +230,6 @@ function configurarJSON() {
             };
             reader.readAsText(file);
         });
-
         inputFile.click();
     });
 }
@@ -231,7 +278,12 @@ export function duplicarPaginaAtual() {
     fecharBottomSheet();
 }
 
+/* --- CORREÇÃO BUG 3: ATALHOS COM PROTEÇÃO --- */
 function configurarAtalhosTeclado() {
+    // CORREÇÃO: Usa a window como escopo global para a flag
+    if (window._atalhosCodexConfigurados === true) return;
+    window._atalhosCodexConfigurados = true;
+
     let campoSelecionadoId = null;
 
     document.addEventListener('pointerdown', (e) => {
@@ -373,6 +425,7 @@ function adicionarPagina() {
 
 function trocarPagina(id) {
     if (estado.paginaAtivaId === id || animando) return;
+    
     if (!estado.animacaoAtiva) {
         estado.paginaAtivaId = id;
         salvarEstado();
@@ -380,6 +433,7 @@ function trocarPagina(id) {
         carregarConteudoPaginaAtiva();
         return;
     }
+    
     animando = true;
     const folha = document.querySelector('#pagina-ficha-nova .folha');
     folha.classList.add('virando-pagina');
@@ -431,7 +485,10 @@ function configurarBotaoLimpar() {
     const btnLimpar = document.querySelector('#btn-limpar-ficha');
     if (!btnLimpar) return;
 
-    btnLimpar.addEventListener('click', () => {
+    const novoBtn = btnLimpar.cloneNode(true);
+    btnLimpar.parentNode.replaceChild(novoBtn, btnLimpar);
+
+    novoBtn.addEventListener('click', () => {
         if (!estaEmModoEdicao()) return;
         
         if (confirm("Tem certeza que deseja apagar TUDO nesta ficha?")) {
@@ -493,7 +550,11 @@ function configurarBottomSheet() {
 
     inputNome.addEventListener('input', (e) => {
         const pag = estado.paginas.find(p => p.id === paginaSendoEditadaId);
-        if (pag) { pag.nome = e.target.value; refs.inputTitulo.value = pag.nome; salvarEstado(); }
+        if (pag) { 
+            pag.nome = e.target.value; 
+            refs.inputTitulo.value = pag.nome; 
+            salvarEstado(); 
+        }
     });
 
     inputDesc.addEventListener('input', (e) => {
@@ -532,27 +593,6 @@ function abrirBottomSheet(id) {
 function fecharBottomSheet() {
     document.querySelector('#page-settings-sheet')?.classList.remove('active');
     paginaSendoEditadaId = null;
-}
-
-function configurarBotaoAnimacao() {
-    const btn = document.querySelector('#btn-toggle-animacao');
-    if (!btn) return;
-    if (estado.animacaoAtiva) btn.classList.add('ativo');
-    btn.addEventListener('click', () => {
-        estado.animacaoAtiva = !estado.animacaoAtiva;
-        btn.classList.toggle('ativo');
-    });
-}
-
-function configurarBotaoLayout() {
-    const btn = document.querySelector('#btn-modo-layout');
-    if (!btn) return;
-    btn.addEventListener('click', () => {
-        estado.modoLayout = estado.modoLayout === 'livre' ? 'grid' : 'livre';
-        btn.classList.toggle('ativo');
-        const folha = document.querySelector('#pagina-ficha-nova .folha');
-        folha.classList.toggle('layout-grid', estado.modoLayout === 'grid');
-    });
 }
 
 function configurarTooltipsDireita() {

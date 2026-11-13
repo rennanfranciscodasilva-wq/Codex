@@ -227,3 +227,35 @@
 #pagina-ficha-nova .bloco-borda-base { bottom: -4px; }
 #pagina-ficha-nova .bloco-borda-esq { left: -4px; }
 #pagina-ficha-nova .bloco-borda-dir { right: -4px; }
+
+/* ============================================================
+   CORREÇÃO CRÍTICA: INPUTS NUMÉRICOS CLICÁVEIS
+   ============================================================ */
+
+/* Garante que o input numérico sempre receba o clique */
+#pagina-ficha-nova .bloco-input-numerico {
+    pointer-events: auto !important;
+    user-select: text !important;
+    -webkit-user-select: text !important;
+    cursor: text !important;
+    position: relative !important;
+    z-index: 999 !important;
+    touch-action: manipulation;
+}
+
+/* Remove qualquer bloqueio do wrapper */
+#pagina-ficha-nova .bloco-numerico-wrapper {
+    pointer-events: auto !important;
+}
+
+/* Garante que o bloco interno não bloqueie */
+#pagina-ficha-nova .bloco-interno {
+    pointer-events: auto !important;
+}
+
+/* Foco visual claro quando o input está ativo */
+#pagina-ficha-nova .bloco-input-numerico:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(212, 175, 55, 0.8) !important;
+    background: rgba(255, 255, 255, 0.5) !important;
+}
