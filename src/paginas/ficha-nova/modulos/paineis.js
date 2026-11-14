@@ -199,18 +199,32 @@ function iniciarArrastoPainel(e, painel) {
     const onMove = (ev) => {
         let novoX = origX + (ev.clientX - startX) / zoomAtual;
         let novoY = origY + (ev.clientY - startY) / zoomAtual;
-        const maxX = folha.clientWidth - painel.largura - PAD_X, maxY = folha.clientHeight - painel.altura - PAD_Y;
-        if (novoX < PAD_X) novoX = PAD_X; if (novoY < PAD_Y) novoY = PAD_Y;
-        if (novoX > maxX) novoX = maxX; if (novoY > maxY) novoY = maxY;
-
+        
+        // 1. Aplica o Snap (Encaixe no Grid) ANTES de verificar os limites
         if (estado.modoLayout === 'grid') {
-            novoX = Math.round(novoX / GRID) * GRID; novoY = Math.round(novoY / GRID) * GRID;
+            novoX = Math.round(novoX / GRID) * GRID; 
+            novoY = Math.round(novoY / GRID) * GRID;
         }
+
+        // 2. Verifica os limites da folha
+        const maxX = folha.clientWidth - painel.largura - PAD_X;
+        const maxY = folha.clientHeight - painel.altura - PAD_Y;
+        if (novoX < PAD_X) novoX = PAD_X; 
+        if (novoY < PAD_Y) novoY = PAD_Y;
+        if (novoX > maxX) novoX = maxX; 
+        if (novoY > maxY) novoY = maxY;
+
         painel.x = novoX; painel.y = novoY;
         el.style.left = novoX + 'px'; el.style.top = novoY + 'px';
     };
-    const onUp = () => { document.removeEventListener('pointermove', onMove); document.removeEventListener('pointerup', onUp); salvarEstado(); };
-    document.addEventListener('pointermove', onMove); document.addEventListener('pointerup', onUp);
+    
+    const onUp = () => { 
+        document.removeEventListener('pointermove', onMove); 
+        document.removeEventListener('pointerup', onUp); 
+        salvarEstado();
+    };
+    document.addEventListener('pointermove', onMove); 
+    document.addEventListener('pointerup', onUp);
 }
 
 function iniciarResizePainel(e, painel, lado) {
@@ -239,6 +253,14 @@ function iniciarResizePainel(e, painel, lado) {
         if (y < PAD_Y) { altura += y - PAD_Y; y = PAD_Y; }
         if (x + largura > folha.clientWidth - PAD_X) largura = folha.clientWidth - PAD_X - x;
         if (y + altura > folha.clientHeight - PAD_Y) altura = folha.clientHeight - PAD_Y - y;
+
+        // Snap no Grid para o Resize
+        if (estado.modoLayout === 'grid') {
+            if (lado === 'dir') largura = Math.round((x + largura) / GRID) * GRID - x;
+            if (lado === 'base') altura = Math.round((y + altura) / GRID) * GRID - y;
+            if (lado === 'esq') { const novaLarg = Math.round((x + largura) / GRID) * GRID; largura = x + largura - novaLarg; x = novaLarg; }
+            if (lado === 'topo') { const novaAlt = Math.round((y + altura) / GRID) * GRID; altura = y + altura - novaAlt; y = novaAlt; }
+        }
 
         painel.x = x; painel.y = y; painel.largura = largura; painel.altura = altura;
         el.style.left = x + 'px'; el.style.top = y + 'px'; el.style.width = largura + 'px'; el.style.height = altura + 'px';

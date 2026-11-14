@@ -19,10 +19,9 @@
     display: flex; align-items: center; justify-content: center; 
     background: var(--cor-fundo-base); 
     border-bottom: 1px solid rgba(212, 175, 55, 0.15); 
-    z-index: 99999; /* Acima de absolutamente tudo */
+    z-index: 99999; 
     position: relative; 
     box-sizing: border-box;
-    pointer-events: auto;
 }
 
 #pagina-ficha-nova #btn-voltar-home {
@@ -51,7 +50,6 @@
     scrollbar-color: #b8860b transparent;
 }
 
-/* Wrapper do Zoom */
 #pagina-ficha-nova .folha-wrapper {
     display: flex;
     justify-content: center; 
@@ -61,7 +59,6 @@
     padding: 0 40px; 
 }
 
-/* Layout Interno: Menus e Folha */
 #pagina-ficha-nova .folha-layout {
     display: flex; 
     flex-direction: row; 
@@ -88,7 +85,6 @@
     display: flex; flex-direction: column; align-items: center; gap: 12px;
 }
 
-/* Botões Redondos */
 #pagina-ficha-nova .folha-pagina-btn,
 #pagina-ficha-nova .folha-btn-ferramenta {
     position: relative; width: 44px; height: 44px; border-radius: 50%;
@@ -116,7 +112,6 @@
     border-style: solid; color: var(--cor-dourado); background: rgba(212, 175, 55, 0.1);
 }
 
-/* Modo Edição e Ferramentas Extras */
 #pagina-ficha-nova .folha-menu-lateral.direito.editando .folha-btn-ferramenta.principal {
     background: radial-gradient(circle at 35% 30%, #f5d742, #b8860b);
     color: var(--cor-fundo-base); border-color: #fff3c4;
@@ -132,7 +127,8 @@
     max-height: 400px; opacity: 1; visibility: visible; margin: -16px; margin-top: -0.5rem;
 }
 #pagina-ficha-nova #btn-toggle-animacao.ativo,
-#pagina-ficha-nova #btn-modo-layout.ativo {
+#pagina-ficha-nova #btn-modo-layout.ativo,
+#pagina-ficha-nova #btn-modo-colorir.ativo {
     background: radial-gradient(circle at 35% 30%, var(--cor-dourado-medio), var(--cor-marrom-fundo-2));
     color: var(--cor-dourado-claro); border-color: var(--cor-dourado-claro);
     box-shadow: 0 0 15px rgba(240, 196, 74, 0.5);
@@ -142,7 +138,6 @@
     pointer-events: none; border-bottom-color: transparent !important; user-select: none;
 }
 
-/* Tooltips */
 #pagina-ficha-nova .folha-btn-tooltip {
     position: absolute; background: rgba(14, 11, 8, 0.95); color: var(--cor-dourado-claro);
     padding: 4px 10px; border-radius: 6px; border: 1px solid rgba(212, 175, 55, 0.3);
@@ -180,7 +175,6 @@
     pointer-events: none; border-radius: 4px;
 }
 
-/* Cabeçalho da Folha e Conteúdo */
 #pagina-ficha-nova .folha-cabecalho {
     display: flex; justify-content: space-between; align-items: flex-start;
     padding: 2rem 2rem 0; flex-shrink: 0; position: relative; 
@@ -219,28 +213,16 @@
     background: rgba(180, 40, 40, 0.2); color: #ff5252; border-color: #ff5252;
     box-shadow: 0 0 10px rgba(255, 82, 82, 0.3);
 }
-#pagina-ficha-nova.modo-edicao .btn-limpar-ficha {
-    display: flex;
-}
+#pagina-ficha-nova.modo-edicao .btn-limpar-ficha { display: flex; }
 
-/* --- BOTÕES DE IMPORTAR E EXPORTAR --- */
 #pagina-ficha-nova .btn-acao-header {
-    background: rgba(212, 175, 55, 0.1); 
-    border: 1px solid rgba(212, 175, 55, 0.4);
-    color: var(--cor-dourado); 
-    padding: 6px 12px; 
-    border-radius: 6px; 
-    font-size: 0.9rem; 
-    cursor: pointer; 
-    transition: all 0.2s;
-    display: flex; 
-    align-items: center; 
-    justify-content: center;
+    background: rgba(212, 175, 55, 0.1); border: 1px solid rgba(212, 175, 55, 0.4);
+    color: var(--cor-dourado); padding: 6px 12px; border-radius: 6px; 
+    font-size: 0.9rem; cursor: pointer; transition: all 0.2s;
+    display: flex; align-items: center; justify-content: center;
 }
 #pagina-ficha-nova .btn-acao-header:hover {
-    background: rgba(212, 175, 55, 0.25); 
-    color: #fff; 
-    border-color: var(--cor-dourado);
+    background: rgba(212, 175, 55, 0.25); color: #fff; border-color: var(--cor-dourado);
     box-shadow: 0 0 10px rgba(240, 196, 74, 0.3);
 }
 
@@ -255,71 +237,20 @@
     color: rgba(107, 79, 29, 0.3); font-family: var(--fonte-titulo); font-style: italic; font-size: 1.2rem;
 }
 
-/* Animação */
-@keyframes virarPedra {
-    0% { transform: translateX(0); opacity: 1; }
-    100% { transform: translateX(-50px); opacity: 0; }
-}
-#pagina-ficha-nova .folha.virando-pagina {
-    animation: virarPedra 0.4s ease-in forwards; pointer-events: none; 
-}
-
-/* Responsividade */
-@media (max-width: 1024px) {
-    #pagina-ficha-nova .folha-layout { gap: 1rem; }
-    #pagina-ficha-nova .folha-menu-lateral { padding: 0.8rem 0.4rem; }
-    #pagina-ficha-nova .folha-pagina-btn,
-    #pagina-ficha-nova .folha-btn-ferramenta { width: 38px; height: 38px; font-size: 1rem; }
-}
-@media (max-width: 900px) {
-    #pagina-ficha-nova .folha-layout { flex-direction: column; align-items: center; gap: 1rem; padding-bottom: 2rem; }
-    #pagina-ficha-nova .folha-menu-lateral { flex-direction: row; padding: 0.5rem 1rem; order: -1; position: relative; }
-    #pagina-ficha-nova .folha-ferramentas-extras { flex-direction: row; max-height: none; max-width: 0; }
-    #pagina-ficha-nova .folha-menu-lateral.direito.editando .folha-ferramentas-extras { max-width: 300px; margin-top: 0; margin-left: 0.5rem; }
-}
 /* ============================================================
-   CORREÇÃO BUG 5: BOTÕES DO MODAL DE CONFIGURAÇÃO DA PÁGINA
+   VISUAL DO GRID (Alinhado ao painel-conteudo)
    ============================================================ */
-#pagina-ficha-nova .sheet-acoes-pagina {
-    display: flex;
-    gap: 10px;
-    margin-top: 10px;
-    width: 100%;
-    flex-wrap: wrap;
-}
 
-#pagina-ficha-nova .btn-copiar-pagina,
-#pagina-ficha-nova .btn-excluir-pagina {
-    flex: 1;
-    min-width: 80px;
-    padding: 0.8rem;
-    border-radius: 8px;
-    font-family: var(--fonte-titulo);
-    font-size: 0.9rem;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    transition: all 0.2s;
-}
-
-#pagina-ficha-nova .btn-copiar-pagina {
-    background: rgba(212, 175, 55, 0.1);
-    border: 1px solid var(--cor-dourado);
-    color: var(--cor-dourado-claro);
-}
-#pagina-ficha-nova .btn-copiar-pagina:hover {
-    background: rgba(212, 175, 55, 0.25);
-    color: #fff;
-}
-
-#pagina-ficha-nova .btn-excluir-pagina {
-    background: rgba(180, 40, 40, 0.1);
-    border: 1px solid #b42828;
-    color: #ff8a8a;
-}
-#pagina-ficha-nova .btn-excluir-pagina:hover {
-    background: rgba(180, 40, 40, 0.25);
-    color: #fff;
+/* O grid agora é desenhado DENTRO do container de paineis para alinhar com o (0,0) deles */
+#pagina-ficha-nova .folha.layout-grid .painel-conteudo::after {
+    content: "";
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+    pointer-events: none;
+    z-index: 9999;
+    
+    background-image: 
+        linear-gradient(rgba(212, 175, 55, 0.2) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(212, 175, 55, 0.2) 1px, transparent 1px);
+    background-size: 20px 20px, 20px 20px;
 }
