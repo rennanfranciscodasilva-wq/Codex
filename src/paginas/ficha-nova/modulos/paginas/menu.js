@@ -22,6 +22,7 @@ const ICONES_DISPONIVEIS = [
 ];
 
 let refsMenu = null;
+let refsBtnAdd = null; 
 let abrirBottomSheetCallback = null;
 let carregarConteudoCallback = null;
 
@@ -30,7 +31,13 @@ export function configurarMenu(elementos, abrirBottomSheet, carregarConteudo) {
     abrirBottomSheetCallback = abrirBottomSheet;
     carregarConteudoCallback = carregarConteudo;
     
-    elementos.btnAdd.addEventListener('click', adicionarPagina);
+    if (elementos.btnAdd) {
+        refsBtnAdd = elementos.btnAdd;
+        const novoBtn = refsBtnAdd.cloneNode(true);
+        refsBtnAdd.parentNode.replaceChild(novoBtn, refsBtnAdd);
+        refsBtnAdd = novoBtn;
+        refsBtnAdd.addEventListener('click', adicionarPagina);
+    }
 }
 
 export function renderizarMenu() {
@@ -55,10 +62,9 @@ export function renderizarMenu() {
         refsMenu.appendChild(btn);
     });
     
-    const btnAdd = refsMenu.querySelector('#folha-pagina-add') || document.querySelector('#folha-pagina-add');
-    if (btnAdd) {
-        refsMenu.appendChild(btnAdd);
-        btnAdd.style.display = estado.paginas.length >= MAX_PAGINAS ? 'none' : 'flex';
+    if (refsBtnAdd) {
+        refsMenu.appendChild(refsBtnAdd);
+        refsBtnAdd.style.display = estado.paginas.length >= MAX_PAGINAS ? 'none' : 'flex';
     }
 }
 
@@ -83,7 +89,8 @@ export function trocarPagina(id) {
     
     const folha = document.querySelector('#pagina-ficha-nova .folha');
     
-    if (!estado.animacaoAtiva) {
+    // Se a animação estiver desligada ou a folha não existir, troca na hora
+    if (!estado.animacaoAtiva || !folha) {
         estado.paginaAtivaId = id;
         salvarEstado();
         renderizarMenu();
@@ -91,14 +98,19 @@ export function trocarPagina(id) {
         return;
     }
     
-    if (folha) folha.classList.add('virando-pagina');
+    // Força o reflow para garantir que a animação rode novamente
+    folha.classList.remove('virando-pagina');
+    void folha.offsetWidth; 
+    
+    folha.classList.add('virando-pagina');
+    
     setTimeout(() => {
         estado.paginaAtivaId = id;
         salvarEstado();
         renderizarMenu();
         if (carregarConteudoCallback) carregarConteudoCallback();
-        if (folha) folha.classList.remove('virando-pagina');
-    }, 600);
+        folha.classList.remove('virando-pagina');
+    }, 400); // Tempo bate com a animação do CSS (0.4s)
 }
 
 export function excluirPagina(id) {

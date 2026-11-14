@@ -417,3 +417,35 @@
     #pagina-inicio .center-dice { font-size: min(14vh, 5rem); }
     #pagina-inicio .auth-container { padding: 1rem; max-width: 300px; }
 }
+/* ---------- NOME DO USUÁRIO NO DADO ---------- */
+
+#pagina-inicio .center-dice-wrapper {
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: var(--z-dado-central);
+}
+
+#pagina-inicio .user-name-tag {
+    position: absolute;
+    top: -20px; /* Fica acima do dado */
+    background: rgba(20, 15, 8, 0.85);
+    border: 1px solid var(--cor-dourado-medio);
+    color: var(--cor-dourado-claro);
+    font-family: var(--fonte-titulo);
+    font-size: 0.9rem;
+    font-weight: 600;
+    padding: 0.2rem 0.8rem;
+    border-radius: 20px;
+    white-space: nowrap;
+    box-shadow: 0 0 15px rgba(184, 134, 11, 0.4);
+    backdrop-filter: blur(4px);
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    pointer-events: none; /* O clique passa direto para o dado */
+}
+
+#pagina-inicio .user-name-tag.hidden {
+    opacity: 0;
+    transform: translateY(10px);
+}

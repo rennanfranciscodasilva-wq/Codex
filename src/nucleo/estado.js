@@ -4,15 +4,33 @@
    Estado de páginas (ex.: categoria selecionada) fica NA página.
    ============================================================ */
 
+import { observarAutenticacao } from '../servicos/autenticacao/autenticacao.js';
+
 const estadoInicial = {
     tema: 'escuro',
-    usuario: null,        // { nome, email } quando logado
+    usuario: null,        // { uid, email } quando logado
     rotaAtual: '/',
     rotaAnterior: null
 };
 
 let estado = { ...estadoInicial };
 const ouvintes = new Set();
+
+// Conecta o Firebase ao estado global.
+// O Firebase dispara esse callback assim que o app carrega (verificando sessão salva)
+// e também a cada login, logout ou expiração de sessão.
+observarAutenticacao((userFirebase) => {
+    if (userFirebase) {
+        definirEstado({
+            usuario: {
+                uid: userFirebase.uid,
+                email: userFirebase.email
+            }
+        });
+    } else {
+        definirEstado({ usuario: null });
+    }
+});
 
 /**
  * Retorna cópia do estado (evita mutação externa acidental).

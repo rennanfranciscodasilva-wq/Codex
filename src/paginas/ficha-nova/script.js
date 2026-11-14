@@ -17,25 +17,28 @@ let _handlerModoEdicao = null;
 let _handlerAddCampo = null;
 
 export function montarPagina(container) {
+    // Delay de segurança para o Vite terminar de injetar o HTML antes de buscar os elementos
+    setTimeout(() => {
+        iniciarFichaNova(container);
+    }, 50);
+}
+
+function iniciarFichaNova(container) {
     const pagina = container.querySelector('#pagina-ficha-nova');
-    if (!pagina) return;
+    if (!pagina) {
+        console.warn("Ficha Nova: Aguardando DOM...");
+        return;
+    }
 
-    // --- INJEÇÃO DO CABEÇALHO ---
-    const homeBtnContainer = pagina.querySelector('#home-btn-container');
-    if (homeBtnContainer) {
-        homeBtnContainer.innerHTML = `
-            <div id="btn-voltar-home" style="display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; height: 100%; cursor: pointer;">
-                <h1 style="font-family: 'Cinzel', serif; font-size: 4rem; color: #d4af37; text-shadow: 0 0 20px rgba(240, 196, 74, 0.8); margin: 0; line-height: 1; font-weight: 900; pointer-events: none;">CODEX</h1>
-                <span style="font-family: 'Cinzel', serif; font-size: 1.2rem; color: #f0c44a; letter-spacing: 8px; margin-top: 10px; pointer-events: none;">⚔ RPG ⚔</span>
-            </div>
-        `;
-
-        const btnVoltar = homeBtnContainer.querySelector('#btn-voltar-home');
-        if (btnVoltar) {
-            btnVoltar.addEventListener('click', () => {
-                window.location.hash = '#/inicio';
-            });
-        }
+    // --- EVENTO DO CABEÇALHO (O HTML já está injetado no index.html) ---
+    const btnVoltar = pagina.querySelector('#btn-voltar-home');
+    if (btnVoltar) {
+        // Clona o botão para remover qualquer listener antigo e evitar duplicação
+        const novoBtn = btnVoltar.cloneNode(true);
+        btnVoltar.parentNode.replaceChild(novoBtn, btnVoltar);
+        novoBtn.addEventListener('click', () => {
+            window.location.hash = '#/inicio';
+        });
     }
 
     if (pagina.dataset.eventosAtivos === 'true') return;

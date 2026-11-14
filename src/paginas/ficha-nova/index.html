@@ -1,8 +1,11 @@
 <main id="pagina-ficha-nova" class="screen">
 
-    <!-- Container do Cabeçalho Fixo -->
+    <!-- Container do Cabeçalho Fixo (COM O TÍTULO INJETADO DIRETAMENTE) -->
     <header class="ficha-header-fixo" id="home-btn-container">
-        <!-- O JS injeta o CodeX aqui -->
+        <div id="btn-voltar-home" style="display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; height: 100%; cursor: pointer;">
+            <h1 style="font-family: 'Cinzel', serif; font-size: 4rem; color: #d4af37; text-shadow: 0 0 20px rgba(240, 196, 74, 0.8); margin: 0; line-height: 1; font-weight: 900;">CODEX</h1>
+            <span style="font-family: 'Cinzel', serif; font-size: 1.2rem; color: #f0c44a; letter-spacing: 8px; margin-top: 10px;">⚔ RPG ⚔</span>
+        </div>
     </header>
 
     <div class="ficha-nova-area">
@@ -190,7 +193,6 @@
                     </select>
                 </div>
 
-                <!-- ALINHAMENTO DE CONTEÚDO PRIMEIRO -->
                 <div id="bloco-sheet-alinhamento-wrapper" style="display: none; flex-direction: column; gap: 10px;">
                     <div class="sheet-field">
                         <label>Alinhamento do Conteúdo</label>

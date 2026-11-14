@@ -238,10 +238,29 @@
 }
 
 /* ============================================================
-   VISUAL DO GRID (Alinhado ao painel-conteudo)
+   ANIMAÇÃO DE VIRAR A PÁGINA (100% 2D, Suave)
    ============================================================ */
 
-/* O grid agora é desenhado DENTRO do container de paineis para alinhar com o (0,0) deles */
+@keyframes virarPedra {
+    0% { 
+        transform: translateX(0); 
+        opacity: 1; 
+    }
+    100% { 
+        transform: translateX(-80px); /* Desliza sutilmente para a esquerda */
+        opacity: 0; 
+    }
+}
+
+#pagina-ficha-nova .folha.virando-pagina {
+    /* Animação rápida, linear e sem efeitos 3D */
+    animation: virarPedra 0.3s ease-in forwards; 
+    pointer-events: none;
+}
+
+/* ============================================================
+   VISUAL DO GRID (Sobreposto a Tudo)
+   ============================================================ */
 #pagina-ficha-nova .folha.layout-grid .painel-conteudo::after {
     content: "";
     position: absolute;

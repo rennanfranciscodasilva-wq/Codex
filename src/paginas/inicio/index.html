@@ -15,9 +15,14 @@
             <div class="orbit-ring inner"></div>
 
             <!-- Dado central: abre login/perfil -->
-            <a href="#" class="center-dice" id="center-dice-btn" role="button" title="Conta / Perfil">
-                <i class="fas fa-dice-d20"></i>
-            </a>
+            <div class="center-dice-wrapper">
+                <!-- Tag com o nome do usuário flutuando -->
+                <div class="user-name-tag hidden" id="user-name-tag"></div>
+                
+                <a href="#" class="center-dice" id="center-dice-btn" role="button" title="Conta / Perfil">
+                    <i class="fas fa-dice-d20"></i>
+                </a>
+            </div>
 
             <div class="orbit-icons-rotator">
                 <a href="#" class="orbit-item" data-rota="/ficha"        data-section="ficha"><i class="fas fa-id-card"></i></a>
@@ -72,14 +77,20 @@
             </div>
         </div>
 
-        <!-- Painel: perfil -->
+        <!-- Painel: perfil expandido -->
         <div class="screen-panel" id="profile-panel">
             <div class="profile-avatar">
                 <i class="fas fa-hat-wizard"></i>
             </div>
             <h2 class="section-title-text" id="profile-name">Aventureiro</h2>
-            <p class="section-desc">Bem-vindo de volta ao Codex. Sua jornada continua.</p>
-            <button class="btn-secondary" id="btn-logout">Sair da Conta</button>
+            <p class="section-desc" id="profile-email">email@exemplo.com</p>
+            
+            <div class="profile-actions" style="margin-top: 1.5rem; display: flex; flex-direction: column; gap: 0.8rem; width: 100%; max-width: 300px; z-index: var(--z-auth); position: relative;">
+                <!-- Botões prontos para o futuro (Mudar Nome, Excluir Conta, etc) -->
+                <button class="btn-secondary" id="btn-change-name" style="display: none;">Mudar Nome de Aventureiro</button>
+                <button class="btn-secondary" id="btn-logout">Sair da Conta</button>
+                <button class="btn-danger" id="btn-delete-account" style="display: none; background: #5a1a1a; border-color: #8a2a2a; color: #ffb3b3;">Excluir Conta Permanentemente</button>
+            </div>
         </div>
     </div>
 
