@@ -2,7 +2,8 @@ import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
 
 const firebaseConfig = {
-  apiKey: "AIzaSyD1hskWg85ewB1f5wHH0WX8ifgJELW4RAo", // <-- Note o "f" no final da parte em negrito
+  // O Vite vai puxar a NOVA chave que você colocou no arquivo .env.local
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
   authDomain: "codexproject-701b2.firebaseapp.com",
   projectId: "codexproject-701b2",
   storageBucket: "codexproject-701b2.firebasestorage.app",
