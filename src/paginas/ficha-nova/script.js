@@ -11,7 +11,7 @@ import {
     salvarEstado,
     renderizarPaineis,
     renderizarMenu
-} from './modulos/paginas.js';
+} from './modulos/paginas/index.js';
 
 let _handlerModoEdicao = null;
 let _handlerAddCampo = null;
@@ -94,39 +94,56 @@ export function montarPagina(container) {
 /* --- FUNÇÃO: ARRASTAR CÂMERA (PAN) --- */
 function configurarArrastarCamera(pagina) {
     const area = pagina.querySelector('.ficha-nova-area');
-    const folha = pagina.querySelector('#folha-elemento');
-    if (!area || !folha) return;
+    if (!area) return;
 
     let isDown = false;
     let startX, startY;
     let scrollLeft, scrollTop;
 
-    folha.addEventListener('contextmenu', (e) => e.preventDefault());
+    area.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+    });
 
     area.addEventListener('pointerdown', (e) => {
         const isRightClick = e.button === 2;
         const isTouch = e.pointerType === 'touch';
+        
         if (!isRightClick && !isTouch) return;
-        if (e.target.closest('.painel, .bloco, button, input, textarea, .folha-menu-lateral, .ficha-header-fixo')) return;
+
+        if (e.target.closest('.bloco-imagem')) {
+            return;
+        }
 
         isDown = true;
         area.style.cursor = 'grabbing';
+        
         startX = e.pageX - area.offsetLeft;
         startY = e.pageY - area.offsetTop;
         scrollLeft = area.scrollLeft;
         scrollTop = area.scrollTop;
+
         e.preventDefault(); 
     });
 
     area.addEventListener('pointermove', (e) => {
         if (!isDown) return;
+        
         const x = e.pageX - area.offsetLeft;
         const y = e.pageY - area.offsetTop;
-        area.scrollLeft = scrollLeft - (x - startX) * 1.5;
-        area.scrollTop = scrollTop - (y - startY) * 1.5;
+        
+        const walkX = (x - startX) * 1.5; 
+        const walkY = (y - startY) * 1.5;
+        
+        area.scrollLeft = scrollLeft - walkX;
+        area.scrollTop = scrollTop - walkY;
     });
 
-    const pararArrasto = () => { isDown = false; area.style.cursor = 'default'; };
+    const pararArrasto = () => {
+        if (!isDown) return;
+        isDown = false;
+        area.style.cursor = 'default';
+    };
+
     area.addEventListener('pointerup', pararArrasto);
     area.addEventListener('pointerleave', pararArrasto);
 }

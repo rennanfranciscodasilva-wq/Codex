@@ -2,7 +2,7 @@
    MÓDULO: AUTOMAÇÃO (Editor de Fórmulas)
    ============================================================ */
 
-import { estado, getPaginaAtiva } from './paginas.js';
+import { estado, getPaginaAtiva } from './paginas/index.js';
 
 // CRIAÇÃO DO BARRAMENTO DE EVENTOS (Para atualizar a tela em tempo real)
 export const formulaEventBus = new EventTarget();

@@ -1,224 +1,221 @@
 /* ============================================================
-   CODEX — Painéis e Blocos
+   CODEX — Painéis e Blocos (Ficha Nova)
    ============================================================ */
 
-/* CAMADA 2: Painéis (Campos) */
+/* 1. PAINÉIS (CAMPOS) */
 #pagina-ficha-nova .painel {
-    position: absolute !important; 
-    z-index: 20 !important; 
+    position: absolute !important; z-index: 20 !important; 
     display: flex; flex-direction: column;
     background: #e8dcc0 !important;
     border: 1px solid rgba(120, 90, 40, 0.45); border-radius: 6px;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08); min-width: 180px; min-height: 120px; box-sizing: border-box;
-    pointer-events: auto; 
-    transition: box-shadow 0.2s, border-color 0.2s;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08); 
+    min-width: 180px; min-height: 120px; box-sizing: border-box;
+    pointer-events: auto; transition: box-shadow 0.2s, border-color 0.2s;
 }
 
-/* Feedback visual de seleção do campo */
 #pagina-ficha-nova .painel.selecionado {
-    box-shadow: 0 0 0 3px rgba(26, 115, 232, 0.6), 0 4px 15px rgba(0,0,0,0.3) !important;
+    box-shadow: 0 0 0 3px #1a73e8, 0 0 15px rgba(26, 115, 232, 0.6) !important;
     border-color: #1a73e8 !important;
+    z-index: 50 !important;
 }
 
-/* CAMADA 3: Cabeçalho do Campo */
 #pagina-ficha-nova .painel-header {
     position: relative; display: flex; align-items: center;
-    z-index: 22 !important; 
-    padding: 0.4rem 6.5rem 0.4rem 0.5rem;
+    z-index: 22 !important; padding: 0.4rem 0.5rem;
     border-bottom: 1px solid rgba(120, 90, 40, 0.25);
     cursor: grab; flex-shrink: 0; user-select: none; box-sizing: border-box; width: 100%;
     background: #e8dcc0;
 }
 
-/* Título do Campo */
 #pagina-ficha-nova .painel-titulo {
     flex: 1; width: 100%; background: transparent; border: none; outline: none;
     font-family: var(--fonte-titulo); font-size: 0.95rem; font-weight: 700;
-    color: #3d2e0a; padding: 2px 0; cursor: inherit; white-space: nowrap;
-    overflow: hidden; text-overflow: ellipsis;
+    color: #3d2e0a; padding: 2px 0; cursor: inherit;
 }
 
-/* --- BOTÕES DO PAINEL (CAMPO) --- */
-#pagina-ficha-nova .painel-btn-add-bloco,
-#pagina-ficha-nova .painel-copiar,
-#pagina-ficha-nova .painel-engrenagem,
-#pagina-ficha-nova .painel-excluir {
-    position: absolute; top: 50%; transform: translateY(-50%);
-    background: transparent; border: none; color: rgba(120, 90, 40, 0.7);
-    cursor: pointer; padding: 4px; font-size: 0.85rem;
-    transition: all 0.2s; display: none;
-    z-index: 60 !important;
-    pointer-events: auto !important;
-    border-radius: 4px;
-}
-
-/* Posicionamento dos botões no Painel */
-#pagina-ficha-nova .painel-btn-add-bloco { right: 74px; }
-#pagina-ficha-nova .painel-copiar { right: 52px; }
-#pagina-ficha-nova .painel-engrenagem { right: 30px; }
-#pagina-ficha-nova .painel-excluir { right: 8px; }
-
-/* Hovers do Painel */
-#pagina-ficha-nova .painel-copiar:hover { color: #1a73e8; background: rgba(26, 115, 232, 0.1); }
-#pagina-ficha-nova .painel-excluir:hover { color: #c62828; background: rgba(198, 40, 40, 0.1); }
-#pagina-ficha-nova .painel-engrenagem:hover { color: #b8860b; background: rgba(184, 134, 11, 0.1); }
-#pagina-ficha-nova .painel-btn-add-bloco:hover { color: #2e7d32; background: rgba(46, 125, 50, 0.1); }
-
-/* CAMADA 3: Conteúdo do Campo */
 #pagina-ficha-nova .painel-conteudo {
     flex: 1 1 auto; min-height: 0; overflow: visible; 
-    position: relative; 
-    z-index: 21 !important; 
-    padding: 10px;
-    font-family: var(--fonte-corpo); font-size: 0.9rem; color: #3d2e0a;
-    pointer-events: auto;
+    position: relative; z-index: 21 !important; 
+    padding: 10px; font-family: var(--fonte-corpo); 
+    font-size: 0.9rem; color: #3d2e0a; pointer-events: auto;
 }
 
-/* CAMADA 4: Blocos */
+/* 2. BLOCOS */
 #pagina-ficha-nova .bloco {
-    position: absolute !important; 
-    z-index: 30 !important; 
-    display: flex; 
-    flex-direction: column;
+    position: absolute !important; z-index: 30 !important; 
+    display: flex; flex-direction: column;
     background: #f4ecd8 !important; 
     border: 1px solid rgba(120, 90, 40, 0.2); border-radius: 4px;
     box-sizing: border-box; 
-    overflow: hidden;
+    overflow: visible; 
     pointer-events: auto;
+    cursor: grab; 
 }
 
-/* --- TÍTULO DO BLOCO (Fixo no topo) --- */
-#pagina-ficha-nova .bloco-titulo-wrapper {
-    position: relative; 
-    z-index: 5;
-    width: 100%;
+#pagina-ficha-nova .bloco.selecionado {
+    box-shadow: 0 0 0 3px #d4af37, 0 0 15px rgba(212, 175, 55, 0.6) !important;
+    border-color: #d4af37 !important;
+    z-index: 100 !important;
+}
+
+/* --- ALÇA DE ARRASTO (CANTO INFERIOR DIREITO) --- */
+#pagina-ficha-nova .bloco-alca-arrasto {
+    position: absolute;
+    bottom: 2px;
+    right: 2px;
+    
+    width: 18px;
+    height: 18px;
     background: rgba(120, 90, 40, 0.15);
-    border-bottom: 1px solid rgba(120, 90, 40, 0.3);
-    border-top-left-radius: 4px; border-top-right-radius: 4px; 
-    padding: 4px 8px;
-    box-sizing: border-box; 
-    display: flex; align-items: center;
+    border: 1px solid rgba(120, 90, 40, 0.3);
+    border-radius: 4px;
+    display: none; 
+    align-items: center;
+    justify-content: center;
+    color: rgba(120, 90, 40, 0.7);
+    font-size: 10px;
+    cursor: grab;
+    z-index: 10000;
+}
+
+#pagina-ficha-nova.modo-edicao .bloco-alca-arrasto {
+    display: flex;
+}
+
+#pagina-ficha-nova .bloco.selecionado .bloco-alca-arrasto {
+    background: rgba(212, 175, 55, 0.2);
+    border-color: #d4af37;
+    color: #b8860b;
+}
+
+#pagina-ficha-nova .bloco-alca-arrasto:hover {
+    background: rgba(212, 175, 55, 0.4);
+    color: #4a3a1a;
+}
+
+/* TÍTULO DO BLOCO (Flutuante acima) */
+#pagina-ficha-nova .bloco-titulo-wrapper {
+    position: absolute;
+    bottom: 100%; 
+    left: -1px; 
+    z-index: 5;
+    width: min(100%, max(150px, 50%)); 
+    background: #e6d8b8; 
+    border: 1px solid rgba(120, 90, 40, 0.3);
+    border-bottom: none; 
+    border-top-left-radius: 6px;
+    border-top-right-radius: 12px;
+    padding: 4px 10px;
+    margin-bottom: -1px; 
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
     pointer-events: auto;
-    flex-shrink: 0;
-    min-height: 28px;
 }
 
 #pagina-ficha-nova .bloco-titulo-input {
-    background: transparent; border: none; outline: none; font-family: var(--fonte-titulo);
-    font-size: 0.8rem; font-weight: 700; color: #4a3a1a; width: 100%;
-}
-
-/* --- CONTEÚDO INTERNO DO BLOCO --- */
-#pagina-ficha-nova .bloco-interno {
-    display: flex; flex-direction: column; 
+    background: transparent;
+    border: none;
+    outline: none;
+    font-family: var(--fonte-titulo);
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #4a3a1a;
     width: 100%;
-    position: relative; 
-    overflow: hidden;
-    z-index: 40 !important; 
-    pointer-events: auto; 
-    flex: 1; 
-    padding: 6px;
-    box-sizing: border-box;
 }
 
-/* Ajuste do Textarea e Input Numérico */
+/* Conteúdo Interno */
+#pagina-ficha-nova .bloco-interno {
+    display: flex; flex-direction: column; width: 100%; height: 100%;
+    position: relative; 
+    overflow: visible; 
+    z-index: 40 !important; 
+    pointer-events: auto; flex: 1; padding: 6px; box-sizing: border-box;
+    justify-content: center; 
+}
+
 #pagina-ficha-nova .bloco-textarea {
-    flex: 1; width: 100%; height: 100%; background: transparent; border: none; outline: none;
-    padding: 0; font-family: var(--fonte-corpo); font-size: 0.85rem; color: #3d2e0a;
+    flex: 1; width: 100%; height: 100%; background: transparent; 
+    border: none; outline: none; padding: 0; 
+    font-family: var(--fonte-corpo); font-size: 0.85rem; color: #3d2e0a;
     min-height: 0; box-sizing: border-box; resize: none;
 }
 
 #pagina-ficha-nova .bloco-numerico-wrapper {
     display: flex; align-items: center; width: 100%; height: 100%; gap: 8px;
     pointer-events: auto;
+    flex-wrap: nowrap;
 }
 
 #pagina-ficha-nova .bloco-input-numerico {
-    width: 60px; height: 32px; background: transparent; border: 1px solid rgba(120, 90, 40, 0.3);
-    border-radius: 4px; font-family: var(--fonte-titulo); font-size: 1.1rem; font-weight: bold;
+    width: 60px; height: 28px;
+    background: transparent; 
+    border: 1px solid rgba(120, 90, 40, 0.3); border-radius: 4px; 
+    font-family: var(--fonte-titulo); font-size: 1rem; font-weight: bold;
     text-align: center; color: #3d2e0a; outline: none; padding: 0;
+    flex-shrink: 0;
 }
 
 #pagina-ficha-nova .bloco-modificador-display {
-    display: flex; align-items: center; justify-content: center; min-width: 32px; height: 32px;
-    padding: 0 6px; background: rgba(255, 255, 255, 0.4); border: 1px solid rgba(120, 90, 40, 0.2);
-    border-radius: 16px; font-family: var(--fonte-titulo); font-size: 1.1rem; font-weight: bold; color: #6b4f1d;
-    pointer-events: auto;
-}
-
-/* --- RODAPÉ DO BLOCO (Fixo na base) --- */
-#pagina-ficha-nova .bloco-footer {
-    height: 28px;
-    min-height: 28px;
-    background: #e6d8b8; 
-    border-top: 1px solid rgba(120, 90, 40, 0.2);
-    display: none; 
-    align-items: center;
-    justify-content: flex-end;
-    padding: 0 6px;
-    gap: 4px;
-    box-sizing: border-box;
+    display: flex; align-items: center; justify-content: center; 
+    min-width: 28px; height: 28px; padding: 0 6px; 
+    background: rgba(255, 255, 255, 0.4); border: 1px solid rgba(120, 90, 40, 0.2);
+    border-radius: 14px; font-family: var(--fonte-titulo); 
+    font-size: 1rem; font-weight: bold; color: #6b4f1d;
     pointer-events: auto;
     flex-shrink: 0;
 }
 
-/* --- BOTÕES DO BLOCO --- */
-#pagina-ficha-nova .bloco-btn-acao {
-    background: transparent;
-    border: none;
-    color: rgba(120, 90, 40, 0.7);
-    cursor: pointer;
-    padding: 4px 6px;
-    font-size: 0.8rem;
-    border-radius: 4px;
-    transition: all 0.2s;
-    display: flex; align-items: center; justify-content: center;
-}
-#pagina-ficha-nova .bloco-btn-acao:hover { background: rgba(255, 255, 255, 0.5); }
-#pagina-ficha-nova .bloco-copiar:hover { color: #1a73e8; }
-#pagina-ficha-nova .bloco-excluir:hover { color: #c62828; }
-#pagina-ficha-nova .bloco-engrenagem:hover { color: #b8860b; }
-
-/* --- EXIBIÇÃO NO MODO EDIÇÃO --- */
-#pagina-ficha-nova.modo-edicao .painel-btn-add-bloco,
-#pagina-ficha-nova.modo-edicao .painel-copiar,
-#pagina-ficha-nova.modo-edicao .painel-engrenagem,
-#pagina-ficha-nova.modo-edicao .painel-excluir,
-#pagina-ficha-nova.modo-edicao .bloco-footer { 
-    display: flex; 
-}
-
-/* Inputs e Textareas: Foco e Digitação */
+/* 3. INPUTS E TEXTAREAS */
 #pagina-ficha-nova .bloco-textarea,
 #pagina-ficha-nova .bloco-input-numerico,
 #pagina-ficha-nova .bloco-titulo-input,
 #pagina-ficha-nova .painel-titulo {
-    pointer-events: auto !important; 
-    user-select: text !important;
-    z-index: 100 !important;
-    position: relative;
-    cursor: text;
+    pointer-events: auto !important; user-select: text !important;
+    -webkit-user-select: text !important; z-index: 9999 !important;
+    position: relative !important; cursor: text !important;
+    touch-action: manipulation;
 }
 
 #pagina-ficha-nova .bloco-textarea:focus,
 #pagina-ficha-nova .bloco-input-numerico:focus {
     outline: none;
-    box-shadow: 0 0 0 2px rgba(212, 175, 55, 0.5);
+    box-shadow: 0 0 0 2px rgba(212, 175, 55, 0.8) !important;
+    background: rgba(255, 255, 255, 0.6) !important;
 }
 
-/* Bordas de Resize */
+/* 4. BORDAS DE RESIZE */
 #pagina-ficha-nova .painel-borda,
-#pagina-ficha-nova .bloco-borda { position: absolute; z-index: 50 !important; display: none; pointer-events: auto; }
+#pagina-ficha-nova .bloco-borda { 
+    position: absolute; z-index: 100 !important; display: none; pointer-events: auto; 
+}
+
+/* Mostra bordas no modo edição OU se for expansível no modo jogador */
 #pagina-ficha-nova.modo-edicao .painel-borda,
-#pagina-ficha-nova.modo-edicao .bloco-borda { display: block; }
+#pagina-ficha-nova.modo-edicao .bloco-borda,
+#pagina-ficha-nova .bloco-borda.borda-expansivel { 
+    display: block; 
+}
+
+/* Cursor de Resize no modo jogador para blocos expansíveis */
+#pagina-ficha-nova:not(.modo-edicao) .bloco-borda.borda-expansivel.borda-topo,
+#pagina-ficha-nova:not(.modo-edicao) .bloco-borda.borda-expansivel.borda-base {
+    cursor: ns-resize;
+}
+
 #pagina-ficha-nova .painel-borda-topo,
 #pagina-ficha-nova .painel-borda-base,
 #pagina-ficha-nova .bloco-borda-topo,
-#pagina-ficha-nova .bloco-borda-base { left: 4px; right: 4px; height: 8px; cursor: ns-resize; }
+#pagina-ficha-nova .bloco-borda-base { 
+    left: 8px; right: 8px; height: 8px; cursor: ns-resize; 
+}
 #pagina-ficha-nova .painel-borda-esq,
 #pagina-ficha-nova .painel-borda-dir,
 #pagina-ficha-nova .bloco-borda-esq,
-#pagina-ficha-nova .bloco-borda-dir { top: 4px; bottom: 4px; width: 8px; cursor: ew-resize; }
+#pagina-ficha-nova .bloco-borda-dir { 
+    top: 8px; bottom: 8px; width: 8px; cursor: ew-resize; 
+}
+
 #pagina-ficha-nova .painel-borda-topo { top: -4px; }
 #pagina-ficha-nova .painel-borda-base { bottom: -4px; }
 #pagina-ficha-nova .painel-borda-esq { left: -4px; }
@@ -228,34 +225,35 @@
 #pagina-ficha-nova .bloco-borda-esq { left: -4px; }
 #pagina-ficha-nova .bloco-borda-dir { right: -4px; }
 
-/* ============================================================
-   CORREÇÃO CRÍTICA: INPUTS NUMÉRICOS CLICÁVEIS
-   ============================================================ */
+/* 5. BOTÕES DE ZOOM NA IMAGEM */
+#pagina-ficha-nova .bloco-imagem-wrapper { position: relative; }
 
-/* Garante que o input numérico sempre receba o clique */
-#pagina-ficha-nova .bloco-input-numerico {
-    pointer-events: auto !important;
-    user-select: text !important;
-    -webkit-user-select: text !important;
-    cursor: text !important;
-    position: relative !important;
-    z-index: 999 !important;
-    touch-action: manipulation;
+#pagina-ficha-nova .bloco-img-zoom-btn,
+#pagina-ficha-nova .bloco-img-engrenagem-btn {
+    position: absolute; width: 32px; height: 32px; border-radius: 50%;
+    background: rgba(14, 11, 8, 0.5); border: 1px solid rgba(212, 175, 55, 0.4);
+    color: var(--cor-dourado); backdrop-filter: blur(4px);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.9rem; cursor: pointer; z-index: 1000;
+    opacity: 0; transition: opacity 0.2s ease, background 0.2s ease, transform 0.2s ease;
 }
 
-/* Remove qualquer bloqueio do wrapper */
-#pagina-ficha-nova .bloco-numerico-wrapper {
-    pointer-events: auto !important;
+#pagina-ficha-nova .bloco-img-zoom-btn { top: 10px; }
+#pagina-ficha-nova .bloco-img-engrenagem-btn { bottom: 10px; left: 50%; transform: translateX(-50%); }
+
+#pagina-ficha-nova .bloco-imagem-wrapper:hover .bloco-img-zoom-btn,
+#pagina-ficha-nova .bloco-imagem-wrapper:hover .bloco-img-engrenagem-btn { opacity: 1; }
+
+#pagina-ficha-nova .bloco-img-zoom-btn:hover,
+#pagina-ficha-nova .bloco-img-engrenagem-btn:hover {
+    background: rgba(14, 11, 8, 0.85); border-color: var(--cor-dourado-claro);
+    box-shadow: 0 0 15px rgba(240, 196, 74, 0.4);
 }
 
-/* Garante que o bloco interno não bloqueie */
-#pagina-ficha-nova .bloco-interno {
-    pointer-events: auto !important;
-}
+#pagina-ficha-nova .bloco-img-zoom-btn:hover { transform: scale(1.1); }
+#pagina-ficha-nova .bloco-img-engrenagem-btn:hover { transform: translateX(-50%) scale(1.1); }
 
-/* Foco visual claro quando o input está ativo */
-#pagina-ficha-nova .bloco-input-numerico:focus {
-    outline: none;
-    box-shadow: 0 0 0 2px rgba(212, 175, 55, 0.8) !important;
-    background: rgba(255, 255, 255, 0.5) !important;
-}
+#pagina-ficha-nova .bloco-img-zoom-btn.bloco-img-zoom-menos { left: 10px; }
+#pagina-ficha-nova .bloco-img-zoom-btn.bloco-img-zoom-mais { right: 10px; }
+
+#pagina-ficha-nova.modo-edicao .bloco-img-engrenagem-btn { display: none !important; }

@@ -36,9 +36,7 @@
                             <button id="btn-importar-ficha" class="btn-acao-header" title="Importar Ficha (JSON)">
                                 <i class="fas fa-file-import"></i>
                             </button>
-                            <!-- INPUT INVISÍVEL PARA O IMPORTAR FUNCIONAR -->
-                            <input type="file" id="input-importar-json" accept=".json" style="position: absolute; width: 1px; height: 1px; opacity: 0; z-index: -1;">
-
+                            
                             <!-- BOTÃO LIMPAR -->
                             <button id="btn-limpar-ficha" class="btn-limpar-ficha" title="Limpar Ficha">
                                 <i class="fas fa-broom"></i> Limpar
@@ -53,7 +51,7 @@
                     </div>
                 </div>
 
-                <!-- Menu Direito -->
+                <!-- Menu Direito (Ferramentas e Ações) -->
                 <div class="folha-menu-lateral direito">
                     <button class="folha-btn-ferramenta" id="btn-toggle-animacao" data-tooltip="Alternar Animação">
                         <i class="fas fa-film"></i>
@@ -61,12 +59,29 @@
                     <button class="folha-btn-ferramenta principal" id="btn-modo-edicao" data-tooltip="Modo Edição">
                         <i class="fas fa-pen"></i>
                     </button>
+                    
                     <div class="folha-ferramentas-extras" id="folha-ferramentas-extras">
                         <button class="folha-btn-ferramenta" id="btn-modo-layout" data-tooltip="Modo Livre">
                             <i class="fas fa-arrows-up-down-left-right"></i>
                         </button>
                         <button class="folha-btn-ferramenta" id="btn-add-campo" data-tooltip="Adicionar Campo">
                             <i class="fas fa-plus-square"></i>
+                        </button>
+                        
+                        <!-- NOVO BOTÃO DE ADICIONAR BLOCO -->
+                        <button class="folha-btn-ferramenta" id="btn-add-bloco" data-tooltip="Adicionar Bloco (Selecione um campo)">
+                            <i class="fas fa-cube"></i>
+                        </button>
+                        
+                        <!-- BOTÕES DE AÇÃO DO ELEMENTO SELECIONADO -->
+                        <button class="folha-btn-ferramenta btn-acao-selecao" id="btn-acao-config" data-tooltip="Configurar Selecionado">
+                            <i class="fas fa-cog"></i>
+                        </button>
+                        <button class="folha-btn-ferramenta btn-acao-selecao" id="btn-acao-copiar" data-tooltip="Copiar Selecionado">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                        <button class="folha-btn-ferramenta btn-acao-selecao" id="btn-acao-excluir" data-tooltip="Excluir Selecionado">
+                            <i class="fas fa-trash-alt"></i>
                         </button>
                     </div>
                 </div>
@@ -175,18 +190,19 @@
                     </select>
                 </div>
 
+                <!-- ALINHAMENTO DE CONTEÚDO PRIMEIRO -->
                 <div id="bloco-sheet-alinhamento-wrapper" style="display: none; flex-direction: column; gap: 10px;">
                     <div class="sheet-field">
-                        <label>Alinhamento do Título</label>
-                        <select id="bloco-sheet-align-titulo" class="sheet-input">
+                        <label>Alinhamento do Conteúdo</label>
+                        <select id="bloco-sheet-align-conteudo" class="sheet-input">
                             <option value="left">Esquerda</option>
                             <option value="center">Centro</option>
                             <option value="right">Direita</option>
                         </select>
                     </div>
                     <div class="sheet-field">
-                        <label>Alinhamento do Conteúdo</label>
-                        <select id="bloco-sheet-align-conteudo" class="sheet-input">
+                        <label>Alinhamento do Título</label>
+                        <select id="bloco-sheet-align-titulo" class="sheet-input">
                             <option value="left">Esquerda</option>
                             <option value="center">Centro</option>
                             <option value="right">Direita</option>
