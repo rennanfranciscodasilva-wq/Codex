@@ -1,0 +1,61 @@
+<!-- ============================================================
+     CODEX — Página: Perfil do Jogador
+     ============================================================ -->
+
+<main id="pagina-perfil" class="screen">
+    <!-- O cabeçalho CodeX será injetado aqui pelo script.js -->
+
+    <div class="perfil-conteudo-wrapper">
+        <aside class="perfil-sidebar">
+            <div class="perfil-user-header">
+                <div class="perfil-avatar">
+                    <i class="fas fa-hat-wizard"></i>
+                </div>
+                <h2 class="perfil-nome" id="profile-name">Carregando...</h2>
+                <p class="perfil-email" id="profile-email">...</p>
+            </div>
+            
+            <ul class="perfil-nav">
+                <li class="perfil-nav-item active" data-tab="fichas"><i class="fas fa-scroll"></i> Minhas Fichas</li>
+                <li class="perfil-nav-item" data-tab="favoritos"><i class="fas fa-star"></i> Favoritos</li>
+                <li class="perfil-nav-item" data-tab="config"><i class="fas fa-cog"></i> Configurações</li>
+            </ul>
+
+            <button class="btn-secondary perfil-btn-logout" id="btn-logout">
+                <i class="fas fa-door-open"></i> Sair da Conta
+            </button>
+        </aside>
+
+        <div class="perfil-content">
+            <!-- Aba: Fichas -->
+            <div class="perfil-tab-content active" id="tab-content-fichas">
+                <h1 class="perfil-page-title">Minhas Fichas</h1>
+                <div class="perfil-cards-grid">
+                    <div class="perfil-card">
+                        <i class="fas fa-user-shield"></i>
+                        <h3>Kael, o Bárbaro</h3>
+                        <p>Nível 5 • Old Dragon</p>
+                    </div>
+                    <a href="#/ficha/nova" class="perfil-card perfil-card-new" style="text-decoration: none;">
+                        <i class="fas fa-plus"></i>
+                        <p>Criar Nova Ficha</p>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Aba: Favoritos -->
+            <div class="perfil-tab-content" id="tab-content-favoritos">
+                <h1 class="perfil-page-title">Favoritos</h1>
+                <p style="color: #888;">Seus itens, magias e bestiário salvos aparecerão aqui.</p>
+            </div>
+
+            <!-- Aba: Configurações -->
+            <div class="perfil-tab-content" id="tab-content-config">
+                <h1 class="perfil-page-title">Configurações da Conta</h1>
+                <div class="perfil-config-box">
+                    <p>Em breve você poderá mudar seu nome de aventureiro e gerenciar sua conta.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>

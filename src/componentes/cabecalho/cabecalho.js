@@ -1,21 +1,18 @@
 /* ============================================================
-   CODEX — Componente: Cabeçalho
-   Cria o título "CodeX" clicável que volta para a Home.
+   CODEX — Componente: Cabeçalho (Título CodeX)
    ============================================================ */
 
-/**
- * Cria o título CodeX.
- * @param {object} opcoes
- * @param {string} opcoes.rotaHome - rota para onde volta (padrão: '/inicio')
- * @returns {HTMLAnchorElement}
- */
 export function criarCabecalho({ rotaHome = '/inicio' } = {}) {
-    const titulo = document.createElement('a');
-    titulo.href = '#';
-    titulo.className = 'codex-title';
-    titulo.id = 'home-btn';
-    titulo.setAttribute('data-rota', rotaHome);
-    titulo.setAttribute('aria-label', 'Voltar ao início do Codex');
-    titulo.textContent = 'CodeX';
-    return titulo;
+    const container = document.createElement('div');
+    container.id = 'home-btn';
+    container.className = 'codex-header-container';
+
+    const link = document.createElement('a');
+    link.className = 'codex-title';
+    link.href = `#${rotaHome}`;
+    link.setAttribute('data-rota', rotaHome);
+    link.innerHTML = 'Code<span>X</span>'; // Aquele "X" dourado clássico
+
+    container.appendChild(link);
+    return container;
 }

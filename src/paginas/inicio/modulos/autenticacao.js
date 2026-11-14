@@ -8,7 +8,6 @@ export function iniciarAutenticacao(refs, callbacks) {
     const { tabLogin, tabRegister, formLogin, formRegister, pagina } = refs;
     const { aoLogarComSucesso } = callbacks;
 
-    // --- Alternar Abas ---
     function alternarAba(mostrarLogin) {
         if (mostrarLogin) {
             tabLogin.classList.add('active');
@@ -26,7 +25,7 @@ export function iniciarAutenticacao(refs, callbacks) {
     tabLogin.addEventListener('click', () => alternarAba(true));
     tabRegister.addEventListener('click', () => alternarAba(false));
 
-    // --- Botão de Registro ---
+    // --- Registro ---
     const btnSubmitRegistro = formRegister.querySelector('button[type="submit"]');
     btnSubmitRegistro.addEventListener('click', async (e) => {
         e.preventDefault();
@@ -38,7 +37,7 @@ export function iniciarAutenticacao(refs, callbacks) {
         try {
             await registrar(email, senha);
             formRegister.reset();
-            aoLogarComSucesso(nome || email.split('@')[0]); // Usa o nome ou a parte antes do @
+            aoLogarComSucesso(nome || email.split('@')[0]); 
         } catch (erro) {
             console.error("Erro no registro:", erro);
             if (erro.code === 'auth/email-already-in-use') alert("Este e-mail já está cadastrado.");
@@ -48,7 +47,7 @@ export function iniciarAutenticacao(refs, callbacks) {
         }
     });
 
-    // --- Botão de Login ---
+    // --- Login ---
     const btnSubmitLogin = formLogin.querySelector('button[type="submit"]');
     btnSubmitLogin.addEventListener('click', async (e) => {
         e.preventDefault();
@@ -59,7 +58,7 @@ export function iniciarAutenticacao(refs, callbacks) {
         try {
             await entrar(email, senha);
             formLogin.reset();
-            aoLogarComSucesso(email.split('@')[0]); // Usa a parte antes do @ como nome provisório
+            aoLogarComSucesso(email.split('@')[0]);
         } catch (erro) {
             console.error("Erro no login:", erro);
             if (erro.code === 'auth/invalid-credential' || erro.code === 'auth/wrong-password' || erro.code === 'auth/user-not-found') {

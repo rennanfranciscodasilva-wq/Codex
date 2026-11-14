@@ -9,23 +9,19 @@ const BASE_PAGINA = '/src/paginas';
 
 const rotas = {
     '/inicio':              { pasta: 'inicio',       css: true, js: true },
-
-    /* Ficha — seleção de sistema */
     '/ficha':               { pasta: 'ficha',        css: true, js: true },
-
-    /* Ficha — sub-rotas */
     '/ficha/nova':          { pasta: 'ficha-nova',   css: true, js: true },
     '/ficha/old-dragon':    { pasta: 'placeholder',  css: true, js: true },
     '/ficha/vastura':       { pasta: 'placeholder',  css: true, js: true },
-
-    /* Demais seções */
     '/materiais':           { pasta: 'placeholder',  css: true, js: true },
     '/itens':               { pasta: 'placeholder',  css: true, js: true },
     '/equipamentos':        { pasta: 'placeholder',  css: true, js: true },
     '/deuses':              { pasta: 'placeholder',  css: true, js: true },
     '/magias':              { pasta: 'placeholder',  css: true, js: true },
     '/bestiario':           { pasta: 'placeholder',  css: true, js: true },
-    '/perfil':              { pasta: 'placeholder',  css: true, js: true }
+    
+    /* Nova rota de perfil apontando para a pasta correta */
+    '/perfil':              { pasta: 'perfil',       css: true, js: true }
 };
 
 const ROTA_INICIAL = '/inicio';
@@ -55,7 +51,6 @@ export async function navegar(rota, { substituir = false } = {}) {
         return navegar(ROTA_FALLBACK, { substituir: true });
     }
 
-    // Se a rota é a mesma que já está montada, não remonta
     if (rotaNormalizada === rotaAtualMontada) {
         return;
     }
@@ -87,8 +82,6 @@ export async function navegar(rota, { substituir = false } = {}) {
 export function obterRotaAtual() {
     return obterRotaDoHash() || ROTA_INICIAL;
 }
-
-/* ---------- Helpers internos ---------- */
 
 function aoMudarHash() {
     const rota = obterRotaDoHash() || ROTA_INICIAL;

@@ -1,0 +1,242 @@
+/* ============================================================
+   CODEX — Página: Perfil
+   ============================================================ */
+
+/* Força a página a ocupar a tela inteira, ignorando margens do #app */
+#pagina-perfil {
+    display: flex !important;
+    flex-direction: column;
+    width: 100vw !important;
+    max-width: 100vw !important;
+    height: 100vh;
+    background: var(--cor-fundo);
+    overflow: hidden;
+    margin: 0 !important;
+    padding: 0 !important;
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 100;
+}
+
+/* Container do cabeçalho CodeX */
+#pagina-perfil .codex-title-container {
+    width: 100%;
+    display: flex;
+    justify-content: center; /* Centraliza o título no topo */
+    align-items: center;
+    padding: 1rem 0;
+    background: var(--cor-fundo);
+    border-bottom: 1px solid rgba(138, 109, 59, 0.2);
+    flex-shrink: 0;
+    z-index: 10;
+}
+
+/* Wrapper que segura a sidebar e o conteúdo, lado a lado */
+#pagina-perfil .perfil-conteudo-wrapper {
+    display: flex;
+    flex-direction: row;
+    flex: 1; /* Ocupa todo o espaço restante abaixo do cabeçalho */
+    overflow: hidden;
+    width: 100%;
+}
+
+/* ---------- SIDEBAR (ESQUERDA) ---------- */
+#pagina-perfil .perfil-sidebar {
+    width: 300px;
+    background: var(--cor-painel);
+    border-right: 1px solid var(--cor-dourado-escuro);
+    display: flex;
+    flex-direction: column;
+    padding: 2rem 0;
+    flex-shrink: 0;
+    height: 100%;
+    overflow-y: auto;
+}
+
+#pagina-perfil .perfil-user-header {
+    text-align: center;
+    padding: 0 1.5rem 1.5rem;
+    border-bottom: 1px solid rgba(138, 109, 59, 0.3);
+    margin-bottom: 1.5rem;
+}
+
+#pagina-perfil .perfil-avatar {
+    width: 90px;
+    height: 90px;
+    border-radius: 50%;
+    border: 2px solid var(--cor-dourado);
+    margin: 0 auto 1rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 2.5rem;
+    color: var(--cor-dourado);
+    background: radial-gradient(circle at 35% 30%, var(--cor-marrom-fundo-2), var(--cor-marrom-fundo-4));
+    box-shadow: 0 0 15px rgba(184, 134, 11, 0.3);
+}
+
+#pagina-perfil .perfil-nome {
+    font-family: var(--fonte-titulo);
+    color: var(--cor-dourado);
+    margin: 0;
+    font-size: 1.3rem;
+}
+
+#pagina-perfil .perfil-email {
+    font-size: 0.85rem;
+    color: #888;
+    margin: 0.2rem 0 0;
+}
+
+#pagina-perfil .perfil-nav {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    flex: 1;
+}
+
+#pagina-perfil .perfil-nav-item {
+    padding: 1rem 1.5rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    color: #a09b8c;
+    transition: 0.3s;
+    font-family: var(--fonte-texto);
+    font-weight: 500;
+    user-select: none;
+}
+
+#pagina-perfil .perfil-nav-item:hover,
+#pagina-perfil .perfil-nav-item.active {
+    background: rgba(212, 175, 55, 0.1);
+    color: var(--cor-dourado);
+    border-left: 3px solid var(--cor-dourado);
+}
+
+#pagina-perfil .perfil-nav-item i {
+    width: 20px;
+    text-align: center;
+    font-size: 1.1rem;
+}
+
+#pagina-perfil .perfil-btn-logout {
+    margin: 0 1.5rem;
+    justify-content: center;
+    background: transparent;
+    border: 1px solid #7a2e2e;
+    color: #ff9999;
+    padding: 0.8rem;
+    border-radius: var(--raio-md);
+    cursor: pointer;
+    transition: 0.3s;
+    font-family: var(--fonte-titulo);
+    font-weight: 700;
+}
+
+#pagina-perfil .perfil-btn-logout:hover {
+    background: #7a2e2e;
+    color: white;
+}
+
+/* ---------- CONTEÚDO (DIREITA) ---------- */
+#pagina-perfil .perfil-content {
+    flex: 1;
+    padding: 3rem;
+    overflow-y: auto;
+    background-image: radial-gradient(circle at 50% 0%, rgba(212, 175, 55, 0.03) 0%, transparent 60%);
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start; /* Alinha os cards à esquerda */
+}
+
+#pagina-perfil .perfil-page-title {
+    font-family: var(--fonte-titulo);
+    color: var(--cor-dourado);
+    font-size: 2rem;
+    border-bottom: 1px solid rgba(138, 109, 59, 0.4);
+    padding-bottom: 0.8rem;
+    margin-top: 0;
+    margin-bottom: 2rem;
+    width: 100%; /* Garante que a linha de baixo ocupe toda a largura */
+}
+
+#pagina-perfil .perfil-tab-content {
+    display: none;
+    width: 100%;
+}
+
+#pagina-perfil .perfil-tab-content.active {
+    display: block;
+    animation: fadeIn 0.4s ease;
+}
+
+/* Grid de Cards de Ficha */
+#pagina-perfil .perfil-cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 1.5rem;
+    width: 100%;
+}
+
+#pagina-perfil .perfil-card {
+    background: var(--cor-painel);
+    border: 1px solid rgba(138, 109, 59, 0.3);
+    border-radius: 8px;
+    padding: 1.5rem;
+    transition: 0.3s;
+    cursor: pointer;
+    color: inherit;
+}
+
+#pagina-perfil .perfil-card:hover {
+    border-color: var(--cor-dourado);
+    transform: translateY(-5px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+}
+
+#pagina-perfil .perfil-card i {
+    font-size: 2rem;
+    color: var(--cor-dourado-escuro);
+    margin-bottom: 1rem;
+}
+
+#pagina-perfil .perfil-card h3 {
+    margin: 0 0 0.5rem 0;
+    font-family: var(--fonte-titulo);
+    color: var(--cor-texto);
+    font-size: 1.1rem;
+}
+
+#pagina-perfil .perfil-card p {
+    margin: 0;
+    font-size: 0.85rem;
+    color: #888;
+}
+
+#pagina-perfil .perfil-card-new {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    border-style: dashed;
+    text-align: center;
+}
+
+/* Responsividade para telas menores */
+@media (max-width: 768px) {
+    #pagina-perfil .perfil-conteudo-wrapper {
+        flex-direction: column;
+    }
+    #pagina-perfil .perfil-sidebar {
+        width: 100%;
+        height: auto;
+        border-right: none;
+        border-bottom: 1px solid var(--cor-dourado-escuro);
+    }
+    #pagina-perfil .perfil-content {
+        padding: 1.5rem;
+    }
+}

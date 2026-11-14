@@ -1,28 +1,14 @@
 /* ============================================================
-   MÓDULO: Perfil do Usuário
+   MÓDULO: Limpeza de Perfil (na Home)
    ============================================================ */
 
-import { sair } from '../../../servicos/autenticacao/autenticacao.js';
-
 export function iniciarPerfil(refs, callbacks) {
-    const { btnLogout, profileName, profileEmail } = refs;
-    const { aoDeslogar } = callbacks;
-
-    // --- Botão de Sair ---
-    btnLogout.addEventListener('click', async () => {
-        try {
-            await sair();
-            aoDeslogar();
-        } catch (erro) {
-            console.error("Erro ao sair:", erro);
-            alert("Erro ao sair da conta.");
-        }
-    });
+    // Este módulo ficou vazio na Home, pois a lógica foi movida
+    // para a página exclusiva em src/paginas/perfil/script.js
 
     return {
         atualizarDadosPerfil(nome, email) {
-            profileName.textContent = nome || 'Aventureiro';
-            if (profileEmail) profileEmail.textContent = email || '';
+            // Não precisamos mais atualizar o painel aqui
         }
     };
 }
