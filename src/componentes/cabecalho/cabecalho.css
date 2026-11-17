@@ -1,7 +1,201 @@
 /* ============================================================
-   CODEX — Componente: Cabeçalho (título CodeX)
-   Estilos já estão em sistema-visual/tipografia.css (.codex-title).
-   Este arquivo serve para ajustes exclusivos do componente.
+   CODEX — Cabeçalho Global
    ============================================================ */
 
-/* Nada adicional por enquanto — o título usa .codex-title global. */
+.codex-global-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    height: 70px;
+    padding: 0 2rem;
+    background: var(--cor-fundo);
+    border-bottom: 1px solid rgba(138, 109, 59, 0.2);
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+}
+
+.header-left {
+    width: 250px; /* Ocupa espaço para empurrar o centro */
+}
+
+.header-center {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+}
+
+/* CONSERTO AQUI: Força o CodeX a ficar na mesma linha */
+.codex-global-header .codex-title {
+    font-family: var(--fonte-titulo);
+    font-size: 2rem;
+    color: var(--cor-dourado-claro);
+    text-decoration: none;
+    white-space: nowrap; /* Impede de quebrar em duas linhas */
+    display: inline-block;
+    line-height: 1;
+}
+
+.codex-global-header .codex-title span {
+    color: var(--cor-dourado);
+}
+
+.codex-global-header .codex-subtitle {
+    font-family: var(--fonte-titulo);
+    font-size: 0.6rem;
+    color: var(--cor-texto-fraco);
+    letter-spacing: 4px;
+    margin-top: 4px;
+    text-transform: uppercase;
+}
+
+.header-right {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 1.5rem;
+    width: 250px;
+}
+
+/* Botão de Usuário */
+.btn-usuario {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--cor-texto);
+    text-decoration: none;
+    font-family: var(--fonte-texto);
+    transition: 0.3s;
+}
+.btn-usuario:hover {
+    color: var(--cor-dourado);
+}
+.btn-usuario i {
+    font-size: 1.5rem;
+}
+
+/* Seletor de Personagem */
+.seletor-personagem {
+    position: relative;
+}
+.btn-seletor {
+    background: transparent;
+    border: 1px solid var(--cor-dourado-escuro);
+    color: var(--cor-dourado);
+    padding: 0.4rem 1rem;
+    border-radius: 20px;
+    cursor: pointer;
+    font-family: var(--fonte-texto);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: 0.3s;
+}
+.btn-seletor:hover {
+    background: rgba(212, 175, 55, 0.1);
+    border-color: var(--cor-dourado);
+}
+
+/* Dropdown */
+.dropdown-personagens {
+    position: absolute;
+    top: calc(100% + 10px);
+    right: 0;
+    width: 220px;
+    background: var(--cor-painel);
+    border: 1px solid var(--cor-dourado-escuro);
+    border-radius: 8px;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.8);
+    padding: 0.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+.dropdown-personagens.hidden {
+    display: none;
+}
+.dropdown-item {
+    background: transparent;
+    border: none;
+    color: var(--cor-texto);
+    padding: 0.6rem 0.8rem;
+    text-align: left;
+    border-radius: 5px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: 0.2s;
+}
+.dropdown-item:hover {
+    background: rgba(212, 175, 55, 0.1);
+    color: var(--cor-dourado);
+}
+.btn-voltar-sistema {
+    background: transparent;
+    border: none;
+    color: var(--cor-dourado-escuro);
+    padding: 0.3rem;
+    cursor: pointer;
+    text-align: left;
+    font-size: 0.8rem;
+    border-bottom: 1px solid rgba(138, 109, 59, 0.2);
+    margin-bottom: 0.3rem;
+}
+.dropdown-empty {
+    padding: 1rem;
+    text-align: center;
+    color: #888;
+    font-size: 0.9rem;
+}
+
+/* Responsividade para celular */
+@media (max-width: 768px) {
+    .codex-global-header { padding: 0 1rem; }
+    .header-left, .header-right { width: auto; }
+    .btn-seletor span { display: none; }
+    .btn-usuario span { display: none; }
+}
+
+/* ============================================================
+   NOVOS ESTILOS PARA O DROPDOWN EXPANDIDO
+   ============================================================ */
+
+/* Container com limite de altura para não vazar da tela */
+.dropdown-personagens {
+    max-height: 400px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(184, 134, 11, 0.5) transparent;
+}
+
+/* Linha divisória entre Sistemas e Personagens */
+.dropdown-divider {
+    height: 1px;
+    background: rgba(212, 175, 55, 0.3);
+    margin: 6px 8px;
+    width: calc(100% - 16px);
+}
+
+/* Destaque quando um sistema está selecionado */
+.sistema-item.selected {
+    background: rgba(212, 175, 55, 0.15);
+    color: var(--cor-dourado-claro);
+    border-left: 3px solid var(--cor-dourado);
+}
+
+/* Destaque quando um personagem já está ativo no header */
+.personagem-item.active {
+    background: rgba(212, 175, 55, 0.2);
+    color: var(--cor-dourado-claro);
+    font-weight: bold;
+}
+
+/* Garantir que os botões ocupem a largura certa */
+.dropdown-sistemas-wrapper,
+.dropdown-personagens-wrapper {
+    display: flex;
+    flex-direction: column;
+}

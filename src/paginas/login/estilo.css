@@ -1,0 +1,170 @@
+/* ============================================================
+   CODEX — Página: Login / Registro
+   ============================================================ */
+
+#pagina-login {
+    flex: 1;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    background: var(--cor-fundo, #0f0a05);
+    position: relative;
+    overflow: hidden;
+}
+
+#pagina-login .login-container {
+    width: 100%;
+    max-width: 420px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    z-index: 10;
+}
+
+#pagina-login .section-icon {
+    font-size: 2.5rem;
+    color: var(--cor-dourado);
+    margin-bottom: 1rem;
+}
+
+#pagina-login .section-title-text {
+    font-family: var(--fonte-titulo, inherit);
+    color: var(--cor-dourado-claro, #f0c44a);
+    font-size: 2.5rem;
+    margin: 0;
+    text-shadow: 0 0 20px rgba(212, 175, 55, 0.5);
+}
+
+#pagina-login .section-desc {
+    color: #aaa;
+    margin-bottom: 2rem;
+    text-align: center;
+    font-family: var(--fonte-texto, inherit);
+}
+
+#pagina-login .auth-container {
+    width: 100%;
+    background: rgba(20, 15, 8, 0.8);
+    border: 1px solid rgba(212, 175, 55, 0.3);
+    border-radius: 12px;
+    padding: 2.5rem 2rem;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+    backdrop-filter: blur(10px);
+}
+
+#pagina-login .auth-tabs {
+    display: flex;
+    margin-bottom: 2rem;
+    border-bottom: 1px solid rgba(212, 175, 55, 0.2);
+}
+
+#pagina-login .auth-tab {
+    flex: 1;
+    text-align: center;
+    padding: 1rem;
+    cursor: pointer;
+    color: #888;
+    font-family: var(--fonte-titulo, inherit);
+    font-size: 1.1rem;
+    transition: 0.3s;
+}
+
+#pagina-login .auth-tab:hover {
+    color: var(--cor-dourado-claro, #f0c44a);
+}
+
+#pagina-login .auth-tab.active {
+    color: var(--cor-dourado-claro, #f0c44a);
+    border-bottom: 2px solid var(--cor-dourado-claro, #f0c44a);
+}
+
+#pagina-login .auth-form {
+    display: none;
+    flex-direction: column;
+    gap: 1.2rem;
+}
+
+#pagina-login .auth-form.active {
+    display: flex;
+}
+
+/* ============================================================
+   CORREÇÃO FORÇADA DOS INPUTS (Para vencer o CSS Global)
+   ============================================================ */
+
+#pagina-login .input-group {
+    display: flex;
+    align-items: center;
+    background: #1a140b !important; /* Cor de fundo escura */
+    border: 1px solid rgba(138, 109, 59, 0.4) !important;
+    border-radius: 8px;
+    height: 52px; /* Altura fixa */
+    position: relative;
+    overflow: hidden; /* Impede que o input vaze as bordas */
+    transition: border-color 0.3s;
+}
+
+#pagina-login .input-group:focus-within {
+    border-color: var(--cor-dourado, #d4af37) !important;
+}
+
+/* Ícone posicionado absolutamente para não empurrar o texto */
+#pagina-login .input-group i {
+    position: absolute;
+    left: 16px;
+    color: #888;
+    font-size: 1.1rem;
+    pointer-events: none; /* O clique passa direto para o input */
+}
+
+/* O Input em si */
+#pagina-login .auth-input {
+    width: 100% !important;
+    height: 100% !important;
+    background: transparent !important; /* Mata o fundo branco */
+    border: none !important;
+    outline: none !important;
+    color: #fff !important; /* Texto branco */
+    font-family: var(--fonte-texto, sans-serif);
+    font-size: 1rem;
+    padding: 0 16px 0 48px !important; /* Padding esquerdo grande para não bater no ícone */
+    box-shadow: none !important; /* Remove sombras do navegador */
+}
+
+/* Corrige a cor do placeholder */
+#pagina-login .auth-input::placeholder {
+    color: #666 !important;
+    opacity: 1;
+}
+
+/* Corrige o fundo branco/azul do preenchimento automático do Chrome */
+#pagina-login .auth-input:-webkit-autofill,
+#pagina-login .auth-input:-webkit-autofill:hover, 
+#pagina-login .auth-input:-webkit-autofill:focus, 
+#pagina-login .auth-input:-webkit-autofill:active {
+    -webkit-box-shadow: 0 0 0 50px #1a140b inset !important;
+    -webkit-text-fill-color: #fff !important;
+    transition: background-color 5000s ease-in-out 0s;
+}
+
+/* Botão */
+#pagina-login .btn-primary {
+    background: linear-gradient(to bottom, #d4af37, #b8860b);
+    color: #0f0a05;
+    border: none;
+    padding: 1rem;
+    border-radius: 8px;
+    font-family: var(--fonte-titulo, inherit);
+    font-size: 1.1rem;
+    font-weight: bold;
+    cursor: pointer;
+    margin-top: 1rem;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+#pagina-login .btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(212, 175, 55, 0.4);
+}

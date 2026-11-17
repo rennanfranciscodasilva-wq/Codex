@@ -1,12 +1,6 @@
 <main id="pagina-ficha-nova" class="screen">
 
-    <!-- Container do Cabeçalho Fixo (COM O TÍTULO INJETADO DIRETAMENTE) -->
-    <header class="ficha-header-fixo" id="home-btn-container">
-        <div id="btn-voltar-home" style="display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; height: 100%; cursor: pointer;">
-            <h1 style="font-family: 'Cinzel', serif; font-size: 4rem; color: #d4af37; text-shadow: 0 0 20px rgba(240, 196, 74, 0.8); margin: 0; line-height: 1; font-weight: 900;">CODEX</h1>
-            <span style="font-family: 'Cinzel', serif; font-size: 1.2rem; color: #f0c44a; letter-spacing: 8px; margin-top: 10px;">⚔ RPG ⚔</span>
-        </div>
-    </header>
+    <!-- O CABEÇALHO FOI REMOVIDO DAQUI POIS JÁ É INJETADO GLOBALMENTE PELO CICLO DE VIDA -->
 
     <div class="ficha-nova-area">
         <!-- Wrapper do Zoom (Tudo aqui dentro cresce/diminui junto) -->
@@ -32,7 +26,6 @@
                         </div>
                         
                         <div class="folha-cabecalho-acoes">
-                            <!-- BOTÕES DE EXPORTAR E IMPORTAR JSON -->
                             <button id="btn-exportar-ficha" class="btn-acao-header" title="Exportar Ficha (JSON)">
                                 <i class="fas fa-file-export"></i>
                             </button>
@@ -40,7 +33,6 @@
                                 <i class="fas fa-file-import"></i>
                             </button>
                             
-                            <!-- BOTÃO LIMPAR -->
                             <button id="btn-limpar-ficha" class="btn-limpar-ficha" title="Limpar Ficha">
                                 <i class="fas fa-broom"></i> Limpar
                             </button>
@@ -70,13 +62,9 @@
                         <button class="folha-btn-ferramenta" id="btn-add-campo" data-tooltip="Adicionar Campo">
                             <i class="fas fa-plus-square"></i>
                         </button>
-                        
-                        <!-- NOVO BOTÃO DE ADICIONAR BLOCO -->
                         <button class="folha-btn-ferramenta" id="btn-add-bloco" data-tooltip="Adicionar Bloco (Selecione um campo)">
                             <i class="fas fa-cube"></i>
                         </button>
-                        
-                        <!-- BOTÕES DE AÇÃO DO ELEMENTO SELECIONADO -->
                         <button class="folha-btn-ferramenta btn-acao-selecao" id="btn-acao-config" data-tooltip="Configurar Selecionado">
                             <i class="fas fa-cog"></i>
                         </button>

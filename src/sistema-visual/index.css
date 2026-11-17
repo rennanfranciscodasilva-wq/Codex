@@ -17,3 +17,6 @@
 /* Componentes funcionais (CSS próprio) */
 @import '../componentes/rodape/rodape.css';
 @import '../componentes/cabecalho/cabecalho.css';
+
+/* NOVO: Notificações */
+@import '../componentes/notificacoes/notificacoes.css'; /* <-- O CAMINHO CORRETO */

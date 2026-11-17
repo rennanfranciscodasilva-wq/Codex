@@ -1,24 +1,23 @@
 /* ============================================================
    CODEX — Estado Global
    Guarda SOMENTE informações realmente compartilhadas.
-   Estado de páginas (ex.: categoria selecionada) fica NA página.
    ============================================================ */
 
 import { observarAutenticacao } from '../servicos/autenticacao/autenticacao.js';
 
 const estadoInicial = {
     tema: 'escuro',
-    usuario: null,        // { uid, email } quando logado
+    usuario: null,          // { uid, email }
     rotaAtual: '/',
-    rotaAnterior: null
+    rotaAnterior: null,
+    personagens: [],        // Lista de personagens do usuário
+    personagemAtivo: null   // O personagem selecionado no cabeçalho
 };
 
 let estado = { ...estadoInicial };
 const ouvintes = new Set();
 
 // Conecta o Firebase ao estado global.
-// O Firebase dispara esse callback assim que o app carrega (verificando sessão salva)
-// e também a cada login, logout ou expiração de sessão.
 observarAutenticacao((userFirebase) => {
     if (userFirebase) {
         definirEstado({
@@ -27,8 +26,15 @@ observarAutenticacao((userFirebase) => {
                 email: userFirebase.email
             }
         });
+        // Busca os personagens assim que o usuário logar
+        carregarPersonagensDoUsuario(userFirebase.uid);
     } else {
-        definirEstado({ usuario: null });
+        // Se deslogar, limpa o usuário E os personagens
+        definirEstado({ 
+            usuario: null,
+            personagens: [],
+            personagemAtivo: null
+        });
     }
 });
 
@@ -41,7 +47,6 @@ export function obterEstado() {
 
 /**
  * Atualiza parte do estado e notifica ouvintes.
- * @param {object} parcial - ex.: { usuario: {...} }
  */
 export function definirEstado(parcial) {
     estado = { ...estado, ...parcial };
@@ -58,16 +63,76 @@ export function resetarEstado() {
 
 /**
  * Registra um ouvinte. Retorna função para cancelar.
- * @param {(estado: object) => void} callback
  */
 export function observarEstado(callback) {
     ouvintes.add(callback);
     return () => ouvintes.delete(callback);
 }
 
+/**
+ * Função específica para definir o personagem ativo.
+ */
+export function definirPersonagemAtivo(personagem) {
+    definirEstado({ personagemAtivo: personagem });
+}
+
+/**
+ * Função específica para atualizar a lista de personagens.
+ */
+export function definirListaPersonagens(lista) {
+    definirEstado({ personagens: lista });
+}
+
+/**
+ * Notifica todos os ouvintes sobre mudanças.
+ */
 function notificar() {
     const copia = { ...estado };
     ouvintes.forEach((cb) => {
         try { cb(copia); } catch (e) { console.error('[estado] ouvinte falhou:', e); }
     });
+}
+
+/* ============================================================
+   FUNÇÃO: Buscar no Cache + Firebase (Mantendo Únicos)
+   ============================================================ */
+export async function carregarPersonagensDoUsuario(uid) {
+    try {
+        // 1. Busca no Cache (LocalStorage)
+        const cacheStr = localStorage.getItem(`codex_personagens_${uid}`);
+        let personagensCache = cacheStr ? JSON.parse(cacheStr) : [];
+
+        // 2. Busca no Firebase (Simulação por enquanto)
+        // TODO: Substitua este bloco pela chamada real ao Firestore no futuro.
+        const personagensFirebase = await new Promise((resolve) => {
+            setTimeout(() => {
+                // Quando o Firebase for conectado, ele vai retornar um array aqui.
+                // Para testar o visual do menu sem Firebase, você pode simular:
+                /*
+                resolve([
+                    { id: '1', nome: 'Kael, o Bárbaro', sistema: 'Vastura' },
+                    { id: '2', nome: 'Lyra, a Feiticeira', sistema: 'Vastura' },
+                    { id: '3', nome: 'Thorin', sistema: 'Old Dragon' }
+                ]);
+                */
+                resolve([]); 
+            }, 500);
+        });
+
+        // 3. Junta as duas listas e remove duplicados
+        const todosPersonagens = [...personagensCache, ...personagensFirebase];
+        
+        // O Map garante que se um personagem estiver nos dois lugares, ele apareça só uma vez.
+        const unicos = new Map();
+        todosPersonagens.forEach(p => unicos.set(p.id, p));
+        
+        const listaFinal = Array.from(unicos.values());
+
+        // 4. Atualiza o estado global (o cabeçalho vai reagir a isso)
+        definirEstado({ personagens: listaFinal });
+
+    } catch (erro) {
+        console.error('[estado] Erro ao carregar personagens:', erro);
+        definirEstado({ personagens: [] });
+    }
 }

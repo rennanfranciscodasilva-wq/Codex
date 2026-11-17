@@ -9,6 +9,7 @@ const BASE_PAGINA = '/src/paginas';
 
 const rotas = {
     '/inicio':              { pasta: 'inicio',       css: true, js: true },
+    '/login':               { pasta: 'login',        css: true, js: true },
     '/ficha':               { pasta: 'ficha',        css: true, js: true },
     '/ficha/nova':          { pasta: 'ficha-nova',   css: true, js: true },
     '/ficha/old-dragon':    { pasta: 'placeholder',  css: true, js: true },

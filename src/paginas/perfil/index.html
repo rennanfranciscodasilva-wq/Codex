@@ -1,61 +1,145 @@
-<!-- ============================================================
-     CODEX — Página: Perfil do Jogador
-     ============================================================ -->
-
 <main id="pagina-perfil" class="screen">
-    <!-- O cabeçalho CodeX será injetado aqui pelo script.js -->
-
     <div class="perfil-conteudo-wrapper">
         <aside class="perfil-sidebar">
             <div class="perfil-user-header">
-                <div class="perfil-avatar">
-                    <i class="fas fa-hat-wizard"></i>
+                <!-- Avatar clicável -->
+                <div class="perfil-avatar-container" id="btn-editar-avatar">
+                    <div class="perfil-avatar" id="avatar-preview">
+                        <i class="fas fa-hat-wizard" id="avatar-icon-padrao"></i>
+                        <img id="avatar-imagem" src="" alt="Foto de Perfil" style="display: none; width: 100%; height: 100%; object-fit: cover;">
+                    </div>
+                    <div class="perfil-avatar-edit-icon"><i class="fas fa-cog"></i></div>
                 </div>
+
+                <!-- Nome e E-mail -->
                 <h2 class="perfil-nome" id="profile-name">Carregando...</h2>
-                <p class="perfil-email" id="profile-email">...</p>
+                
+                <div class="perfil-email-wrapper">
+                    <p class="perfil-email" id="profile-email">...</p>
+                    <button class="btn-toggle-visibilidade" id="btn-toggle-email" title="Mostrar/Ocultar E-mail">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                </div>
+                
+                <button class="btn-editar-perfil" id="btn-editar-perfil">
+                    <i class="fas fa-pen"></i> Editar Perfil
+                </button>
             </div>
             
             <ul class="perfil-nav">
                 <li class="perfil-nav-item active" data-tab="fichas"><i class="fas fa-scroll"></i> Minhas Fichas</li>
-                <li class="perfil-nav-item" data-tab="favoritos"><i class="fas fa-star"></i> Favoritos</li>
+                <li class="perfil-nav-item" data-tab="biblioteca"><i class="fas fa-book-open"></i> Minha Biblioteca</li>
                 <li class="perfil-nav-item" data-tab="config"><i class="fas fa-cog"></i> Configurações</li>
             </ul>
 
-            <button class="btn-secondary perfil-btn-logout" id="btn-logout">
-                <i class="fas fa-door-open"></i> Sair da Conta
-            </button>
+            <div class="perfil-sidebar-footer">
+                <button class="perfil-btn-logout" id="btn-logout">
+                    <i class="fas fa-door-open"></i> Sair da Conta
+                </button>
+            </div>
         </aside>
 
         <div class="perfil-content">
-            <!-- Aba: Fichas -->
+            <!-- Aba: Fichas (Agora Vazia por Padrão) -->
             <div class="perfil-tab-content active" id="tab-content-fichas">
-                <h1 class="perfil-page-title">Minhas Fichas</h1>
-                <div class="perfil-cards-grid">
-                    <div class="perfil-card">
-                        <i class="fas fa-user-shield"></i>
-                        <h3>Kael, o Bárbaro</h3>
-                        <p>Nível 5 • Old Dragon</p>
+                <div class="perfil-header-aba">
+                    <h1 class="perfil-page-title">Minhas Fichas</h1>
+                    <button class="btn-edit-mode" id="btn-modo-edicao-fichas" title="Organizar Fichas">
+                        <i class="fas fa-pen"></i>
+                    </button>
+                </div>
+                
+                <div class="perfil-fichas-categorias" id="perfil-fichas-categorias">
+                    <!-- O JavaScript vai preencher isso. Se estiver vazio, mostra a mensagem abaixo. -->
+                    <div class="empty-state" id="empty-state-fichas" style="text-align: center; color: #888; margin-top: 2rem;">
+                        <i class="fas fa-scroll" style="font-size: 3rem; margin-bottom: 1rem; color: rgba(212, 175, 55, 0.2);"></i>
+                        <p>Você ainda não criou nenhuma ficha.</p>
+                        <a href="#/ficha/nova" style="color: var(--cor-dourado); text-decoration: none; font-weight: bold;">Criar minha primeira ficha</a>
                     </div>
-                    <a href="#/ficha/nova" class="perfil-card perfil-card-new" style="text-decoration: none;">
-                        <i class="fas fa-plus"></i>
-                        <p>Criar Nova Ficha</p>
-                    </a>
                 </div>
             </div>
 
-            <!-- Aba: Favoritos -->
-            <div class="perfil-tab-content" id="tab-content-favoritos">
-                <h1 class="perfil-page-title">Favoritos</h1>
+            <!-- Aba: Biblioteca -->
+            <div class="perfil-tab-content" id="tab-content-biblioteca">
+                <h1 class="perfil-page-title">Minha Biblioteca</h1>
                 <p style="color: #888;">Seus itens, magias e bestiário salvos aparecerão aqui.</p>
             </div>
 
             <!-- Aba: Configurações -->
             <div class="perfil-tab-content" id="tab-content-config">
                 <h1 class="perfil-page-title">Configurações da Conta</h1>
-                <div class="perfil-config-box">
-                    <p>Em breve você poderá mudar seu nome de aventureiro e gerenciar sua conta.</p>
+                
+                <div class="config-box">
+                    <h3>Informações Pessoais</h3>
+                    <div class="config-item">
+                        <label>Número de Telefone</label>
+                        <input type="tel" class="config-input" placeholder="(11) 99999-9999">
+                    </div>
+                    <div class="config-item">
+                        <label>Endereço de E-mail</label>
+                        <input type="email" class="config-input" id="config-email-input" value="seu-email@exemplo.com" disabled>
+                    </div>
+                </div>
+
+                <div class="config-box danger-zone">
+                    <h3>Zona de Perigo</h3>
+                    <p>Uma vez excluída, sua conta não poderá ser recuperada. Todos os dados serão apagados permanentemente.</p>
+                    <button class="btn-danger" id="btn-excluir-conta">Excluir Conta</button>
                 </div>
             </div>
+        </div>
+    </div>
+
+    <!-- MODAL: EDITAR AVATAR -->
+    <div class="modal-overlay" id="modal-avatar">
+        <div class="modal-box">
+            <button class="modal-close" id="btn-fechar-modal-avatar"><i class="fas fa-times"></i></button>
+            <h2 class="modal-title">Editar Foto de Perfil</h2>
+            
+            <div class="modal-preview">
+                <div class="preview-circle" id="preview-circle">
+                    <img id="preview-img" src="" alt="Preview" style="display: none;">
+                    <i class="fas fa-hat-wizard" id="preview-icon" style="font-size: 3rem; color: var(--cor-dourado);"></i>
+                </div>
+            </div>
+
+            <div class="modal-field">
+                <label>URL da Imagem</label>
+                <input type="text" id="input-url-avatar" class="config-input" placeholder="https://exemplo.com/imagem.png">
+            </div>
+
+            <div class="modal-controls">
+                <div class="control-group">
+                    <label>Zoom</label>
+                    <input type="range" id="range-zoom" min="0.5" max="2" step="0.1" value="1">
+                </div>
+                <div class="control-group">
+                    <label>Posição X</label>
+                    <input type="range" id="range-x" min="-50" max="50" value="0">
+                </div>
+                <div class="control-group">
+                    <label>Posição Y</label>
+                    <input type="range" id="range-y" min="-50" max="50" value="0">
+                </div>
+            </div>
+
+            <button class="btn-primary" id="btn-salvar-avatar">Salvar Foto</button>
+        </div>
+    </div>
+
+    <!-- MODAL: EDITAR NOME -->
+    <div class="modal-overlay" id="modal-nome">
+        <div class="modal-box">
+            <button class="modal-close" id="btn-fechar-modal-nome"><i class="fas fa-times"></i></button>
+            <h2 class="modal-title">Editar Nome</h2>
+            <p style="color: #888; margin-bottom: 1.5rem; text-align: center;">Você pode alterar seu nome de aventureiro uma vez por semana.</p>
+            
+            <div class="modal-field">
+                <label>Novo Nome</label>
+                <input type="text" id="input-nome-usuario" class="config-input" placeholder="Seu novo nome...">
+            </div>
+
+            <button class="btn-primary" id="btn-salvar-nome">Salvar Nome</button>
         </div>
     </div>
 </main>

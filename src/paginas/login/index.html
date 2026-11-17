@@ -1,0 +1,44 @@
+<main id="pagina-login" class="screen">
+    
+    <div class="login-container">
+        <div class="section-icon"><i class="fas fa-user-shield"></i></div>
+        <h2 class="section-title-text">Acesso</h2>
+        <p class="section-desc">Entre ou crie sua conta para salvar seu progresso.</p>
+
+        <div class="auth-container">
+            <div class="auth-tabs">
+                <div class="auth-tab active" id="tab-login" role="button">Entrar</div>
+                <div class="auth-tab" id="tab-register" role="button">Registrar</div>
+            </div>
+
+            <form class="auth-form active" id="form-login">
+                <div class="input-group">
+                    <i class="fas fa-envelope"></i>
+                    <input type="email" class="auth-input" id="login-email" placeholder="Email" required>
+                </div>
+                <div class="input-group">
+                    <i class="fas fa-lock"></i>
+                    <input type="password" class="auth-input" id="login-password" placeholder="Senha" required>
+                </div>
+                <button type="submit" class="btn-primary">Entrar</button>
+            </form>
+
+            <form class="auth-form" id="form-register">
+                <div class="input-group">
+                    <i class="fas fa-user"></i>
+                    <input type="text" class="auth-input" id="reg-name" placeholder="Nome de Aventureiro" required>
+                </div>
+                <div class="input-group">
+                    <i class="fas fa-envelope"></i>
+                    <input type="email" class="auth-input" id="reg-email" placeholder="Email" required>
+                </div>
+                <div class="input-group">
+                    <i class="fas fa-lock"></i>
+                    <input type="password" class="auth-input" id="reg-password" placeholder="Senha" required>
+                </div>
+                <button type="submit" class="btn-primary">Criar Conta</button>
+            </form>
+        </div>
+    </div>
+
+</main>
