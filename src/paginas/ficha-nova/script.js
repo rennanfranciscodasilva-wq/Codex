@@ -10,46 +10,74 @@ import {
     estado,
     salvarEstado,
     renderizarPaineis,
-    renderizarMenu
+    renderizarMenu,
+    getPaginaAtiva
 } from './modulos/paginas/index.js';
 
-let _handlerModoEdicao = null;
-let _handlerAddCampo = null;
+import { configurarWizard, abrirWizard, desmontarWizard } from './modulos/wizard/wizard.js';
 
 export function montarPagina(container) {
-    // Delay de segurança para o Vite terminar de injetar o HTML antes de buscar os elementos
     setTimeout(() => {
         iniciarFichaNova(container);
     }, 50);
 }
 
 function iniciarFichaNova(container) {
+    container.innerHTML = '';
+
+    const htmlFicha = `
+        <main id="pagina-ficha-nova" class="screen">
+            <div class="ficha-nova-area">
+                <div class="folha-wrapper" id="folha-wrapper">
+                    <div class="folha-layout">
+                        <div class="folha-menu-lateral esquerdo">
+                            <div class="folha-paginas-menu" id="folha-paginas-menu">
+                                <button class="folha-pagina-btn add" id="folha-pagina-add" title="Nova Página">
+                                    <i class="fas fa-plus"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="folha" id="folha-elemento">
+                            <div class="folha-cabecalho">
+                                <div class="folha-titulos-wrapper">
+                                    <h1 class="folha-sistema-nome" id="folha-sistema-nome"></h1>
+                                    <input type="text" class="folha-titulo-pagina" id="folha-titulo-pagina" value="Página 1" spellcheck="false">
+                                    <div class="folha-descricao-pagina" id="folha-descricao-pagina"></div>
+                                </div>
+                                <div class="folha-cabecalho-acoes">
+                                    <button id="btn-exportar-ficha" class="btn-acao-header" title="Exportar"><i class="fas fa-file-export"></i></button>
+                                    <button id="btn-importar-ficha" class="btn-acao-header" title="Importar"><i class="fas fa-file-import"></i></button>
+                                    <button id="btn-limpar-ficha" class="btn-limpar-ficha" title="Limpar"><i class="fas fa-broom"></i> Limpar</button>
+                                    <div class="indicador-zoom" id="indicador-zoom">50%</div>
+                                </div>
+                            </div>
+                            <div class="folha-conteudo" id="folha-conteudo"></div>
+                        </div>
+                        <div class="folha-menu-lateral direito">
+                            <button class="folha-btn-ferramenta" id="btn-toggle-animacao" data-tooltip="Animação"><i class="fas fa-film"></i></button>
+                            <button class="folha-btn-ferramenta principal" id="btn-modo-edicao" data-tooltip="Modo Edição"><i class="fas fa-pen"></i></button>
+                            <div class="folha-ferramentas-extras" id="folha-ferramentas-extras">
+                                <button class="folha-btn-ferramenta" id="btn-modo-layout" data-tooltip="Modo Livre"><i class="fas fa-arrows-up-down-left-right"></i></button>
+                                <button class="folha-btn-ferramenta" id="btn-add-campo" data-tooltip="Adicionar Campo"><i class="fas fa-plus-square"></i></button>
+                                <button class="folha-btn-ferramenta" id="btn-add-bloco" data-tooltip="Adicionar Bloco"><i class="fas fa-cube"></i></button>
+                                <button class="folha-btn-ferramenta btn-acao-selecao" id="btn-acao-config" data-tooltip="Configurar"><i class="fas fa-cog"></i></button>
+                                <button class="folha-btn-ferramenta btn-acao-selecao" id="btn-acao-copiar" data-tooltip="Copiar"><i class="fas fa-copy"></i></button>
+                                <button class="folha-btn-ferramenta btn-acao-selecao" id="btn-acao-excluir" data-tooltip="Excluir"><i class="fas fa-trash-alt"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    `;
+    container.innerHTML = htmlFicha;
+
     const pagina = container.querySelector('#pagina-ficha-nova');
-    if (!pagina) {
-        console.warn("Ficha Nova: Aguardando DOM...");
-        return;
-    }
+    if (!pagina) return;
 
-    // --- EVENTO DO CABEÇALHO (O HTML já está injetado no index.html) ---
-    const btnVoltar = pagina.querySelector('#btn-voltar-home');
-    if (btnVoltar) {
-        // Clona o botão para remover qualquer listener antigo e evitar duplicação
-        const novoBtn = btnVoltar.cloneNode(true);
-        btnVoltar.parentNode.replaceChild(novoBtn, btnVoltar);
-        novoBtn.addEventListener('click', () => {
-            window.location.hash = '#/inicio';
-        });
-    }
-
-    if (pagina.dataset.eventosAtivos === 'true') return;
-    pagina.dataset.eventosAtivos = 'true';
-
-    // 1. Zoom
     const wrapper = pagina.querySelector('#folha-wrapper');
-    if (!wrapper) return;
-    iniciarZoom(pagina, wrapper);
+    if (wrapper) iniciarZoom(pagina, wrapper);
 
-    // 2. Sistema de páginas
     iniciarPaginas({
         menu: pagina.querySelector('#folha-paginas-menu'),
         btnAdd: pagina.querySelector('#folha-pagina-add'),
@@ -57,118 +85,73 @@ function iniciarFichaNova(container) {
         conteudo: pagina.querySelector('#folha-conteudo')
     });
 
-    // 3. Modo Edição
+    // Garante que o nome do sistema apareça logo após iniciar
+    setTimeout(() => {
+        const elSistemaNome = document.querySelector('#folha-sistema-nome');
+        if (elSistemaNome) {
+            elSistemaNome.textContent = estado.nomeSistema || '';
+            elSistemaNome.style.display = estado.nomeSistema ? 'block' : 'none';
+        }
+    }, 0);
+
     const btnModoEdicao = pagina.querySelector('#btn-modo-edicao');
     const menuDireito = pagina.querySelector('.folha-menu-lateral.direito');
-    if (!btnModoEdicao || !menuDireito) return;
-
-    const aplicarModoEdicao = (ativo) => {
-        pagina.classList.toggle('modo-edicao', ativo);
-        menuDireito.classList.toggle('editando', ativo);
-        atualizarModoEdicao();
-    };
-
-    aplicarModoEdicao(false);
-
-    _handlerModoEdicao = () => {
-        aplicarModoEdicao(!pagina.classList.contains('modo-edicao'));
-    };
-    btnModoEdicao.addEventListener('click', _handlerModoEdicao);
-
-    // 4. Ferramentas (Adicionar Campo)
-    const btnAddCampo = pagina.querySelector('#btn-add-campo');
-    if (btnAddCampo) {
-        _handlerAddCampo = (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            if (!pagina.classList.contains('modo-edicao')) {
-                alert("Ative o Modo Edição primeiro!");
-                return;
-            }
-            acionarAdicionarCampo();
+    if (btnModoEdicao && menuDireito) {
+        const aplicarModoEdicao = (ativo) => {
+            pagina.classList.toggle('modo-edicao', ativo);
+            menuDireito.classList.toggle('editando', ativo);
+            atualizarModoEdicao();
         };
-        btnAddCampo.addEventListener('click', _handlerAddCampo);
+        aplicarModoEdicao(false);
+        btnModoEdicao.addEventListener('click', () => aplicarModoEdicao(!pagina.classList.contains('modo-edicao')));
     }
 
-    // 5. Arrastar Câmera (Pan)
-    configurarArrastarCamera(pagina);
-}
+    // --- VINCULA O BOTÃO DE ADICIONAR CAMPO ---
+    configurarBotaoAdicionarCampo();
 
-/* --- FUNÇÃO: ARRASTAR CÂMERA (PAN) --- */
-function configurarArrastarCamera(pagina) {
-    const area = pagina.querySelector('.ficha-nova-area');
-    if (!area) return;
-
-    let isDown = false;
-    let startX, startY;
-    let scrollLeft, scrollTop;
-
-    area.addEventListener('contextmenu', (e) => {
-        e.preventDefault();
+    configurarWizard({
+        renderizarPaineis: renderizarPaineis,
+        renderizarMenu: renderizarMenu
     });
 
-    area.addEventListener('pointerdown', (e) => {
-        const isRightClick = e.button === 2;
-        const isTouch = e.pointerType === 'touch';
-        
-        if (!isRightClick && !isTouch) return;
-
-        if (e.target.closest('.bloco-imagem')) {
+    setTimeout(() => {
+        const forcarWizard = localStorage.getItem('codex_abrir_wizard');
+        if (forcarWizard === 'true') {
+            localStorage.removeItem('codex_abrir_wizard');
+            abrirWizard();
             return;
         }
 
-        isDown = true;
-        area.style.cursor = 'grabbing';
+        // Só abre o Wizard automaticamente se não houver sistemas criados
+        const sistemas = JSON.parse(localStorage.getItem('codex_sistemas') || '[]');
+        const pag = getPaginaAtiva();
+        const fichaVazia = !pag || !pag.paineis || pag.paineis.length === 0;
         
-        startX = e.pageX - area.offsetLeft;
-        startY = e.pageY - area.offsetTop;
-        scrollLeft = area.scrollLeft;
-        scrollTop = area.scrollTop;
+        if (fichaVazia && sistemas.length === 0) {
+            abrirWizard();
+        }
+    }, 300);
+}
 
-        e.preventDefault(); 
+function configurarBotaoAdicionarCampo() {
+    const btnAddCampo = document.querySelector('#btn-add-campo');
+    if (!btnAddCampo) return;
+
+    // Clona para remover listeners antigos e evitar duplicação
+    const novoBtn = btnAddCampo.cloneNode(true);
+    btnAddCampo.parentNode.replaceChild(novoBtn, btnAddCampo);
+
+    novoBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        acionarAdicionarCampo();
     });
-
-    area.addEventListener('pointermove', (e) => {
-        if (!isDown) return;
-        
-        const x = e.pageX - area.offsetLeft;
-        const y = e.pageY - area.offsetTop;
-        
-        const walkX = (x - startX) * 1.5; 
-        const walkY = (y - startY) * 1.5;
-        
-        area.scrollLeft = scrollLeft - walkX;
-        area.scrollTop = scrollTop - walkY;
-    });
-
-    const pararArrasto = () => {
-        if (!isDown) return;
-        isDown = false;
-        area.style.cursor = 'default';
-    };
-
-    area.addEventListener('pointerup', pararArrasto);
-    area.addEventListener('pointerleave', pararArrasto);
 }
 
 export function desmontarPagina() {
     const pagina = document.querySelector('#pagina-ficha-nova');
     if (!pagina) return;
-
-    if (_handlerModoEdicao) {
-        const btn = pagina.querySelector('#btn-modo-edicao');
-        if (btn) btn.removeEventListener('click', _handlerModoEdicao);
-        _handlerModoEdicao = null;
-    }
-    if (_handlerAddCampo) {
-        const btn = pagina.querySelector('#btn-add-campo');
-        if (btn) btn.removeEventListener('click', _handlerAddCampo);
-        _handlerAddCampo = null;
-    }
-
-    pagina.classList.remove('modo-edicao');
-    const menuDireito = pagina.querySelector('.folha-menu-lateral.direito');
-    if (menuDireito) menuDireito.classList.remove('editando');
-
+    desmontarWizard();
+    localStorage.removeItem('codex_wizard_novo_sistema'); // Remove a flag ao sair
     pagina.dataset.eventosAtivos = 'false';
 }

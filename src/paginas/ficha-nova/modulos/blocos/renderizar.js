@@ -3,7 +3,7 @@
    ============================================================ */
 
 import { 
-    estaEmModoEdicao, salvarEstado, areaTransferenciaCodex, setElementoSelecionado
+    estaEmModoEdicao, salvarEstado, setElementoSelecionado
 } from '../paginas/index.js';
 import { calcularFormula, formulaEventBus } from '../automacao.js';
 import { iniciarArrastoBloco, iniciarResizeBloco } from './interacoes.js';
@@ -27,11 +27,21 @@ export function renderizarBloco(bloco, painelPaiId, renderizarPaineisCallback) {
         el.classList.add('expansivel');
     }
 
-    // --- ALÇA DE ARRASTO (VISUAL) ---
+    // --- ALÇA DE ARRASTO ---
     const alcaArrasto = document.createElement('div');
     alcaArrasto.className = 'bloco-alca-arrasto';
     alcaArrasto.innerHTML = '<i class="fas fa-grip-vertical"></i>';
-    alcaArrasto.title = 'Arraste para mover';
+    alcaArrasto.title = 'Arraste para mover o bloco';
+    
+    // O ARRASTO AGORA É FEITO DIRETAMENTE NA ALÇA (corrige o bug)
+    alcaArrasto.addEventListener('pointerdown', (e) => {
+        if (!estaEmModoEdicao()) return;
+        e.preventDefault();
+        e.stopPropagation();
+        setElementoSelecionado('bloco', painelPaiId, bloco.id);
+        iniciarArrastoBloco(e, bloco, painelPaiId);
+    });
+    
     el.appendChild(alcaArrasto);
 
     // --- TÍTULO ---
@@ -49,7 +59,7 @@ export function renderizarBloco(bloco, painelPaiId, renderizarPaineisCallback) {
 
     el.appendChild(conteudoInterno);
 
-    // --- ARRASTAR E SELECIONAR ---
+    // --- SELECIONAR AO CLICAR (NO MODO EDIÇÃO) ---
     el.addEventListener('pointerdown', (e) => {
         if (!estaEmModoEdicao()) return;
         
@@ -59,36 +69,29 @@ export function renderizarBloco(bloco, painelPaiId, renderizarPaineisCallback) {
         }
 
         if (e.target.classList.contains('bloco-borda')) return;
-        if (e.target.closest('.bloco-img-zoom-btn') || e.target.closest('.bloco-img-engrenagem-btn')) return;
+        if (e.target.closest('.bloco-img-engrenagem-btn')) return;
         if (e.target.classList.contains('bloco-titulo-input')) return;
+        if (e.target.closest('.bloco-alca-arrasto')) return; // A alça já lida com o arrasto
 
         e.stopPropagation(); 
-        e.preventDefault(); 
-        
         setElementoSelecionado('bloco', painelPaiId, bloco.id);
-        iniciarArrastoBloco(e, bloco, painelPaiId);
     });
 
-    // --- BORDAS ---
+    // --- BORDAS DE RESIZE ---
     ['topo', 'base', 'esq', 'dir'].forEach(lado => {
         const borda = document.createElement('div');
         borda.className = `bloco-borda bloco-borda-${lado}`;
         borda.dataset.lado = lado;
         
-        // Adiciona a classe que permite visualizar no modo jogador se for expansível
         if (isExpansivel) {
             borda.classList.add('borda-expansivel');
         }
         
         borda.addEventListener('pointerdown', (e) => {
-            // Se NÃO estiver no modo edição E NÃO for expansível, cancela o resize
             if (!estaEmModoEdicao() && !isExpansivel) return;
-            
-            // Se estiver no modo jogador e for expansível, só permite redimensionar pela base ou topo
             if (!estaEmModoEdicao() && isExpansivel) {
                 if (lado === 'esq' || lado === 'dir') return;
             }
-            
             e.stopPropagation();
             setElementoSelecionado('bloco', painelPaiId, bloco.id);
             iniciarResizeBloco(e, bloco, lado, painelPaiId);
@@ -254,7 +257,7 @@ function criarConteudoNumerico(bloco, el) {
     return numWrapper;
 }
 
-/* --- CONTEÚDO IMAGEM --- */
+/* --- CONTEÚDO IMAGEM (APENAS VISUAL) --- */
 function criarConteudoImagem(bloco, painelPaiId) {
     const imgWrapper = document.createElement('div');
     imgWrapper.className = 'bloco-imagem-wrapper';
@@ -265,7 +268,7 @@ function criarConteudoImagem(bloco, painelPaiId) {
     imgWrapper.style.display = 'flex';
     imgWrapper.style.alignItems = 'center';
     imgWrapper.style.justifyContent = 'center';
-    imgWrapper.style.pointerEvents = 'auto';
+    imgWrapper.style.pointerEvents = 'none';
 
     const img = document.createElement('img');
     img.className = 'bloco-imagem';
@@ -282,79 +285,27 @@ function criarConteudoImagem(bloco, painelPaiId) {
     };
 
     img.style.maxWidth = 'none';
-    img.style.cursor = estaEmModoEdicao() ? 'grab' : 'move';
+    img.style.pointerEvents = 'none';
+    img.style.userSelect = 'none';
     img.style.transition = 'transform 0.15s ease-out';
     aplicarTransform();
-
-    img.addEventListener('pointerdown', (e) => {
-        if (estaEmModoEdicao()) return;
-        if (e.button === 2) return;
-        e.stopPropagation();
-
-        img.style.cursor = 'grabbing';
-        let startX = e.clientX, startY = e.clientY, origX = bloco.imgX, origY = bloco.imgY;
-
-        const onMove = (ev) => {
-            const zoom = bloco.imgZoom || 1;
-            bloco.imgX = origX + (ev.clientX - startX) / zoom;
-            bloco.imgY = origY + (ev.clientY - startY) / zoom;
-            aplicarTransform();
-        };
-
-        const onUp = () => {
-            img.style.cursor = 'move';
-            document.removeEventListener('pointermove', onMove);
-            document.removeEventListener('pointerup', onUp);
-            salvarEstado();
-        };
-
-        document.addEventListener('pointermove', onMove);
-        document.addEventListener('pointerup', onUp);
-    });
-
-    const btnMenos = document.createElement('button');
-    btnMenos.className = 'bloco-img-zoom-btn bloco-img-zoom-menos';
-    btnMenos.innerHTML = '<i class="fas fa-minus"></i>';
-    btnMenos.title = 'Diminuir Zoom';
-    btnMenos.addEventListener('pointerdown', (e) => e.stopPropagation());
-    btnMenos.addEventListener('click', (e) => {
-        e.stopPropagation();
-        if (estaEmModoEdicao()) return;
-        let novoZoom = (bloco.imgZoom || 1) - 0.1;
-        if (novoZoom < 0.1) novoZoom = 0.1;
-        bloco.imgZoom = novoZoom;
-        aplicarTransform(); salvarEstado();
-    });
-
-    const btnMais = document.createElement('button');
-    btnMais.className = 'bloco-img-zoom-btn bloco-img-zoom-mais';
-    btnMais.innerHTML = '<i class="fas fa-plus"></i>';
-    btnMais.title = 'Aumentar Zoom';
-    btnMais.addEventListener('pointerdown', (e) => e.stopPropagation());
-    btnMais.addEventListener('click', (e) => {
-        e.stopPropagation();
-        if (estaEmModoEdicao()) return;
-        let novoZoom = (bloco.imgZoom || 1) + 0.1;
-        if (novoZoom > 5) novoZoom = 5;
-        bloco.imgZoom = novoZoom;
-        aplicarTransform(); salvarEstado();
-    });
 
     const btnEngrenagemImg = document.createElement('button');
     btnEngrenagemImg.className = 'bloco-img-engrenagem-btn';
     btnEngrenagemImg.innerHTML = '<i class="fas fa-cog"></i>';
     btnEngrenagemImg.title = 'Configurar Imagem';
+    btnEngrenagemImg.style.pointerEvents = 'auto';
     btnEngrenagemImg.addEventListener('pointerdown', (e) => e.stopPropagation());
     btnEngrenagemImg.addEventListener('click', (e) => {
         e.stopPropagation();
-        window.abrirBottomSheetBloco(painelPaiId, bloco.id, true);
+        if (window.abrirBottomSheetBloco) {
+            window.abrirBottomSheetBloco(painelPaiId, bloco.id, false);
+        }
     });
 
     if (!bloco.urlImagem) img.style.display = 'none';
     
     imgWrapper.appendChild(img);
-    imgWrapper.appendChild(btnMenos);
-    imgWrapper.appendChild(btnMais);
     imgWrapper.appendChild(btnEngrenagemImg);
     return imgWrapper;
 }

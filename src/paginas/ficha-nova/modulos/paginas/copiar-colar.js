@@ -16,6 +16,7 @@ import {
 let refsRenderizar = null;
 let refsTrocarPagina = null;
 let refsEncontrarSlot = null;
+let campoSelecionadoId = null;
 
 export function configurarCopiarColar(callbacks) {
     refsRenderizar = callbacks.renderizarPaineis;
@@ -25,8 +26,7 @@ export function configurarCopiarColar(callbacks) {
     if (window._atalhosCodexConfigurados === true) return;
     window._atalhosCodexConfigurados = true;
 
-    let campoSelecionadoId = null;
-
+    // Seleciona o campo ao clicar
     document.addEventListener('pointerdown', (e) => {
         const painelEl = e.target.closest('.painel');
         if (painelEl) {
@@ -39,6 +39,7 @@ export function configurarCopiarColar(callbacks) {
         }
     });
 
+    // Atalho de teclado (Desktop)
     document.addEventListener('keydown', (e) => {
         if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'v') {
             if (!estaEmModoEdicao() || !areaTransferenciaCodex.tipo) return;
@@ -58,55 +59,105 @@ export function copiarPagina(id) {
     alert("Página copiada! Aperte Ctrl+V na folha para colar.");
 }
 
-function colarElemento(campoSelecionadoId) {
+export function copiarElemento(tipo, dados) {
+    areaTransferenciaCodex.tipo = tipo;
+    areaTransferenciaCodex.dados = JSON.parse(JSON.stringify(dados));
+    mostrarToastColar();
+}
+
+/* ============================================================
+   TOAST FLUTUANTE PARA O CELULAR
+   ============================================================ */
+function mostrarToastColar() {
+    // Remove toast antigo se houver
+    document.querySelector('#codex-toast-colar')?.remove();
+
+    const toast = document.createElement('div');
+    toast.id = 'codex-toast-colar';
+    toast.style.cssText = `
+        position: fixed;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: #1a140b;
+        border: 1px solid #d4af37;
+        color: #f0c44a;
+        padding: 12px 20px;
+        border-radius: 30px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+        z-index: 100000;
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        font-family: var(--fonte-titulo, inherit);
+        font-size: 0.9rem;
+        animation: slideUp 0.3s ease-out;
+    `;
+
+    toast.innerHTML = `
+        <span>Bloco copiado!</span>
+        <button id="btn-toast-colar" style="background: #d4af37; color: #1a140b; border: none; padding: 6px 12px; border-radius: 20px; font-weight: bold; cursor: pointer;">
+            <i class="fas fa-paste"></i> Colar
+        </button>
+        <button id="btn-toast-fechar" style="background: transparent; color: #ff8a8a; border: none; cursor: pointer; font-size: 1.2rem;">
+            <i class="fas fa-times"></i>
+        </button>
+    `;
+
+    document.body.appendChild(toast);
+
+    document.querySelector('#btn-toast-colar').onclick = () => {
+        colarElemento(campoSelecionadoId);
+        toast.remove();
+    };
+
+    document.querySelector('#btn-toast-fechar').onclick = () => {
+        toast.remove();
+    };
+}
+
+/* ============================================================
+   LÓGICA DE COLAR
+   ============================================================ */
+export function colarElemento(campoIdForcado = null) {
     const item = areaTransferenciaCodex;
     if (!item || !item.tipo) return;
 
-    if (item.tipo === 'pagina') {
-        if (estado.paginas.length >= MAX_PAGINAS) return alert("Limite de páginas atingido.");
-        const novaPag = JSON.parse(JSON.stringify(item.dados));
-        novaPag.id = gerarId('pag_');
-        novaPag.nome = gerarNomeUnico(novaPag.nome, estado.paginas);
-        
-        novaPag.paineis.forEach(p => {
-            p.id = gerarId('p_');
-            p.titulo = gerarNomeUnico(p.titulo, novaPag.paineis);
-            p.x += 20; p.y += 20;
-            p.blocos.forEach(b => { b.id = gerarId('b_'); });
-        });
-        
-        estado.paginas.push(novaPag);
-        salvarEstado();
-        if (refsTrocarPagina) refsTrocarPagina(novaPag.id);
+    const campoIdParaUsar = campoIdForcado || campoSelecionadoId;
 
-    } else if (item.tipo === 'campo') {
-        if (!campoSelecionadoId) {
-            const pag = getPaginaAtiva();
-            if (!pag) return;
-            const novoCampo = JSON.parse(JSON.stringify(item.dados));
-            novoCampo.id = gerarId('p_');
-            novoCampo.titulo = gerarNomeUnico(novoCampo.titulo, pag.paineis);
-            novoCampo.blocos.forEach(b => { b.id = gerarId('b_'); });
+    // --- VERIFICA SE ESTÁ NO WIZARD ---
+    const isWizard = typeof window._codexWizardObterCampoAtual === 'function' && 
+                     document.querySelector('#pagina-ficha-nova')?.classList.contains('wizard-ativo');
+
+    if (isWizard) {
+        const campoAtual = window._codexWizardObterCampoAtual();
+        if (!campoAtual) return;
+
+        if (item.tipo === 'bloco') {
+            const novoBloco = JSON.parse(JSON.stringify(item.dados));
+            novoBloco.id = gerarId('b_');
+            novoBloco.x = (novoBloco.x || 0) + 20; 
+            novoBloco.y = (novoBloco.y || 0) + 20;
+
+            if (!Array.isArray(campoAtual.blocos)) campoAtual.blocos = [];
+            campoAtual.blocos.push(novoBloco);
             
-            if (refsEncontrarSlot) {
-                const slot = refsEncontrarSlot(pag.paineis, novoCampo.largura, novoCampo.altura);
-                novoCampo.x = slot.x; novoCampo.y = slot.y;
+            if (typeof window._codexWizardAtualizarCampo === 'function') {
+                window._codexWizardAtualizarCampo();
             }
-
-            pag.paineis.push(novoCampo);
-            salvarEstado();
-            if (refsRenderizar) refsRenderizar();
-        } else {
-            alert("Para colar um campo, clique na folha vazia primeiro.");
+            return;
         }
+        return;
+    }
 
-    } else if (item.tipo === 'bloco') {
-        if (!campoSelecionadoId) {
+    // --- FICHA NORMAL ---
+    if (item.tipo === 'bloco') {
+        if (!campoIdParaUsar) {
             alert("Selecione o campo onde deseja colar o bloco primeiro.");
             return;
         }
         const pag = getPaginaAtiva();
-        const painel = pag.paineis.find(p => p.id === campoSelecionadoId);
+        const painel = pag.paineis.find(p => p.id === campoIdParaUsar);
         if (!painel) return;
 
         const novoBloco = JSON.parse(JSON.stringify(item.dados));

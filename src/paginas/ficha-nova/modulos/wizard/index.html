@@ -1,0 +1,58 @@
+/* ============================================================
+   CODEX — Wizard (Barrel File)
+   ============================================================ */
+
+export * from './wizard.js';
+
+    <div id="wizard-overlay" class="hidden">
+
+        <!-- PASSO 1: nome e descrição do sistema -->
+        <div id="wizard-step-1">
+            <h2 class="wizard-title">Criar Novo Sistema</h2>
+            <p class="wizard-desc">Dê um nome e uma descrição para o seu sistema de RPG.</p>
+
+            <div class="wizard-field">
+                <label>Nome do Sistema</label>
+                <input type="text" id="wizard-input-nome-sistema" placeholder="Ex: D&D 5e, Ordem Paranormal...">
+            </div>
+
+            <div class="wizard-field">
+                <label>Descrição Breve</label>
+                <textarea id="wizard-input-desc-sistema" placeholder="Uma breve descrição do seu sistema..." rows="3"></textarea>
+            </div>
+
+            <button id="btn-wizard-proximo">Próximo Passo</button>
+        </div>
+
+        <!-- PASSO 2: barra superior + barra inferior. O conteúdo é a folha real. -->
+        <div id="wizard-step-2">
+
+            <div class="wizard-barra-topo">
+                <h2>Criando Campo <span class="wizard-contador" id="wizard-contador-campos">1</span></h2>
+                <div class="wizard-seletor-pagina">
+                    <label>Página:</label>
+                    <input type="number" id="wizard-input-pagina-destino" value="1" min="1">
+                </div>
+            </div>
+
+            <div class="wizard-barra-acoes">
+                <button id="btn-wizard-proximo-campo">Salvar e Criar Próximo Campo</button>
+                <button id="btn-wizard-finalizar">Finalizar e Ir para Ficha</button>
+            </div>
+
+        </div>
+
+        <!-- Modal interno do wizard -->
+        <div id="wizard-modal-confirmacao" class="hidden">
+            <div class="wizard-modal-box">
+                <h3>Atenção</h3>
+                <p id="wizard-modal-texto">Tem certeza?</p>
+                <div class="wizard-modal-acoes">
+                    <button id="btn-wizard-modal-cancelar">Cancelar</button>
+                    <button id="btn-wizard-modal-confirmar">Sim, Continuar</button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+    <!-- FIM DO WIZARD -->

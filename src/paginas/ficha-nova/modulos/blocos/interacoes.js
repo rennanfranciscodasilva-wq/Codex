@@ -26,9 +26,10 @@ export function iniciarArrastoBloco(e, bloco, painelPaiId) {
     const elArea = document.querySelector(`.painel[data-painel-id="${painelPaiId}"] .painel-conteudo`);
     if (!elBloco || !elArea) return;
 
-    // --- CURSOR DE MÃOZINHA ---
+    // --- CURSOR E BLOQUEIO DE SCROLL NO MOBILE ---
     document.body.style.cursor = 'grabbing';
     elBloco.style.cursor = 'grabbing';
+    elBloco.style.touchAction = 'none'; // Impede o scroll da tela enquanto arrasta
 
     const folha = document.querySelector('#pagina-ficha-nova .folha');
     if (!folha) return;
@@ -60,9 +61,10 @@ export function iniciarArrastoBloco(e, bloco, painelPaiId) {
         document.removeEventListener('pointermove', onMove);
         document.removeEventListener('pointerup', onUp);
         
-        // --- REMOVE O CURSOR DE MÃOZINHA ---
+        // --- REMOVE O CURSOR E O BLOQUEIO DE SCROLL ---
         document.body.style.cursor = 'default';
         elBloco.style.cursor = 'grab';
+        elBloco.style.touchAction = '';
         
         salvarEstado();
     };
@@ -88,6 +90,9 @@ export function iniciarResizeBloco(e, bloco, lado, painelPaiId) {
         if (!isExpansivel) return;
         if (lado === 'esq' || lado === 'dir') return;
     }
+
+    // --- BLOQUEIO DE SCROLL NO MOBILE ---
+    elBloco.style.touchAction = 'none';
 
     const folha = document.querySelector('#pagina-ficha-nova .folha');
     if (!folha) return;
@@ -137,6 +142,7 @@ export function iniciarResizeBloco(e, bloco, lado, painelPaiId) {
     const onUp = () => {
         document.removeEventListener('pointermove', onMove);
         document.removeEventListener('pointerup', onUp);
+        elBloco.style.touchAction = ''; // Libera o scroll novamente
         salvarEstado();
     };
     

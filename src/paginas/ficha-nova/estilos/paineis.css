@@ -27,6 +27,32 @@
     background: #e8dcc0;
 }
 
+/* --- ALÇA DE ARRASTO DO PAINEL (MOBILE FRIENDLY) --- */
+#pagina-ficha-nova .painel-alca-arrasto {
+    display: none;
+    width: 32px;
+    height: 32px;
+    align-items: center;
+    justify-content: center;
+    color: rgba(120, 90, 40, 0.6);
+    font-size: 14px;
+    cursor: grab;
+    margin-right: 6px;
+    flex-shrink: 0;
+    background: rgba(120, 90, 40, 0.08);
+    border-radius: 4px;
+    touch-action: none; /* Apenas a alça bloqueia o scroll */
+}
+
+#pagina-ficha-nova.modo-edicao .painel-alca-arrasto {
+    display: flex;
+}
+
+#pagina-ficha-nova .painel-alca-arrasto:active {
+    background: rgba(120, 90, 40, 0.2);
+    color: #4a3a1a;
+}
+
 #pagina-ficha-nova .painel-titulo {
     flex: 1; width: 100%; background: transparent; border: none; outline: none;
     font-family: var(--fonte-titulo); font-size: 0.95rem; font-weight: 700;
@@ -58,14 +84,13 @@
     z-index: 100 !important;
 }
 
-/* --- ALÇA DE ARRASTO (CANTO INFERIOR DIREITO) --- */
+/* --- ALÇA DE ARRASTO DO BLOCO --- */
 #pagina-ficha-nova .bloco-alca-arrasto {
     position: absolute;
     bottom: 2px;
     right: 2px;
-    
-    width: 18px;
-    height: 18px;
+    width: 32px;
+    height: 32px;
     background: rgba(120, 90, 40, 0.15);
     border: 1px solid rgba(120, 90, 40, 0.3);
     border-radius: 4px;
@@ -73,9 +98,10 @@
     align-items: center;
     justify-content: center;
     color: rgba(120, 90, 40, 0.7);
-    font-size: 10px;
+    font-size: 14px;
     cursor: grab;
     z-index: 10000;
+    touch-action: none; /* Apenas a alça bloqueia o scroll */
 }
 
 #pagina-ficha-nova.modo-edicao .bloco-alca-arrasto {
@@ -88,7 +114,7 @@
     color: #b8860b;
 }
 
-#pagina-ficha-nova .bloco-alca-arrasto:hover {
+#pagina-ficha-nova .bloco-alca-arrasto:active {
     background: rgba(212, 175, 55, 0.4);
     color: #4a3a1a;
 }
@@ -174,7 +200,6 @@
     pointer-events: auto !important; user-select: text !important;
     -webkit-user-select: text !important; z-index: 9999 !important;
     position: relative !important; cursor: text !important;
-    touch-action: manipulation;
 }
 
 #pagina-ficha-nova .bloco-textarea:focus,
@@ -188,16 +213,15 @@
 #pagina-ficha-nova .painel-borda,
 #pagina-ficha-nova .bloco-borda { 
     position: absolute; z-index: 100 !important; display: none; pointer-events: auto; 
+    touch-action: none; /* Bordas bloqueiam o scroll */
 }
 
-/* Mostra bordas no modo edição OU se for expansível no modo jogador */
 #pagina-ficha-nova.modo-edicao .painel-borda,
 #pagina-ficha-nova.modo-edicao .bloco-borda,
 #pagina-ficha-nova .bloco-borda.borda-expansivel { 
     display: block; 
 }
 
-/* Cursor de Resize no modo jogador para blocos expansíveis */
 #pagina-ficha-nova:not(.modo-edicao) .bloco-borda.borda-expansivel.borda-topo,
 #pagina-ficha-nova:not(.modo-edicao) .bloco-borda.borda-expansivel.borda-base {
     cursor: ns-resize;
@@ -207,23 +231,23 @@
 #pagina-ficha-nova .painel-borda-base,
 #pagina-ficha-nova .bloco-borda-topo,
 #pagina-ficha-nova .bloco-borda-base { 
-    left: 8px; right: 8px; height: 8px; cursor: ns-resize; 
+    left: 8px; right: 8px; height: 12px; cursor: ns-resize; 
 }
 #pagina-ficha-nova .painel-borda-esq,
 #pagina-ficha-nova .painel-borda-dir,
 #pagina-ficha-nova .bloco-borda-esq,
 #pagina-ficha-nova .bloco-borda-dir { 
-    top: 8px; bottom: 8px; width: 8px; cursor: ew-resize; 
+    top: 8px; bottom: 8px; width: 12px; cursor: ew-resize; 
 }
 
-#pagina-ficha-nova .painel-borda-topo { top: -4px; }
-#pagina-ficha-nova .painel-borda-base { bottom: -4px; }
-#pagina-ficha-nova .painel-borda-esq { left: -4px; }
-#pagina-ficha-nova .painel-borda-dir { right: -4px; }
-#pagina-ficha-nova .bloco-borda-topo { top: -4px; }
-#pagina-ficha-nova .bloco-borda-base { bottom: -4px; }
-#pagina-ficha-nova .bloco-borda-esq { left: -4px; }
-#pagina-ficha-nova .bloco-borda-dir { right: -4px; }
+#pagina-ficha-nova .painel-borda-topo { top: -6px; }
+#pagina-ficha-nova .painel-borda-base { bottom: -6px; }
+#pagina-ficha-nova .painel-borda-esq { left: -6px; }
+#pagina-ficha-nova .painel-borda-dir { right: -6px; }
+#pagina-ficha-nova .bloco-borda-topo { top: -6px; }
+#pagina-ficha-nova .bloco-borda-base { bottom: -6px; }
+#pagina-ficha-nova .bloco-borda-esq { left: -6px; }
+#pagina-ficha-nova .bloco-borda-dir { right: -6px; }
 
 /* 5. BOTÕES DE ZOOM NA IMAGEM */
 #pagina-ficha-nova .bloco-imagem-wrapper { position: relative; }
@@ -263,11 +287,9 @@
    ============================================================ */
 
 #pagina-ficha-nova .folha.layout-grid {
-    /* Adiciona as linhas do grid sobre o papel */
     background-image: 
         linear-gradient(rgba(120, 90, 40, 0.1) 1px, transparent 1px),
         linear-gradient(90deg, rgba(120, 90, 40, 0.1) 1px, transparent 1px),
-        /* Mantém as texturas originais da folha */
         radial-gradient(circle at 20% 15%, rgba(160, 130, 80, 0.12) 0%, transparent 40%),
         radial-gradient(circle at 80% 70%, rgba(140, 110, 60, 0.10) 0%, transparent 45%),
         radial-gradient(circle at 50% 50%, rgba(255, 248, 230, 0.4) 0%, transparent 70%);
@@ -275,7 +297,6 @@
     background-size: 20px 20px, 20px 20px, 100% 100%, 100% 100%, 100% 100%;
 }
 
-/* Adiciona a textura SVG por cima do grid para manter o aspecto de papel */
 #pagina-ficha-nova .folha.layout-grid::before {
     content: "";
     position: absolute;

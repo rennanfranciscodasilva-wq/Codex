@@ -8,9 +8,11 @@ import { configurarEditorFormula, formulaEventBus } from '../automacao.js';
 let blocoSendoEditadoId = null;
 let painelPaiIdTemp = null;
 let renderizarPaineisCallback = null;
+let renderizarBlocoFn = null;
 
-export function configurarSheetBloco(renderizarCallback) {
+export function configurarSheetBloco(renderizarCallback, renderizarBlocoCallback) {
     renderizarPaineisCallback = renderizarCallback;
+    renderizarBlocoFn = renderizarBlocoCallback;
     
     const sheet = document.querySelector('#bloco-settings-sheet');
     const dragHandle = document.querySelector('#bloco-sheet-header-drag');
@@ -38,6 +40,11 @@ export function configurarSheetBloco(renderizarCallback) {
     const inputUrl = document.querySelector('#bloco-sheet-url');
     const wrapAutomacao = document.querySelector('#bloco-sheet-automacao-wrapper');
 
+    const blocoImgControles = document.querySelector('#bloco-img-controles');
+    const sliderImgZoom = document.querySelector('#bloco-img-zoom');
+    const sliderImgX = document.querySelector('#bloco-img-x');
+    const sliderImgY = document.querySelector('#bloco-img-y');
+
     const btnAddFormula = document.querySelector('#btn-add-formula');
     const resumoFormula = document.querySelector('#bloco-sheet-formula-resumo');
     const textoFormula = document.querySelector('#bloco-sheet-formula-texto');
@@ -45,6 +52,29 @@ export function configurarSheetBloco(renderizarCallback) {
     const btnRemoveFormula = document.querySelector('#btn-remove-formula');
 
     if (!sheet || !selectTipo) return;
+
+    // --- FUNÇÃO AUXILIAR PARA BUSCAR O BLOCO COM SEGURANÇA ---
+    const obterBlocoAtual = () => {
+        // 1. Tenta buscar no Wizard
+        if (typeof window._codexWizardObterCampoAtual === 'function') {
+            const campoAtual = window._codexWizardObterCampoAtual();
+            // Verifica se campoAtual existe E se blocos é um array
+            if (campoAtual && campoAtual.id === painelPaiIdTemp && Array.isArray(campoAtual.blocos)) {
+                return campoAtual.blocos.find(b => b.id === blocoSendoEditadoId) || null;
+            }
+        }
+
+        // 2. Tenta buscar na ficha normal (estado global)
+        const pag = getPaginaAtiva();
+        if (pag && Array.isArray(pag.paineis)) {
+            const p = pag.paineis.find(p => p.id === painelPaiIdTemp);
+            if (p && Array.isArray(p.blocos)) {
+                return p.blocos.find(b => b.id === blocoSendoEditadoId) || null;
+            }
+        }
+        
+        return null;
+    };
 
     configurarEditorFormula(() => {
         if (renderizarPaineisCallback) renderizarPaineisCallback();
@@ -85,35 +115,52 @@ export function configurarSheetBloco(renderizarCallback) {
     }
 
     const atualizarInterface = () => {
+        if (!selectTipo) return;
         const tipo = selectTipo.value;
-        const modelo = tipo === 'textual' ? selectModeloTxt.value : (tipo === 'numerico' ? selectModeloNum.value : '');
-        const temTitulo = modelo.includes('titulo');
+        const modelo = tipo === 'textual' ? selectModeloTxt?.value : (tipo === 'numerico' ? selectModeloNum?.value : '');
+        const temTitulo = modelo && modelo.includes('titulo');
 
-        wrapModeloTxt.style.display = (tipo === 'textual') ? 'flex' : 'none';
-        wrapModeloNum.style.display = (tipo === 'numerico') ? 'flex' : 'none';
-        wrapModificador.style.display = (tipo === 'numerico') ? 'flex' : 'none';
-        wrapAutomacao.style.display = (tipo === 'numerico') ? 'flex' : 'none';
-        wrapAlinhamento.style.display = temTitulo ? 'flex' : 'none';
-        wrapUrl.style.display = (tipo === 'imagem') ? 'flex' : 'none';
+        if (wrapModeloTxt) wrapModeloTxt.style.display = (tipo === 'textual') ? 'flex' : 'none';
+        if (wrapModeloNum) wrapModeloNum.style.display = (tipo === 'numerico') ? 'flex' : 'none';
+        if (wrapModificador) wrapModificador.style.display = (tipo === 'numerico') ? 'flex' : 'none';
+        if (wrapAutomacao) wrapAutomacao.style.display = (tipo === 'numerico') ? 'flex' : 'none';
+        if (wrapAlinhamento) wrapAlinhamento.style.display = temTitulo ? 'flex' : 'none';
+        if (wrapUrl) wrapUrl.style.display = (tipo === 'imagem') ? 'flex' : 'none';
 
-        if (tipo === 'numerico' && selectModificador.value === 'com') {
-            divModCampos.style.display = 'flex';
+        if (blocoImgControles) {
+            const isImagem = tipo === 'imagem';
+            const temUrl = inputUrl && inputUrl.value.trim() !== '';
+            blocoImgControles.style.display = (isImagem && temUrl) ? 'flex' : 'none';
+        }
+
+        if (tipo === 'numerico' && selectModificador?.value === 'com') {
+            if (divModCampos) divModCampos.style.display = 'flex';
         } else {
-            divModCampos.style.display = 'none';
+            if (divModCampos) divModCampos.style.display = 'none';
         }
     };
 
-    selectTipo.addEventListener('change', () => { atualizarInterface(); salvarConfiguracoes(); });
-    selectModeloTxt.addEventListener('change', () => { atualizarInterface(); salvarConfiguracoes(); });
-    selectModeloNum.addEventListener('change', () => { atualizarInterface(); salvarConfiguracoes(); });
-    selectModificador.addEventListener('change', () => { atualizarInterface(); salvarConfiguracoes(); });
-    selectModPosicao.addEventListener('change', salvarConfiguracoes);
-    inputModMedio.addEventListener('input', salvarConfiguracoes);
-    inputModCada.addEventListener('input', salvarConfiguracoes);
-    inputModBonus.addEventListener('input', salvarConfiguracoes);
-    selectAlignTitulo.addEventListener('change', salvarConfiguracoes);
-    selectAlignConteudo.addEventListener('change', salvarConfiguracoes);
-    inputUrl.addEventListener('input', salvarConfiguracoes);
+    if (selectTipo) selectTipo.addEventListener('change', () => { atualizarInterface(); salvarConfiguracoes(); });
+    if (selectModeloTxt) selectModeloTxt.addEventListener('change', () => { atualizarInterface(); salvarConfiguracoes(); });
+    if (selectModeloNum) selectModeloNum.addEventListener('change', () => { atualizarInterface(); salvarConfiguracoes(); });
+    if (selectModificador) selectModificador.addEventListener('change', () => { atualizarInterface(); salvarConfiguracoes(); });
+    if (selectModPosicao) selectModPosicao.addEventListener('change', salvarConfiguracoes);
+    if (inputModMedio) inputModMedio.addEventListener('input', salvarConfiguracoes);
+    if (inputModCada) inputModCada.addEventListener('input', salvarConfiguracoes);
+    if (inputModBonus) inputModBonus.addEventListener('input', salvarConfiguracoes);
+    if (selectAlignTitulo) selectAlignTitulo.addEventListener('change', salvarConfiguracoes);
+    if (selectAlignConteudo) selectAlignConteudo.addEventListener('change', salvarConfiguracoes);
+    
+    if (inputUrl) {
+        inputUrl.addEventListener('input', () => {
+            atualizarInterface();
+            salvarConfiguracoes();
+        });
+    }
+    
+    if (sliderImgZoom) sliderImgZoom.addEventListener('input', salvarConfiguracoes);
+    if (sliderImgX) sliderImgX.addEventListener('input', salvarConfiguracoes);
+    if (sliderImgY) sliderImgY.addEventListener('input', salvarConfiguracoes);
 
     if (btnAddFormula) {
         btnAddFormula.addEventListener('click', () => {
@@ -124,11 +171,7 @@ export function configurarSheetBloco(renderizarCallback) {
     if (btnEditFormula) {
         btnEditFormula.addEventListener('click', (e) => {
             e.preventDefault();
-            const pag = getPaginaAtiva();
-            if (!pag) return;
-            const p = pag.paineis.find(p => p.id === painelPaiIdTemp);
-            if (!p) return;
-            const b = p.blocos.find(b => b.id === blocoSendoEditadoId);
+            const b = obterBlocoAtual();
             if (!b) return;
             window.abrirEditorFormula(painelPaiIdTemp, blocoSendoEditadoId, b.formula);
         });
@@ -138,11 +181,7 @@ export function configurarSheetBloco(renderizarCallback) {
         btnRemoveFormula.addEventListener('click', (e) => {
             e.preventDefault();
             if(confirm("Deseja remover a automatização deste bloco?")) {
-                const pag = getPaginaAtiva();
-                if (!pag) return;
-                const p = pag.paineis.find(p => p.id === painelPaiIdTemp);
-                if (!p) return;
-                const b = p.blocos.find(b => b.id === blocoSendoEditadoId);
+                const b = obterBlocoAtual();
                 if (!b) return;
                 b.formula = [];
                 salvarEstado();
@@ -156,11 +195,7 @@ export function configurarSheetBloco(renderizarCallback) {
     function atualizarResumoFormula() {
         if (!blocoSendoEditadoId || !painelPaiIdTemp || !resumoFormula || !btnAddFormula || !textoFormula) return;
         
-        const pag = getPaginaAtiva();
-        if (!pag) return;
-        const p = pag.paineis.find(p => p.id === painelPaiIdTemp);
-        if (!p) return;
-        const b = p.blocos.find(b => b.id === blocoSendoEditadoId);
+        const b = obterBlocoAtual();
         if (!b) return;
         
         if (b.formula && b.formula.length > 0) {
@@ -180,61 +215,58 @@ export function configurarSheetBloco(renderizarCallback) {
     }
 
     window.abrirBottomSheetBloco = (painelId, blocoId, modoJogador = false) => {
-        const pag = getPaginaAtiva();
-        if (!pag) return;
-        const p = pag.paineis.find(p => p.id === painelId);
-        if (!p || !p.blocos) return;
-        const b = p.blocos.find(b => b.id === blocoId);
-        if (!b) return;
-        
         blocoSendoEditadoId = blocoId;
         painelPaiIdTemp = painelId;
 
-        selectTipo.value = b.tipo || 'textual';
-        
-        if (b.tipo === 'textual') {
-            selectModeloTxt.value = b.modelo || 'padrao';
-        } else if (b.tipo === 'numerico') {
-            selectModeloNum.value = b.modelo || 'padrao';
-            selectModificador.value = b.modTipo || 'sem';
-            selectModPosicao.value = b.modPosicao || 'lado';
-            inputModMedio.value = b.modMedio || 10;
-            inputModCada.value = b.modCada || 2;
-            inputModBonus.value = b.modBonus || 1;
-        } else if (b.tipo === 'imagem') {
-            inputUrl.value = b.urlImagem || '';
-        }
+        const b = obterBlocoAtual();
+        if (!b) {
+            console.error("Bloco não encontrado para configurar:", painelId, blocoId);
+            // Se o bloco não foi encontrado, ainda assim abre a sheet para não travar
+            // mas não tenta ler propriedades de um objeto undefined
+            if (selectTipo) selectTipo.value = 'textual';
+        } else {
+            if (selectTipo) selectTipo.value = b.tipo || 'textual';
+            
+            if (b.tipo === 'textual') {
+                if (selectModeloTxt) selectModeloTxt.value = b.modelo || 'padrao';
+            } else if (b.tipo === 'numerico') {
+                if (selectModeloNum) selectModeloNum.value = b.modelo || 'padrao';
+                if (selectModificador) selectModificador.value = b.modTipo || 'sem';
+                if (selectModPosicao) selectModPosicao.value = b.modPosicao || 'lado';
+                if (inputModMedio) inputModMedio.value = b.modMedio || 10;
+                if (inputModCada) inputModCada.value = b.modCada || 2;
+                if (inputModBonus) inputModBonus.value = b.modBonus || 1;
+            } else if (b.tipo === 'imagem') {
+                if (inputUrl) inputUrl.value = b.urlImagem || '';
+                if (sliderImgZoom) sliderImgZoom.value = b.imgZoom || 1;
+                if (sliderImgX) sliderImgX.value = b.imgX || 0;
+                if (sliderImgY) sliderImgY.value = b.imgY || 0;
+            }
 
-        selectAlignTitulo.value = b.alignTitulo || 'left';
-        selectAlignConteudo.value = b.alignConteudo || 'left';
+            if (selectAlignTitulo) selectAlignTitulo.value = b.alignTitulo || 'left';
+            if (selectAlignConteudo) selectAlignConteudo.value = b.alignConteudo || 'left';
+        }
         
         atualizarInterface();
         atualizarResumoFormula();
 
-        // --- LÓGICA DO MODO JOGADOR (SÓ URL EDITÁVEL) ---
         const todosControles = sheet.querySelectorAll('select, input, button, a');
         if (modoJogador) {
             todosControles.forEach(el => {
-                if (el === inputUrl) {
+                if (el === inputUrl || el === sliderImgZoom || el === sliderImgX || el === sliderImgY || el === btnClose) {
                     el.disabled = false;
                     el.readOnly = false;
                     return;
-                }
-                if (el === btnClose) return;
-                if (el.closest('.sheet-header-drag') && !el.classList.contains('sheet-close-btn')) {
-                    // Permite arrastar o header (o drag é via pointerdown no dragHandle, não no button)
                 }
                 el.disabled = true;
                 el.style.opacity = '0.4';
                 el.style.pointerEvents = 'none';
             });
-            // Reabilita o botão de fechar (que foi pego pelo forEach)
             if (btnClose) {
                 btnClose.disabled = false;
                 btnClose.style.opacity = '1';
                 btnClose.style.pointerEvents = 'auto';
             }
-            // Reabilita o drag handle para mover o modal
             if (dragHandle) {
                 dragHandle.style.pointerEvents = 'auto';
             }
@@ -256,31 +288,44 @@ export function configurarSheetBloco(renderizarCallback) {
     };
 
     function salvarConfiguracoes() {
-        const pag = getPaginaAtiva();
-        if (!pag) return;
-        const p = pag.paineis.find(p => p.id === painelPaiIdTemp);
-        if (!p) return;
-        const b = p.blocos.find(b => b.id === blocoSendoEditadoId);
+        const b = obterBlocoAtual();
         if (!b) return;
 
-        b.tipo = selectTipo.value;
-        b.alignTitulo = selectAlignTitulo.value;
-        b.alignConteudo = selectAlignConteudo.value;
+        if (selectTipo) b.tipo = selectTipo.value;
+        if (selectAlignTitulo) b.alignTitulo = selectAlignTitulo.value;
+        if (selectAlignConteudo) b.alignConteudo = selectAlignConteudo.value;
         
         if (b.tipo === 'textual') {
-            b.modelo = selectModeloTxt.value;
+            if (selectModeloTxt) b.modelo = selectModeloTxt.value;
+            b.valorNumerico = undefined;
+            b.formula = [];
         } else if (b.tipo === 'numerico') {
-            b.modelo = selectModeloNum.value;
-            b.modTipo = selectModificador.value;
-            b.modPosicao = selectModPosicao.value;
-            b.modMedio = inputModMedio.value;
-            b.modCada = inputModCada.value;
-            b.modBonus = inputModBonus.value;
+            if (selectModeloNum) b.modelo = selectModeloNum.value;
+            if (selectModificador) b.modTipo = selectModificador.value;
+            if (selectModPosicao) b.modPosicao = selectModPosicao.value;
+            if (inputModMedio) b.modMedio = inputModMedio.value;
+            if (inputModCada) b.modCada = inputModCada.value;
+            if (inputModBonus) b.modBonus = inputModBonus.value;
+            b.texto = undefined;
         } else if (b.tipo === 'imagem') {
-            b.urlImagem = inputUrl.value;
+            if (inputUrl) b.urlImagem = inputUrl.value;
+            if (sliderImgZoom) b.imgZoom = parseFloat(sliderImgZoom.value);
+            if (sliderImgX) b.imgX = parseFloat(sliderImgX.value);
+            if (sliderImgY) b.imgY = parseFloat(sliderImgY.value);
+            
+            b.texto = undefined;
+            b.valorNumerico = undefined;
+            b.formula = [];
         }
         
         salvarEstado();
-        if (renderizarPaineisCallback) renderizarPaineisCallback(); 
+
+        if (renderizarPaineisCallback) {
+            renderizarPaineisCallback();
+        }
+
+        if (typeof window._codexWizardAtualizarCampo === 'function') {
+            window._codexWizardAtualizarCampo();
+        }
     }
 }

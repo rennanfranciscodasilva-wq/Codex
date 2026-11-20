@@ -71,6 +71,9 @@
     outline: none;
 }
 
+/* ============================================================
+   ÍCONE DO CARD (Suporta Imagem de Capa)
+   ============================================================ */
 #pagina-ficha .ficha-card-icon {
     width: clamp(64px, 12vmin, 88px);
     height: clamp(64px, 12vmin, 88px);
@@ -85,6 +88,8 @@
     margin-bottom: 1.2rem;
     box-shadow: var(--brilho-suave);
     transition: border-color 0.3s ease, color 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease;
+    overflow: hidden; /* Impede que a imagem vaze do círculo */
+    position: relative;
 }
 
 #pagina-ficha .ficha-card:hover .ficha-card-icon,
@@ -95,6 +100,20 @@
     transform: scale(1.08);
 }
 
+/* Efeito de Zoom na imagem de capa ao passar o mouse */
+#pagina-ficha .ficha-card-icon img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+}
+#pagina-ficha .ficha-card:hover .ficha-card-icon img {
+    transform: scale(1.1);
+}
+
+/* ============================================================
+   TEXTOS DO CARD
+   ============================================================ */
 #pagina-ficha .ficha-card-title {
     font-family: var(--fonte-titulo);
     font-size: clamp(1.1rem, 2.4vw, 1.4rem);
@@ -103,6 +122,10 @@
     letter-spacing: 1px;
     margin-bottom: 0.6rem;
     text-shadow: 0 0 10px rgba(184, 134, 11, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px; /* Espaço entre o nome e o ícone de nuvem/pc */
 }
 
 #pagina-ficha .ficha-card-desc {
@@ -111,9 +134,50 @@
     line-height: 1.5;
 }
 
+/* ============================================================
+   BOTÃO DE EXCLUIR SISTEMA (O "X" no canto)
+   ============================================================ */
+#pagina-ficha .btn-deletar-sistema {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(255, 82, 82, 0.3);
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #ff5252;
+    font-size: 1rem;
+    cursor: pointer;
+    z-index: 10;
+    transition: all 0.2s ease;
+    opacity: 0; /* Fica invisível por padrão */
+}
+
+#pagina-ficha .ficha-card:hover .btn-deletar-sistema {
+    opacity: 1; /* Aparece ao passar o mouse no card */
+}
+
+#pagina-ficha .btn-deletar-sistema:hover {
+    background: #ff5252;
+    color: #fff;
+    border-color: #ff5252;
+    transform: scale(1.1);
+    box-shadow: 0 0 10px rgba(255, 82, 82, 0.5);
+}
+
+/* ============================================================
+   RESPONSIVIDADE
+   ============================================================ */
 @media (max-width: 640px) {
     #pagina-ficha .ficha-cards { gap: 1rem; }
     #pagina-ficha .ficha-card { width: clamp(160px, 44vw, 220px); padding: 1.4rem 1rem; }
+    
+    /* No mobile, o botão de excluir fica sempre visível */
+    #pagina-ficha .btn-deletar-sistema { opacity: 1; }
 }
 
 @media (max-width: 420px) {

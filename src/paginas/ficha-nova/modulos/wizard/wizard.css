@@ -1,0 +1,261 @@
+/* ============================================================
+   CODEX — Wizard de Criação de Ficha
+   ============================================================ */
+
+#wizard-overlay {
+    position: fixed !important;
+    inset: 0;
+    z-index: 5000 !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(8, 6, 3, 0.85);
+    backdrop-filter: blur(6px);
+    pointer-events: none; /* O fundo não bloqueia a ficha */
+}
+#wizard-overlay.hidden { display: none !important; }
+
+/* Garante que o passo 1 sempre bloqueie a ficha por trás */
+#wizard-overlay #wizard-step-1 {
+    pointer-events: auto;
+}
+
+#wizard-overlay.wizard-modo-editor {
+    background: transparent !important;
+    backdrop-filter: none !important;
+}
+#wizard-overlay.wizard-modo-editor #wizard-step-1 { display: none !important; }
+#wizard-overlay.wizard-modo-editor #wizard-step-2 { 
+    display: block; 
+    pointer-events: none; 
+}
+
+/* ============================================================
+   PASSO 1: CARD DE NOME E DESCRIÇÃO
+   ============================================================ */
+#wizard-step-1 {
+    width: 100%;
+    max-width: 520px;
+    background: rgba(20, 15, 8, 0.95);
+    border: 1px solid rgba(212, 175, 55, 0.35);
+    border-radius: 12px;
+    padding: 2rem;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
+}
+#wizard-step-1.hidden { display: none !important; }
+
+.wizard-title { font-family: var(--fonte-titulo, inherit); color: #f0c44a; font-size: 1.8rem; margin: 0 0 0.5rem 0; }
+.wizard-desc { color: #aaa; margin: 0 0 1.5rem 0; font-size: 0.95rem; }
+.wizard-field { display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1.25rem; }
+.wizard-field label { color: #ccc; font-size: 0.9rem; }
+.wizard-field input, .wizard-field textarea {
+    width: 100%; box-sizing: border-box; background: rgba(0, 0, 0, 0.45);
+    border: 1px solid rgba(138, 109, 59, 0.5); border-radius: 6px;
+    color: #fff; padding: 0.8rem; font-family: inherit; font-size: 1rem; outline: none; resize: vertical;
+}
+.wizard-field input:focus, .wizard-field textarea:focus { border-color: var(--cor-dourado, #d4af37); box-shadow: 0 0 0 2px rgba(212, 175, 55, 0.2); }
+
+#btn-wizard-proximo {
+    width: 100%; padding: 0.85rem; background: linear-gradient(180deg, #d4af37, #a9821f);
+    border: 1px solid #f0c44a; border-radius: 8px; color: #1a140b;
+    font-family: var(--fonte-titulo, inherit); font-size: 1rem; font-weight: 700; cursor: pointer; transition: filter 0.2s;
+}
+
+/* ============================================================
+   PASSO 1: PREVIEW DA IMAGEM
+   ============================================================ */
+.wizard-field input[type="range"] {
+    -webkit-appearance: none;
+    width: 100%;
+    height: 6px;
+    background: rgba(212, 175, 55, 0.2);
+    border-radius: 3px;
+    outline: none;
+}
+
+.wizard-field input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--cor-dourado, #d4af37);
+    cursor: pointer;
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+}
+
+.wizard-preview-controles {
+    width: 100%;
+}
+
+#wizard-img-preview-wrapper {
+    display: none; 
+    width: 88px; 
+    height: 88px; 
+    border-radius: 50%; 
+    border: 2px solid var(--cor-marrom-borda); 
+    background: radial-gradient(circle at 35% 30%, var(--cor-marrom-fundo-1), var(--cor-marrom-fundo-3)); 
+    overflow: hidden;
+    flex-shrink: 0; 
+    position: relative;
+}
+
+#wizard-img-preview {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0.5);
+    transform-origin: center;
+    transition: transform 0.1s ease-out;
+    object-fit: contain;
+    width: auto;
+    height: auto;
+    max-width: 100%;
+    max-height: 100%;
+}
+
+/* Responsividade para o Preview */
+@media (max-width: 500px) {
+    .wizard-field[style*="flex-direction: row"] {
+        flex-direction: column !important;
+        align-items: center !important;
+    }
+    #wizard-img-preview-wrapper {
+        margin-top: 10px;
+        width: 120px !important;
+        height: 120px !important;
+    }
+}
+
+/* ============================================================
+   PASSO 2: BOTÕES INFERIORES
+   ============================================================ */
+#wizard-step-2 { 
+    display: none; 
+}
+#wizard-step-2.active { 
+    display: block; 
+}
+
+/* Barra de ações escondida por padrão */
+.wizard-barra-acoes { 
+    display: none; 
+}
+
+/* Só aparece se o overlay estiver no modo editor */
+#wizard-overlay.wizard-modo-editor .wizard-barra-acoes {
+    display: flex !important;
+    position: absolute; 
+    bottom: 2rem; 
+    left: 50%; 
+    transform: translateX(-50%);
+    z-index: 99999; 
+    gap: 1rem; 
+    padding: 0.75rem 1.5rem;
+    background: rgba(14, 11, 8, 0.95); 
+    border: 1px solid rgba(212, 175, 55, 0.35);
+    border-radius: 30px; 
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.6); 
+    pointer-events: auto;
+}
+
+/* Força o sumiço da barra se o overlay não estiver no modo editor */
+#wizard-overlay:not(.wizard-modo-editor) .wizard-barra-acoes {
+    display: none !important;
+}
+
+.wizard-barra-acoes button {
+    padding: 0.7rem 1.4rem; border-radius: 8px; font-family: var(--fonte-titulo, inherit);
+    font-size: 0.95rem; font-weight: 700; cursor: pointer; transition: filter 0.2s;
+}
+#btn-wizard-proximo-campo { background: rgba(212, 175, 55, 0.15); border: 1px solid var(--cor-dourado, #d4af37); color: var(--cor-dourado-claro, #f0c44a); }
+#btn-wizard-finalizar { background: linear-gradient(180deg, #2e7d32, #1b5e20); border: 1px solid #4caf50; color: #e8f5e9; }
+
+/* ============================================================
+   MODAL DE CONFIRMAÇÃO
+   ============================================================ */
+#wizard-modal-confirmacao { position: absolute; inset: 0; z-index: 100000; display: flex; align-items: center; justify-content: center; background: rgba(0, 0, 0, 0.6); pointer-events: auto; }
+#wizard-modal-confirmacao.hidden { display: none !important; }
+.wizard-modal-box { max-width: 420px; width: 90%; background: #1a140b; border: 1px solid rgba(212, 175, 55, 0.4); border-radius: 12px; padding: 1.5rem; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8); }
+.wizard-modal-box h3 { margin: 0 0 0.75rem 0; font-family: var(--fonte-titulo, inherit); color: var(--cor-dourado, #d4af37); font-size: 1.2rem; }
+.wizard-modal-box p { margin: 0 0 1.25rem 0; color: #ccc; font-size: 0.95rem; line-height: 1.4; }
+.wizard-modal-acoes { display: flex; gap: 0.75rem; justify-content: flex-end; }
+.wizard-modal-acoes button { padding: 0.6rem 1.2rem; border-radius: 6px; font-family: var(--fonte-titulo, inherit); font-size: 0.9rem; cursor: pointer; border: 1px solid transparent; }
+#btn-wizard-modal-cancelar { background: transparent; border-color: rgba(255, 255, 255, 0.2); color: #ccc; }
+#btn-wizard-modal-confirmar { background: linear-gradient(180deg, #d4af37, #a9821f); border-color: #f0c44a; color: #1a140b; font-weight: 700; }
+
+/* ============================================================
+   O POST-IT E OS MENUS
+   ============================================================ */
+#pagina-ficha-nova.wizard-ativo .ficha-nova-area {
+    background: rgba(8, 6, 3, 0.85) !important;
+    backdrop-filter: blur(6px);
+}
+
+#pagina-ficha-nova.wizard-ativo .folha {
+    width: 600px !important;
+    height: 450px !important;
+    margin: 100px auto !important;
+    box-shadow: 0 0 50px rgba(0,0,0,0.8), 0 0 0 2px rgba(212, 175, 55, 0.4) inset !important;
+    border-radius: 8px;
+    transform: scale(1) !important;
+    z-index: 9999 !important;
+    position: relative !important;
+}
+
+#pagina-ficha-nova.wizard-ativo .folha .bloco {
+    z-index: 10000 !important;
+    display: flex !important;
+}
+
+#pagina-ficha-nova.wizard-ativo .folha-cabecalho {
+    display: none !important;
+}
+
+#pagina-ficha-nova.wizard-ativo .folha-menu-lateral {
+    z-index: 99999 !important;
+    background: rgba(14, 11, 8, 0.95) !important;
+    margin-top: 100px !important;
+}
+
+#pagina-ficha-nova.wizard-ativo #btn-add-campo {
+    display: none !important;
+}
+
+/* ============================================================
+   BOTÃO DE EXCLUIR PÁGINA (ÓRBITAS DO MENU ESQUERDO)
+   ============================================================ */
+#pagina-ficha-nova.wizard-ativo .folha-pagina-btn {
+    position: relative;
+}
+
+#pagina-ficha-nova.wizard-ativo .btn-excluir-pagina-orbita {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    width: 18px;
+    height: 18px;
+    background: #b42828;
+    color: #fff;
+    border: 1px solid #fff;
+    border-radius: 50%;
+    font-size: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.2s ease;
+    z-index: 100000;
+}
+
+#pagina-ficha-nova.wizard-ativo .folha-pagina-btn:hover .btn-excluir-pagina-orbita,
+#pagina-ficha-nova.wizard-ativo .folha-pagina-btn.ativa .btn-excluir-pagina-orbita {
+    opacity: 1;
+    visibility: visible;
+}
+
+#pagina-ficha-nova.wizard-ativo .btn-excluir-pagina-orbita:hover {
+    transform: scale(1.2);
+    background: #ff5252;
+}

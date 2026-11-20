@@ -12,23 +12,12 @@ import {
     MAX_PAGINAS
 } from './estado.js';
 
-const ICONES_DISPONIVEIS = [
-    'fa-book', 'fa-scroll', 'fa-fire', 'fa-hat-wizard',
-    'fa-dragon', 'fa-shield-alt', 'fa-gem', 'fa-feather-alt',
-    'fa-skull', 'fa-tree', 'fa-dice-d20', 'fa-wand-magic-sparkles',
-    'fa-flask', 'fa-eye', 'fa-hand-fist', 'fa-heart',
-    'fa-compass', 'fa-map', 'fa-crown', 'fa-key',
-    'fa-khanda', 'fa-moon'
-];
-
 let refsMenu = null;
 let refsBtnAdd = null; 
-let abrirBottomSheetCallback = null;
 let carregarConteudoCallback = null;
 
 export function configurarMenu(elementos, abrirBottomSheet, carregarConteudo) {
     refsMenu = elementos.menu;
-    abrirBottomSheetCallback = abrirBottomSheet;
     carregarConteudoCallback = carregarConteudo;
     
     if (elementos.btnAdd) {
@@ -49,16 +38,57 @@ export function renderizarMenu() {
         const btn = document.createElement('button');
         btn.className = `folha-pagina-btn ${isAtiva ? 'ativa' : ''}`;
         btn.dataset.pageId = pag.id;
-        btn.innerHTML = pag.icone ? `<i class="fas ${pag.icone}"></i>` : index + 1;
+        
+        // MOSTRA APENAS O NÚMERO
+        btn.innerHTML = `<span style="font-weight: bold; font-size: 1.1rem;">${index + 1}</span>`;
         
         btn.addEventListener('click', () => trocarPagina(pag.id));
-        btn.addEventListener('contextmenu', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            if (estaEmModoEdicao() && abrirBottomSheetCallback) {
-                abrirBottomSheetCallback(pag.id);
-            }
-        });
+
+        // ADICIONA O "X" APENAS SE FOR A PÁGINA ATIVA
+        if (isAtiva && estado.paginas.length > 1) {
+            const btnX = document.createElement('div');
+            btnX.className = 'btn-excluir-pagina-orbita';
+            btnX.innerHTML = '<i class="fas fa-times"></i>';
+            btnX.title = 'Excluir esta página';
+
+            btnX.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+
+                if (estado.paginas.length <= 1) {
+                    alert("Você precisa ter pelo menos uma página no sistema.");
+                    return;
+                }
+
+                let mensagem = "Tem certeza que deseja excluir esta página?";
+                
+                if (pag.paineis && pag.paineis.length > 0) {
+                    const nomesCampos = pag.paineis
+                        .map(p => p.titulo || '(sem título)')
+                        .filter(Boolean)
+                        .join(", ");
+                    if (nomesCampos) {
+                        mensagem = `Tem certeza que deseja excluir esta página? Ela contém: ${nomesCampos}`;
+                    }
+                }
+
+                if (confirm(mensagem)) {
+                    const index = estado.paginas.findIndex(p => p.id === pag.id);
+                    if (index === -1) return;
+                    estado.paginas.splice(index, 1);
+
+                    if (estado.paginaAtivaId === pag.id) {
+                        estado.paginaAtivaId = estado.paginas[0].id;
+                        if (carregarConteudoCallback) carregarConteudoCallback();
+                    }
+                    salvarEstado();
+                    renderizarMenu();
+                }
+            });
+
+            btn.appendChild(btnX);
+        }
+
         refsMenu.appendChild(btn);
     });
     
@@ -74,8 +104,8 @@ export function adicionarPagina() {
 
     const novaPagina = {
         id: gerarId('pag_'),
-        nome: gerarNomeUnico(`Página ${estado.paginas.length + 1}`, estado.paginas),
-        icone: ICONES_DISPONIVEIS[Math.floor(Math.random() * ICONES_DISPONIVEIS.length)],
+        nome: `Página ${estado.paginas.length + 1}`,
+        icone: null,
         descricao: '',
         paineis: []
     };
@@ -85,11 +115,15 @@ export function adicionarPagina() {
 }
 
 export function trocarPagina(id) {
+    // Se estiver no Wizard, não faz nada (o passo2-paginas.js cuida disso)
+    const paginaFichaNova = document.querySelector('#pagina-ficha-nova');
+    const isWizard = paginaFichaNova?.classList.contains('wizard-ativo');
+    if (isWizard) return; 
+
     if (estado.paginaAtivaId === id) return;
     
     const folha = document.querySelector('#pagina-ficha-nova .folha');
     
-    // Se a animação estiver desligada ou a folha não existir, troca na hora
     if (!estado.animacaoAtiva || !folha) {
         estado.paginaAtivaId = id;
         salvarEstado();
@@ -98,7 +132,6 @@ export function trocarPagina(id) {
         return;
     }
     
-    // Força o reflow para garantir que a animação rode novamente
     folha.classList.remove('virando-pagina');
     void folha.offsetWidth; 
     
@@ -110,17 +143,20 @@ export function trocarPagina(id) {
         renderizarMenu();
         if (carregarConteudoCallback) carregarConteudoCallback();
         folha.classList.remove('virando-pagina');
-    }, 400); // Tempo bate com a animação do CSS (0.4s)
+    }, 400);
 }
 
 export function excluirPagina(id) {
     if (estado.paginas.length <= 1) return alert("Mínimo de 1 página.");
     const index = estado.paginas.findIndex(p => p.id === id);
+    if (index === -1) return;
     estado.paginas.splice(index, 1);
+    
     if (estado.paginaAtivaId === id) {
         estado.paginaAtivaId = estado.paginas[0].id;
         if (carregarConteudoCallback) carregarConteudoCallback();
     }
+    
     salvarEstado();
     renderizarMenu();
 }

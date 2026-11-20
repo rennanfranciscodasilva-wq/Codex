@@ -13,7 +13,7 @@ import {
 import { 
     configurarBottomSheetPagina, abrirBottomSheetPagina
 } from './configuracoes.js';
-import { configurarCopiarColar, copiarPagina } from './copiar-colar.js';
+import { configurarCopiarColar, copiarPagina, copiarElemento } from './copiar-colar.js';
 import { configurarJSON } from './json.js';
 
 import { renderizarPainel, configurarSheetCampo, encontrarPrimeiroSlotLivre, adicionarBlocoNoPainel } from '../paineis.js';
@@ -47,15 +47,28 @@ export function setElementoSelecionado(tipo, painelId, blocoId = null) {
 export function iniciarPaginas(elementos) {
     refs = elementos;
 
-    const cache = localStorage.getItem('codex_ficha_dados');
-    if (cache) {
-        try {
-            const dados = JSON.parse(cache);
-            estado.paginas = dados.paginas || [];
-            estado.paginaAtivaId = dados.paginaAtivaId || null;
-            if (dados.animacaoAtiva !== undefined) estado.animacaoAtiva = dados.animacaoAtiva;
-            if (dados.modoLayout !== undefined) estado.modoLayout = dados.modoLayout;
-        } catch (e) {}
+    // --- A CORREÇÃO ESTÁ AQUI ---
+    // Se for uma nova ficha, ignora o cache antigo e começa do zero
+    const isNovoSistema = localStorage.getItem('codex_wizard_novo_sistema') === 'true';
+    
+    if (isNovoSistema) {
+        estado.paginas = [{ id: gerarId('pag_'), nome: 'Página 1', icone: 'fa-book', descricao: '', paineis: [] }];
+        estado.paginaAtivaId = estado.paginas[0].id;
+        estado.nomeSistema = '';
+        estado.animacaoAtiva = true;
+        estado.modoLayout = 'livre';
+    } else {
+        const cache = localStorage.getItem('codex_ficha_dados');
+        if (cache) {
+            try {
+                const dados = JSON.parse(cache);
+                estado.paginas = dados.paginas || [];
+                estado.paginaAtivaId = dados.paginaAtivaId || null;
+                if (dados.animacaoAtiva !== undefined) estado.animacaoAtiva = dados.animacaoAtiva;
+                if (dados.modoLayout !== undefined) estado.modoLayout = dados.modoLayout;
+                if (dados.nomeSistema !== undefined) estado.nomeSistema = dados.nomeSistema;
+            } catch (e) {}
+        }
     }
 
     if (estado.paginas.length === 0) {
@@ -79,7 +92,7 @@ export function iniciarPaginas(elementos) {
     configurarJSON(carregarConteudoPaginaAtiva, renderizarMenu);
 
     configurarSheetCampo(() => renderizarPaineis());
-    configurarSheetBloco(() => renderizarPaineis());
+    configurarSheetBloco(() => renderizarPaineis(), renderizarBloco);
 
     if (refs.inputTitulo) {
         refs.inputTitulo.addEventListener('input', (e) => {
@@ -95,7 +108,6 @@ export function iniciarPaginas(elementos) {
     configurarTooltipsDireita();
     configurarBotaoLimpar();
 
-    // Clique na folha vazia limpa a seleção
     if (refs.conteudo) {
         refs.conteudo.addEventListener('pointerdown', (e) => {
             if (e.target === refs.conteudo || e.target.classList.contains('folha-conteudo')) {
@@ -144,6 +156,13 @@ function carregarConteudoPaginaAtiva() {
     const pag = getPaginaAtiva();
     if (!pag) return;
     refs.inputTitulo.value = pag.nome;
+
+    const elSistemaNome = document.querySelector('#folha-sistema-nome');
+    if (elSistemaNome) {
+        elSistemaNome.textContent = estado.nomeSistema || '';
+        elSistemaNome.style.display = estado.nomeSistema ? 'block' : 'none';
+    }
+
     const descEl = document.querySelector('#folha-descricao-pagina');
     if (descEl) {
         descEl.textContent = pag.descricao || '';
@@ -180,21 +199,15 @@ function configurarBotoesAcao() {
             if (tipo === 'campo') {
                 const p = pag.paineis.find(p => p.id === painelId);
                 if (p) {
-                    import('./index.js').then(mod => {
-                        mod.areaTransferenciaCodex.tipo = 'campo';
-                        mod.areaTransferenciaCodex.dados = JSON.parse(JSON.stringify(p));
-                        alert("Campo copiado! Clique na folha vazia e aperte Ctrl+V.");
-                    });
+                    // Chama a nova função que mostra o Toast
+                    copiarElemento('campo', p);
                 }
             } else if (tipo === 'bloco') {
                 const p = pag.paineis.find(p => p.id === painelId);
                 const b = p ? p.blocos.find(b => b.id === blocoId) : null;
                 if (b) {
-                    import('./index.js').then(mod => {
-                        mod.areaTransferenciaCodex.tipo = 'bloco';
-                        mod.areaTransferenciaCodex.dados = JSON.parse(JSON.stringify(b));
-                        alert("Bloco copiado! Selecione outro campo e aperte Ctrl+V.");
-                    });
+                    // Chama a nova função que mostra o Toast
+                    copiarElemento('bloco', b);
                 }
             }
         });

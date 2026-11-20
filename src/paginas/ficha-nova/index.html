@@ -1,9 +1,9 @@
 <main id="pagina-ficha-nova" class="screen">
 
-    <!-- O CABEÇALHO FOI REMOVIDO DAQUI POIS JÁ É INJETADO GLOBALMENTE PELO CICLO DE VIDA -->
+    <!-- O CABEÇALHO É INJETADO GLOBALMENTE PELO CICLO DE VIDA -->
 
     <div class="ficha-nova-area">
-        <!-- Wrapper do Zoom (Tudo aqui dentro cresce/diminui junto) -->
+        <!-- Wrapper do Zoom -->
         <div class="folha-wrapper" id="folha-wrapper">
             <div class="folha-layout">
                 
@@ -21,6 +21,9 @@
                     
                     <div class="folha-cabecalho">
                         <div class="folha-titulos-wrapper">
+                            <!-- NOME DO SISTEMA (Injetado dinamicamente) -->
+                            <h1 class="folha-sistema-nome" id="folha-sistema-nome"></h1>
+                            <!-- NOME DA PÁGINA (Editável) -->
                             <input type="text" class="folha-titulo-pagina" id="folha-titulo-pagina" value="Página 1" spellcheck="false">
                             <div class="folha-descricao-pagina" id="folha-descricao-pagina"></div>
                         </div>
@@ -46,7 +49,7 @@
                     </div>
                 </div>
 
-                <!-- Menu Direito (Ferramentas e Ações) -->
+                <!-- Menu Direito -->
                 <div class="folha-menu-lateral direito">
                     <button class="folha-btn-ferramenta" id="btn-toggle-animacao" data-tooltip="Alternar Animação">
                         <i class="fas fa-film"></i>
@@ -62,7 +65,7 @@
                         <button class="folha-btn-ferramenta" id="btn-add-campo" data-tooltip="Adicionar Campo">
                             <i class="fas fa-plus-square"></i>
                         </button>
-                        <button class="folha-btn-ferramenta" id="btn-add-bloco" data-tooltip="Adicionar Bloco (Selecione um campo)">
+                        <button class="folha-btn-ferramenta" id="btn-add-bloco" data-tooltip="Adicionar Bloco">
                             <i class="fas fa-cube"></i>
                         </button>
                         <button class="folha-btn-ferramenta btn-acao-selecao" id="btn-acao-config" data-tooltip="Configurar Selecionado">
@@ -252,6 +255,22 @@
                 <div class="sheet-field" id="bloco-sheet-url-wrapper" style="display: none;">
                     <label>URL da Imagem</label>
                     <input type="text" id="bloco-sheet-url" class="sheet-input" placeholder="https://exemplo.com/imagem.png">
+                    
+                    <!-- CONTROLES DE IMAGEM (SLIDERS) -->
+                    <div id="bloco-img-controles" style="display: none; flex-direction: column; gap: 10px; margin-top: 10px; background: rgba(0,0,0,0.2); padding: 10px; border-radius: 8px;">
+                        <div class="sheet-field">
+                            <label>Zoom da Imagem</label>
+                            <input type="range" id="bloco-img-zoom" min="0.1" max="5" step="0.1" value="1">
+                        </div>
+                        <div class="sheet-field">
+                            <label>Mover Horizontal</label>
+                            <input type="range" id="bloco-img-x" min="-100" max="100" step="1" value="0">
+                        </div>
+                        <div class="sheet-field">
+                            <label>Mover Vertical</label>
+                            <input type="range" id="bloco-img-y" min="-100" max="100" step="1" value="0">
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

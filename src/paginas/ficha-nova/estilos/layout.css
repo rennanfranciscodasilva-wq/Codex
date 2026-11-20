@@ -159,6 +159,21 @@
     z-index: 10 !important;
 }
 #pagina-ficha-nova .folha-titulos-wrapper { flex: 1; display: flex; flex-direction: column; gap: 0.2rem; }
+
+/* --- NOME DO SISTEMA (TOPO DA FOLHA) --- */
+#pagina-ficha-nova .folha-sistema-nome {
+    font-family: var(--fonte-titulo);
+    font-size: clamp(0.9rem, 1.8vw, 1.2rem);
+    font-weight: 700;
+    color: rgba(61, 46, 10, 0.65);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin: 0 0 0.15rem 0;
+    padding-bottom: 0.1rem;
+    border-bottom: 1px solid rgba(120, 90, 40, 0.15);
+    display: none;
+}
+
 #pagina-ficha-nova .folha-titulo-pagina {
     width: 100%; background: transparent; border: none; border-bottom: 2px dashed rgba(120, 90, 40, 0.2);
     font-family: var(--fonte-titulo); font-size: clamp(1.4rem, 3vw, 2rem); font-weight: 700;
@@ -242,4 +257,37 @@
         linear-gradient(rgba(212, 175, 55, 0.2) 1px, transparent 1px),
         linear-gradient(90deg, rgba(212, 175, 55, 0.2) 1px, transparent 1px);
     background-size: 20px 20px, 20px 20px;
+}
+
+/* ============================================================
+   BOTÃO DE EXCLUIR PÁGINA (ÓRBITA SOBRE O NÚMERO) — MOTOR PRINCIPAL
+   ============================================================ */
+#pagina-ficha-nova .folha-pagina-btn {
+    position: relative !important;
+    overflow: visible !important;
+}
+
+#pagina-ficha-nova .btn-excluir-pagina-orbita {
+    position: absolute !important;
+    top: -6px !important;
+    right: -6px !important;
+    width: 18px;
+    height: 18px;
+    background: #b42828;
+    color: #fff;
+    border: 1px solid #fff;
+    border-radius: 50%;
+    font-size: 10px;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 100000;
+    transition: transform 0.2s ease, background 0.2s ease;
+}
+
+#pagina-ficha-nova .btn-excluir-pagina-orbita:hover {
+    transform: scale(1.2);
+    background: #ff5252;
 }

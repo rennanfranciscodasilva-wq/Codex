@@ -12,6 +12,7 @@ const rotas = {
     '/login':               { pasta: 'login',        css: true, js: true },
     '/ficha':               { pasta: 'ficha',        css: true, js: true },
     '/ficha/nova':          { pasta: 'ficha-nova',   css: true, js: true },
+    '/ficha/personagens':   { pasta: 'personagens',  css: true, js: true },
     '/ficha/old-dragon':    { pasta: 'placeholder',  css: true, js: true },
     '/ficha/vastura':       { pasta: 'placeholder',  css: true, js: true },
     '/materiais':           { pasta: 'placeholder',  css: true, js: true },
@@ -20,8 +21,6 @@ const rotas = {
     '/deuses':              { pasta: 'placeholder',  css: true, js: true },
     '/magias':              { pasta: 'placeholder',  css: true, js: true },
     '/bestiario':           { pasta: 'placeholder',  css: true, js: true },
-    
-    /* Nova rota de perfil apontando para a pasta correta */
     '/perfil':              { pasta: 'perfil',       css: true, js: true }
 };
 
@@ -52,11 +51,15 @@ export async function navegar(rota, { substituir = false } = {}) {
         return navegar(ROTA_FALLBACK, { substituir: true });
     }
 
-    if (rotaNormalizada === rotaAtualMontada) {
-        return;
+    const hashAtual = obterRotaDoHash();
+    
+    if (rotaNormalizada === rotaAtualMontada && hashAtual === rotaNormalizada) {
+        const hashCompleto = window.location.hash.replace(/^#/, '');
+        if (!hashCompleto.includes('?')) {
+            return;
+        }
     }
 
-    const hashAtual = obterRotaDoHash();
     if (hashAtual !== rotaNormalizada) {
         const novoHash = `#${rotaNormalizada}`;
         if (substituir) {
@@ -90,8 +93,10 @@ function aoMudarHash() {
 }
 
 function obterRotaDoHash() {
-    const hash = window.location.hash.replace(/^#/, '');
-    return hash || null;
+    const hashCompleto = window.location.hash.replace(/^#/, '');
+    if (!hashCompleto) return null;
+    const rotaLimpa = hashCompleto.split('?')[0];
+    return rotaLimpa || null;
 }
 
 function normalizarRota(rota) {

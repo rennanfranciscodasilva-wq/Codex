@@ -5,8 +5,7 @@
 import { 
     estado, 
     salvarEstado, 
-    getPaginaAtiva,
-    estaEmModoEdicao
+    getPaginaAtiva
 } from './estado.js';
 
 let carregarConteudoCallback = null;

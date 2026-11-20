@@ -11,7 +11,8 @@ export let estado = {
     paginas: [],
     paginaAtivaId: null,
     animacaoAtiva: true,
-    modoLayout: 'livre'
+    modoLayout: 'livre',
+    nomeSistema: '' // Nome do sistema (definido no Wizard ou manualmente)
 };
 
 export const areaTransferenciaCodex = { tipo: null, dados: null };
@@ -25,7 +26,8 @@ export function salvarEstado() {
         paginas: estado.paginas, 
         paginaAtivaId: estado.paginaAtivaId,
         animacaoAtiva: estado.animacaoAtiva,
-        modoLayout: estado.modoLayout
+        modoLayout: estado.modoLayout,
+        nomeSistema: estado.nomeSistema
     };
     localStorage.setItem('codex_ficha_dados', JSON.stringify(dados));
 }
