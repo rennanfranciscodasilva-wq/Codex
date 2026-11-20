@@ -4,10 +4,12 @@
    ============================================================ */
 
 import { observarAutenticacao } from '../servicos/autenticacao/autenticacao.js';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { db } from '../servicos/firebase/config.js';
 
 const estadoInicial = {
     tema: 'escuro',
-    usuario: null,          // { uid, email }
+    usuario: null,          // { uid, email, nome, fotoUrl, ultimaTrocaNome }
     rotaAtual: '/',
     rotaAnterior: null,
     personagens: [],        // Lista de personagens do usuário
@@ -18,15 +20,68 @@ let estado = { ...estadoInicial };
 const ouvintes = new Set();
 
 // Conecta o Firebase ao estado global.
-observarAutenticacao((userFirebase) => {
+observarAutenticacao(async (userFirebase) => {
     if (userFirebase) {
+        // 1. Define o usuário básico primeiro (para o site não travar enquanto busca)
         definirEstado({
             usuario: {
                 uid: userFirebase.uid,
-                email: userFirebase.email
+                email: userFirebase.email,
+                nome: null,
+                fotoUrl: null
             }
         });
-        // Busca os personagens assim que o usuário logar
+
+        // 2. Busca os dados complementares (nome, foto) no Firestore
+        try {
+            const docRef = doc(db, 'usuarios', userFirebase.uid);
+            const docSnap = await getDoc(docRef);
+
+            if (docSnap.exists()) {
+                const dados = docSnap.data();
+                // Atualiza o estado com o nome e foto salvos no banco
+                definirEstado({
+                    usuario: {
+                        uid: userFirebase.uid,
+                        email: userFirebase.email,
+                        nome: dados.nome || userFirebase.email.split('@')[0],
+                        fotoUrl: dados.fotoUrl || null,
+                        ultimaTrocaNome: dados.ultimaTrocaNome || null
+                    }
+                });
+            } else {
+                // Se o usuário existe no Auth mas não tem documento no Firestore,
+                // criamos um documento básico para ele não ficar sem dados.
+                await setDoc(docRef, {
+                    nome: userFirebase.email.split('@')[0],
+                    email: userFirebase.email,
+                    fotoUrl: ""
+                });
+                
+                // E já atualiza o estado local
+                definirEstado({
+                    usuario: {
+                        uid: userFirebase.uid,
+                        email: userFirebase.email,
+                        nome: userFirebase.email.split('@')[0],
+                        fotoUrl: null
+                    }
+                });
+            }
+        } catch (erro) {
+            console.error("[estado] Erro ao buscar dados do usuário no Firestore:", erro);
+            // Mesmo se der erro no Firestore, garante que o usuário tenha o nome do email
+            definirEstado({
+                usuario: {
+                    uid: userFirebase.uid,
+                    email: userFirebase.email,
+                    nome: userFirebase.email.split('@')[0],
+                    fotoUrl: null
+                }
+            });
+        }
+
+        // 3. Busca os personagens assim que o usuário logar
         carregarPersonagensDoUsuario(userFirebase.uid);
     } else {
         // Se deslogar, limpa o usuário E os personagens
