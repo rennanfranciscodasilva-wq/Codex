@@ -8,11 +8,17 @@ import { configurarEditorFormula, formulaEventBus } from '../automacao.js';
 let blocoSendoEditadoId = null;
 let painelPaiIdTemp = null;
 let renderizarPaineisCallback = null;
-let renderizarBlocoFn = null;
 
-export function configurarSheetBloco(renderizarCallback, renderizarBlocoCallback) {
+function atualizarBlocoNaFolha() {
+    if (document.querySelector('#pagina-ficha-nova.wizard-ativo')) {
+        window._codexWizardAtualizarCampo?.();
+    } else {
+        renderizarPaineisCallback?.();
+    }
+}
+
+export function configurarSheetBloco(renderizarCallback) {
     renderizarPaineisCallback = renderizarCallback;
-    renderizarBlocoFn = renderizarBlocoCallback;
     
     const sheet = document.querySelector('#bloco-settings-sheet');
     const dragHandle = document.querySelector('#bloco-sheet-header-drag');
@@ -52,6 +58,8 @@ export function configurarSheetBloco(renderizarCallback, renderizarBlocoCallback
     const btnRemoveFormula = document.querySelector('#btn-remove-formula');
 
     if (!sheet || !selectTipo) return;
+    if (sheet.dataset.configurado === 'true') return;
+    sheet.dataset.configurado = 'true';
 
     // --- FUNÇÃO AUXILIAR PARA BUSCAR O BLOCO COM SEGURANÇA ---
     const obterBlocoAtual = () => {
@@ -77,7 +85,7 @@ export function configurarSheetBloco(renderizarCallback, renderizarBlocoCallback
     };
 
     configurarEditorFormula(() => {
-        if (renderizarPaineisCallback) renderizarPaineisCallback();
+        atualizarBlocoNaFolha();
         atualizarResumoFormula(); 
     });
 
@@ -187,7 +195,7 @@ export function configurarSheetBloco(renderizarCallback, renderizarBlocoCallback
                 salvarEstado();
                 if (typeof formulaEventBus !== 'undefined') formulaEventBus.dispatchEvent(new Event('formulaAtualizada'));
                 atualizarResumoFormula();
-                if (renderizarPaineisCallback) renderizarPaineisCallback();
+                atualizarBlocoNaFolha();
             }
         });
     }
@@ -279,11 +287,6 @@ export function configurarSheetBloco(renderizarCallback, renderizarBlocoCallback
             });
         }
 
-        if (!sheet.style.left) {
-            sheet.style.left = 'auto'; sheet.style.top = 'auto'; 
-            sheet.style.right = '2rem'; sheet.style.bottom = '2rem';
-        }
-        
         sheet.classList.add('active');
     };
 
@@ -320,12 +323,6 @@ export function configurarSheetBloco(renderizarCallback, renderizarBlocoCallback
         
         salvarEstado();
 
-        if (renderizarPaineisCallback) {
-            renderizarPaineisCallback();
-        }
-
-        if (typeof window._codexWizardAtualizarCampo === 'function') {
-            window._codexWizardAtualizarCampo();
-        }
+        atualizarBlocoNaFolha();
     }
 }

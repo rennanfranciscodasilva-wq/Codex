@@ -2,15 +2,15 @@
    MÓDULO: ZOOM (Ficha Nova) - Focado no Mouse
    ============================================================ */
 
-const ZOOM_MIN = 0.5; // 50% Mínimo
+const ZOOM_MIN = 0.24;
 const ZOOM_MAX = 1.5; // 150% Máximo
 const ZOOM_PADRAO = 0.5; // Padrão inicial
 
-let estadoZoom = ZOOM_PADRAO;
-
 export function iniciarZoom(pagina, wrapper) {
-    const indicador = document.querySelector('#indicador-zoom');
+    const indicador = pagina.querySelector('#indicador-zoom');
     const area = pagina.querySelector('.ficha-nova-area');
+    const folha = pagina.querySelector('.folha');
+    let estadoZoom = Math.max(ZOOM_MIN, Math.min(ZOOM_PADRAO, area.clientWidth / (folha.offsetWidth + 32)));
 
     const aplicarZoom = (novoZoom, mouseX, mouseY) => {
         if (novoZoom < ZOOM_MIN) novoZoom = ZOOM_MIN;
@@ -48,7 +48,7 @@ export function iniciarZoom(pagina, wrapper) {
     if (indicador) indicador.textContent = `${Math.round(estadoZoom * 100)}%`;
 
     // --- ZOOM DESKTOP (Shift + Scroll) ---
-    pagina.addEventListener('wheel', (e) => {
+    area.addEventListener('wheel', (e) => {
         if (!e.shiftKey) return;
         e.preventDefault();
 
@@ -71,7 +71,7 @@ export function iniciarZoom(pagina, wrapper) {
         return Math.sqrt(dx * dx + dy * dy);
     };
 
-    pagina.addEventListener('touchstart', (e) => {
+    area.addEventListener('touchstart', (e) => {
         if (e.touches.length !== 2) return;
         pinching = true;
         distanciaInicial = distanciaEntre(e.touches[0], e.touches[1]);
@@ -82,7 +82,7 @@ export function iniciarZoom(pagina, wrapper) {
         centroPinch.y = (e.touches[0].clientY + e.touches[1].clientY) / 2;
     }, { passive: true });
 
-    pagina.addEventListener('touchmove', (e) => {
+    area.addEventListener('touchmove', (e) => {
         if (!pinching || e.touches.length !== 2) return;
 
         const dist = distanciaEntre(e.touches[0], e.touches[1]);
@@ -94,5 +94,11 @@ export function iniciarZoom(pagina, wrapper) {
         e.preventDefault();
     }, { passive: false });
 
-    pagina.addEventListener('touchend', () => { pinching = false; }, { passive: true });
+    area.addEventListener('touchend', () => { pinching = false; }, { passive: true });
+
+    return function ajustarZoomDoAssistente() {
+        const zoom = Math.min(0.9, area.clientWidth / (folha.offsetWidth + 32));
+        const { left, top } = area.getBoundingClientRect();
+        aplicarZoom(zoom, left, top);
+    };
 }

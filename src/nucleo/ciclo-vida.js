@@ -22,8 +22,8 @@ export async function montarPagina({ rota, caminhoHtml, caminhoCss, caminhoJs, c
         // Garante que o container raiz seja um flex column de tela cheia
         container.style.display = 'flex';
         container.style.flexDirection = 'column';
-        container.style.height = '100vh';
-        container.style.width = '100vw';
+        container.style.height = '100dvh';
+        container.style.width = '100%';
         container.style.overflow = 'hidden';
         container.style.margin = '0';
 

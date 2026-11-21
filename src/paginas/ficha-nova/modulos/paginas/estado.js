@@ -25,7 +25,7 @@ export function gerarId(prefixo) {
     return prefixo + Date.now().toString() + Math.random().toString(36).substring(2, 6);
 }
 
-export function salvarEstado() {
+export function salvarEstado({ redefinirLayout = false } = {}) {
     if (localStorage.getItem('codex_wizard_novo_sistema') === 'true') return;
 
     const dados = { 
@@ -47,6 +47,7 @@ export function salvarEstado() {
     const ficha = fichasJogador.find(f => f.id === estado.idFichaAtual);
     if (!ficha) return;
 
+    if (redefinirLayout) delete ficha.valores;
     if (Array.isArray(ficha.valores)) ficha.valores = extrairValores(dados);
     else ficha.dados = dados;
     localStorage.setItem('codex_fichas_jogador', JSON.stringify(fichasJogador));

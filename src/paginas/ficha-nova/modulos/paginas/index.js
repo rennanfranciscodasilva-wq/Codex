@@ -61,14 +61,14 @@ export function iniciarPaginas(elementos) {
         renderizarMenu: renderizarMenu
     });
     configurarCopiarColar({
-        renderizarPaineis: renderizarPaineis,
-        trocarPagina: trocarPagina,
-        encontrarPrimeiroSlotLivre: encontrarPrimeiroSlotLivre
+        botao: document.querySelector('#btn-acao-colar'),
+        obterCampo: () => elementoSelecionado?.painelId,
+        renderizar: renderizarPaineis
     });
     configurarJSON();
 
     configurarSheetCampo(() => renderizarPaineis());
-    configurarSheetBloco(() => renderizarPaineis(), renderizarBloco);
+    configurarSheetBloco(renderizarPaineis);
 
     if (refs.inputTitulo) {
         refs.inputTitulo.addEventListener('input', (e) => {
@@ -81,7 +81,6 @@ export function iniciarPaginas(elementos) {
     configurarBotaoLayout();
     configurarBotoesAcao(); 
     configurarBotaoAdicionarBloco();
-    configurarTooltipsDireita();
     configurarBotaoLimpar();
 
     if (refs.conteudo) {
@@ -269,30 +268,21 @@ function configurarBotaoLayout() {
     });
 }
 
-function configurarTooltipsDireita() {
-    document.querySelectorAll('.folha-menu-lateral.direito .folha-btn-ferramenta').forEach(btn => {
-        const texto = btn.getAttribute('data-tooltip');
-        if (!texto || btn.querySelector('.folha-btn-tooltip')) return;
-        const tooltip = document.createElement('span');
-        tooltip.className = 'folha-btn-tooltip';
-        tooltip.textContent = texto;
-        btn.appendChild(tooltip);
-    });
-}
-
 function configurarBotaoLimpar() {
     const btnLimpar = document.querySelector('#btn-limpar-ficha');
     if (!btnLimpar) return;
     const novoBtn = btnLimpar.cloneNode(true);
     btnLimpar.parentNode.replaceChild(novoBtn, btnLimpar);
     novoBtn.addEventListener('click', () => {
-        if (!estaEmModoEdicao()) return;
-        if (confirm("Tem certeza que deseja apagar TUDO nesta ficha?")) {
-            estado.paginas.forEach(pag => { pag.paineis = []; });
-            setElementoSelecionado(null);
-            salvarEstado();
-            renderizarPaineis();
-        }
+        if (document.querySelector('#pagina-ficha-nova.wizard-ativo')) return;
+        if (!confirm('Apagar todas as páginas, campos e blocos desta ficha e deixar uma página em branco?')) return;
+
+        const pagina = { id: gerarId('pag_'), nome: 'Página 1', icone: 'fa-book', descricao: '', paineis: [] };
+        estado.paginas = [pagina];
+        estado.paginaAtivaId = pagina.id;
+        salvarEstado({ redefinirLayout: true });
+        renderizarMenu();
+        carregarConteudoPaginaAtiva();
     });
 }
 

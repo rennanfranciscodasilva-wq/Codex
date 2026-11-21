@@ -62,13 +62,16 @@
 }
 
 #pagina-ficha .ficha-card:hover,
-#pagina-ficha .ficha-card:focus,
 #pagina-ficha .ficha-card:active {
     transform: translateY(-8px);
     border-color: var(--cor-dourado);
     box-shadow: 0 0 30px rgba(184, 134, 11, 0.5), var(--sombra-painel);
     background: rgba(35, 25, 12, 0.75);
-    outline: none;
+}
+
+#pagina-ficha .ficha-card:focus-visible {
+    outline: 2px solid var(--cor-dourado-claro);
+    outline-offset: 3px;
 }
 
 /* ============================================================
@@ -92,8 +95,7 @@
     position: relative;
 }
 
-#pagina-ficha .ficha-card:hover .ficha-card-icon,
-#pagina-ficha .ficha-card:focus .ficha-card-icon {
+#pagina-ficha .ficha-card:hover .ficha-card-icon {
     border-color: var(--cor-dourado);
     color: var(--cor-dourado-claro);
     box-shadow: 0 0 26px var(--cor-dourado-medio), 0 0 0 1px rgba(212, 175, 55, 0.6) inset;

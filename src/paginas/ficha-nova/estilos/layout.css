@@ -20,7 +20,7 @@
     align-items: center;
     width: 100%; 
     flex: 1 1 auto; 
-    padding: 40px 0 100px 0; 
+    padding: 68px 0 74px;
     position: relative; 
     z-index: 10; 
     overflow: auto; 
@@ -34,7 +34,7 @@
     align-items: flex-start;
     min-width: min-content; 
     margin: auto; 
-    padding: 0 40px; 
+    padding: 0 16px;
 }
 
 #pagina-ficha-nova .folha-layout {
@@ -51,16 +51,24 @@
    MENUS LATERAIS
    ============================================================ */
 #pagina-ficha-nova .folha-menu-lateral {
-    display: flex; flex-direction: column; align-items: center; gap: 12px;
-    padding: 1rem 0.5rem; border-radius: 40px; background: rgba(14, 11, 8, 0.6);
+    display: flex; align-items: center; gap: 6px;
+    padding: 6px; border-radius: 18px; background: rgba(14, 11, 8, 0.92);
     border: 1px solid rgba(212, 175, 55, 0.2); backdrop-filter: blur(8px);
     flex-shrink: 0; 
-    position: sticky; 
-    top: 0; 
-    z-index: 9999; overflow: visible; 
+    position: absolute;
+    left: 8px;
+    z-index: 30;
+}
+#pagina-ficha-nova .folha-menu-lateral.direito { top: 8px; }
+#pagina-ficha-nova .folha-menu-lateral.esquerdo {
+    bottom: max(8px, env(safe-area-inset-bottom));
+    max-width: calc(100% - 16px);
 }
 #pagina-ficha-nova .folha-paginas-menu {
-    display: flex; flex-direction: column; align-items: center; gap: 12px;
+    display: flex; align-items: center; gap: 8px;
+    overflow-x: auto;
+    padding: 12px;
+    scrollbar-width: thin;
 }
 
 #pagina-ficha-nova .folha-pagina-btn,
@@ -77,9 +85,12 @@
     box-shadow: 0 0 20px var(--cor-dourado-medio), 0 0 0 1px rgba(212, 175, 55, 0.6) inset;
     transform: translateY(-2px) scale(1.05);
 }
+#pagina-ficha-nova .folha-pagina-btn:hover {
+    box-shadow: 0 0 8px var(--cor-dourado-medio), 0 0 0 1px rgba(212, 175, 55, 0.6) inset;
+}
 #pagina-ficha-nova .folha-pagina-btn.ativa {
     border-color: var(--cor-dourado-claro);
-    box-shadow: 0 0 25px #f0c44a, 0 0 0 2px rgba(212, 175, 55, 0.8) inset;
+    box-shadow: 0 0 8px rgba(240, 196, 74, 0.75), 0 0 0 2px rgba(212, 175, 55, 0.8) inset;
     background: radial-gradient(circle at 35% 30%, #3d2e1a, #1a140b);
     transform: scale(1.1); z-index: 2;
 }
@@ -90,20 +101,45 @@
     border-style: solid; color: var(--cor-dourado); background: rgba(212, 175, 55, 0.1);
 }
 
-#pagina-ficha-nova .folha-menu-lateral.direito.editando .folha-btn-ferramenta.principal {
+#pagina-ficha-nova .folha-btn-ferramenta[aria-expanded="true"] {
     background: radial-gradient(circle at 35% 30%, #f5d742, #b8860b);
     color: var(--cor-fundo-base); border-color: #fff3c4;
     box-shadow: 0 0 25px #f0c44a, 0 0 0 2px rgba(255, 255, 255, 0.5) inset; transform: scale(1.1);
 }
-#pagina-ficha-nova .folha-ferramentas-extras {
-    display: flex; flex-direction: column; gap: 12px; overflow: visible; 
-    max-height: 0; opacity: 0; visibility: hidden;
-    transition: max-height 0.4s ease, opacity 0.4s ease, visibility 0.4s ease, margin-top 0.4s ease;
-    padding: 16px; margin: -16px;
+#pagina-ficha-nova .folha-ferramentas-extras,
+#pagina-ficha-nova .folha-submenu {
+    position: absolute;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 6px;
+    border: 1px solid var(--cor-marrom-borda);
+    border-radius: 16px;
+    background: var(--cor-fundo-base);
 }
-#pagina-ficha-nova .folha-menu-lateral.direito.editando .folha-ferramentas-extras {
-    max-height: 400px; opacity: 1; visibility: visible; margin: -16px; margin-top: -0.5rem;
+#pagina-ficha-nova .folha-ferramentas-extras,
+#pagina-ficha-nova .folha-submenu.arquivos {
+    left: -1px;
+    top: calc(100% + 6px);
+    width: max-content;
 }
+#pagina-ficha-nova .folha-submenu.arquivos { left: auto; right: -1px; }
+#pagina-ficha-nova .folha-ferramentas-extras .folha-btn-ferramenta,
+#pagina-ficha-nova .folha-submenu .folha-btn-ferramenta {
+    width: clamp(26px, calc((100dvh - 180px) / 7), 38px);
+    height: clamp(26px, calc((100dvh - 180px) / 7), 38px);
+    font-size: 0.95rem;
+}
+#pagina-ficha-nova .folha-btn-ferramenta:disabled {
+    opacity: 0.45;
+    cursor: default;
+    transform: none;
+    box-shadow: none;
+}
+#pagina-ficha-nova .folha-menu-lateral [hidden] { display: none !important; }
+#pagina-ficha-nova.wizard-ativo #btn-limpar-ficha { display: none; }
 #pagina-ficha-nova #btn-toggle-animacao.ativo,
 #pagina-ficha-nova #btn-modo-layout.ativo,
 #pagina-ficha-nova #btn-modo-colorir.ativo {
@@ -114,18 +150,6 @@
 #pagina-ficha-nova:not(.modo-edicao) .folha-pagina-btn.add { display: none !important; }
 #pagina-ficha-nova:not(.modo-edicao) .folha-titulo-pagina {
     pointer-events: none; border-bottom-color: transparent !important; user-select: none;
-}
-
-#pagina-ficha-nova .folha-btn-tooltip {
-    position: absolute; background: rgba(14, 11, 8, 0.95); color: var(--cor-dourado-claro);
-    padding: 4px 10px; border-radius: 6px; border: 1px solid rgba(212, 175, 55, 0.3);
-    font-family: var(--fonte-corpo); font-size: 0.8rem; white-space: nowrap;
-    opacity: 0; pointer-events: none; transition: opacity 0.2s ease, transform 0.2s ease;
-    z-index: 9999; visibility: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.5);
-}
-#pagina-ficha-nova .folha-btn-tooltip { right: 100%; top: 50%; transform: translateY(-50%) scale(0.9); margin-right: 12px; }
-#pagina-ficha-nova .folha-menu-lateral.direito .folha-btn-ferramenta:hover .folha-btn-tooltip {
-    opacity: 1; transform: translateY(-50%) scale(1); visibility: visible;
 }
 
 /* ============================================================

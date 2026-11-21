@@ -3,15 +3,12 @@
    ============================================================ */
 
 import { estado, salvarEstado, gerarId } from '../paginas/estado.js';
-import { configurarSheetBloco } from '../blocos/configuracoes.js';
-import { renderizarBloco } from '../blocos/renderizar.js';
 import { configurarPreviewImagem } from './passo1-preview.js';
-import { criarAmbienteDeCampo, desenharTelaWizard } from './passo2-render.js';
+import { criarAmbienteDeCampo } from './passo2-render.js';
 import { capturarCampoAtual, executarFinalizar } from './finalizar.js';
 import { configurarCarregamentoModelo } from '../paginas/json.js';
 
 let refs = null;
-let cbRenderizarPaineis = null;
 let cbRenderizarMenu = null;
 let sistemaEmCriacao = { 
     nome: '', 
@@ -97,15 +94,14 @@ function injetarHTMLWizard(pagina) {
 }
 
 export function configurarWizard(pagina, callbacks) {
-    cbRenderizarPaineis = callbacks.renderizarPaineis || null;
     cbRenderizarMenu = callbacks.renderizarMenu || null;
 
     injetarHTMLWizard(pagina);
 
-    configurarSheetBloco(() => desenharTelaWizard(refs, sistemaEmCriacao.campoAtual), renderizarBloco);
-
     refs = {
         pagina,
+        abrirFerramentasEdicao: callbacks.abrirFerramentasEdicao,
+        ajustarZoomDoAssistente: callbacks.ajustarZoomDoAssistente,
         overlay: pagina.querySelector('#wizard-overlay'),
         step1: pagina.querySelector('#wizard-step-1'),
         step2: pagina.querySelector('#wizard-step-2'),
@@ -248,8 +244,6 @@ function solicitarConfirmacao(acao) {
             
             refs.overlay.classList.remove('hidden');
             refs.step1.classList.remove('hidden');
-            refs.pagina.classList.add('wizard-ativo');
-
             window.location.hash = '#/ficha/nova';
         };
 
@@ -290,16 +284,11 @@ function entrarNoModoEditor() {
     
     refs.pagina.classList.add('modo-edicao', 'wizard-ativo');
     
-    const menuDireito = refs.pagina.querySelector('.folha-menu-lateral.direito');
-    if (menuDireito) menuDireito.classList.add('editando');
+    refs.abrirFerramentasEdicao();
+    refs.ajustarZoomDoAssistente();
 
     const btnAddCampo = refs.pagina.querySelector('#btn-add-campo');
     if (btnAddCampo) btnAddCampo.style.display = 'none';
-
-    const btnAnimacao = refs.pagina.querySelector('#btn-toggle-animacao');
-    const btnModoEdicao = refs.pagina.querySelector('#btn-modo-edicao');
-    if (btnAnimacao) btnAnimacao.style.display = 'none';
-    if (btnModoEdicao) btnModoEdicao.style.display = 'none';
 
     const barraAcoes = refs.pagina.querySelector('.wizard-barra-acoes');
     if (barraAcoes) barraAcoes.style.display = '';

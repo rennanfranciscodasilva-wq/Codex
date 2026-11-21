@@ -28,6 +28,8 @@
 
 /* A caixa do modal */
 .modal-box {
+    max-height: calc(100dvh - 24px);
+    overflow-y: auto;
     background: #1a140b;
     border: 1px solid rgba(212, 175, 55, 0.4);
     border-radius: 12px;

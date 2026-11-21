@@ -1,171 +1,87 @@
-/* ============================================================
-   MÓDULO: COPIAR E COLAR (Ficha Nova)
-   ============================================================ */
+import { mostrarNotificacao } from '../../../../componentes/notificacoes/notificacoes.js';
+import { areaTransferenciaCodex, estado, estaEmModoEdicao, gerarId, getPaginaAtiva, salvarEstado } from './estado.js';
 
-import { 
-    estado, 
-    salvarEstado, 
-    gerarId, 
-    getPaginaAtiva, 
-    estaEmModoEdicao,
-    gerarNomeUnico,
-    areaTransferenciaCodex,
-    MAX_PAGINAS
-} from './estado.js';
+const LIMITE_FORA_DA_FICHA = 30 * 60 * 1000;
+let ultimoBloco = null;
+let saiuDaFichaEm = null;
+let botaoColar = null;
+let obterCampoSelecionado = null;
+let renderizarPaineis = null;
+let atalhosConfigurados = false;
 
-let refsRenderizar = null;
-let refsTrocarPagina = null;
-let refsEncontrarSlot = null;
-let campoSelecionadoId = null;
+export function configurarCopiarColar({ botao, obterCampo, renderizar }) {
+    if (saiuDaFichaEm !== null && Date.now() - saiuDaFichaEm >= LIMITE_FORA_DA_FICHA) {
+        ultimoBloco = null;
+    }
+    saiuDaFichaEm = null;
+    botaoColar = botao;
+    obterCampoSelecionado = obterCampo;
+    renderizarPaineis = renderizar;
+    atualizarBotao();
+    botaoColar?.addEventListener('click', colarBloco);
 
-export function configurarCopiarColar(callbacks) {
-    refsRenderizar = callbacks.renderizarPaineis;
-    refsTrocarPagina = callbacks.trocarPagina;
-    refsEncontrarSlot = callbacks.encontrarPrimeiroSlotLivre;
-
-    if (window._atalhosCodexConfigurados === true) return;
-    window._atalhosCodexConfigurados = true;
-
-    // Seleciona o campo ao clicar
-    document.addEventListener('pointerdown', (e) => {
-        const painelEl = e.target.closest('.painel');
-        if (painelEl) {
-            document.querySelectorAll('.painel.selecionado').forEach(p => p.classList.remove('selecionado'));
-            painelEl.classList.add('selecionado');
-            campoSelecionadoId = painelEl.dataset.painelId;
-        } else if (!e.target.closest('.folha-menu-lateral')) {
-            document.querySelectorAll('.painel.selecionado').forEach(p => p.classList.remove('selecionado'));
-            campoSelecionadoId = null;
-        }
-    });
-
-    // Atalho de teclado (Desktop)
-    document.addEventListener('keydown', (e) => {
-        if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'v') {
-            if (!estaEmModoEdicao() || !areaTransferenciaCodex.tipo) return;
-            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
-
-            e.preventDefault();
-            colarElemento(campoSelecionadoId);
-        }
+    if (atalhosConfigurados) return;
+    atalhosConfigurados = true;
+    document.addEventListener('keydown', evento => {
+        if (!botaoColar || !ultimoBloco || !estaEmModoEdicao() ||
+            !(evento.ctrlKey || evento.metaKey) || evento.key.toLowerCase() !== 'v' ||
+            evento.target.closest?.('input, textarea, [contenteditable]')) return;
+        evento.preventDefault();
+        colarBloco();
     });
 }
 
-export function copiarPagina(id) {
-    const pag = estado.paginas.find(p => p.id === id);
-    if (!pag) return;
-    areaTransferenciaCodex.tipo = 'pagina';
-    areaTransferenciaCodex.dados = JSON.parse(JSON.stringify(pag));
-    alert("Página copiada! Aperte Ctrl+V na folha para colar.");
+export function desmontarCopiarColar() {
+    saiuDaFichaEm = Date.now();
+    botaoColar = null;
+    obterCampoSelecionado = null;
+    renderizarPaineis = null;
+}
+
+function atualizarBotao() {
+    if (botaoColar) botaoColar.disabled = ultimoBloco === null;
 }
 
 export function copiarElemento(tipo, dados) {
-    areaTransferenciaCodex.tipo = tipo;
-    areaTransferenciaCodex.dados = JSON.parse(JSON.stringify(dados));
-    mostrarToastColar();
+    if (tipo !== 'bloco') {
+        Object.assign(areaTransferenciaCodex, { tipo, dados: structuredClone(dados) });
+        mostrarNotificacao('Campo copiado', '', 'sucesso');
+        return;
+    }
+    ultimoBloco = structuredClone(dados);
+    atualizarBotao();
+    mostrarNotificacao('Bloco copiado', 'Use Colar no menu de edição.', 'sucesso');
 }
 
-/* ============================================================
-   TOAST FLUTUANTE PARA O CELULAR
-   ============================================================ */
-function mostrarToastColar() {
-    // Remove toast antigo se houver
-    document.querySelector('#codex-toast-colar')?.remove();
-
-    const toast = document.createElement('div');
-    toast.id = 'codex-toast-colar';
-    toast.style.cssText = `
-        position: fixed;
-        bottom: 20px;
-        left: 50%;
-        transform: translateX(-50%);
-        background: #1a140b;
-        border: 1px solid #d4af37;
-        color: #f0c44a;
-        padding: 12px 20px;
-        border-radius: 30px;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.5);
-        z-index: 100000;
-        display: flex;
-        align-items: center;
-        gap: 15px;
-        font-family: var(--fonte-titulo, inherit);
-        font-size: 0.9rem;
-        animation: slideUp 0.3s ease-out;
-    `;
-
-    toast.innerHTML = `
-        <span>Bloco copiado!</span>
-        <button id="btn-toast-colar" style="background: #d4af37; color: #1a140b; border: none; padding: 6px 12px; border-radius: 20px; font-weight: bold; cursor: pointer;">
-            <i class="fas fa-paste"></i> Colar
-        </button>
-        <button id="btn-toast-fechar" style="background: transparent; color: #ff8a8a; border: none; cursor: pointer; font-size: 1.2rem;">
-            <i class="fas fa-times"></i>
-        </button>
-    `;
-
-    document.body.appendChild(toast);
-
-    document.querySelector('#btn-toast-colar').onclick = () => {
-        colarElemento(campoSelecionadoId);
-        toast.remove();
-    };
-
-    document.querySelector('#btn-toast-fechar').onclick = () => {
-        toast.remove();
-    };
+export function copiarPagina(id) {
+    const pagina = estado.paginas.find(item => item.id === id);
+    if (!pagina) return;
+    Object.assign(areaTransferenciaCodex, { tipo: 'pagina', dados: structuredClone(pagina) });
+    mostrarNotificacao('Página copiada', '', 'sucesso');
 }
 
-/* ============================================================
-   LÓGICA DE COLAR
-   ============================================================ */
-export function colarElemento(campoIdForcado = null) {
-    const item = areaTransferenciaCodex;
-    if (!item || !item.tipo) return;
-
-    const campoIdParaUsar = campoIdForcado || campoSelecionadoId;
-
-    // --- VERIFICA SE ESTÁ NO WIZARD ---
-    const isWizard = typeof window._codexWizardObterCampoAtual === 'function' && 
-                     document.querySelector('#pagina-ficha-nova')?.classList.contains('wizard-ativo');
-
-    if (isWizard) {
-        const campoAtual = window._codexWizardObterCampoAtual();
-        if (!campoAtual) return;
-
-        if (item.tipo === 'bloco') {
-            const novoBloco = JSON.parse(JSON.stringify(item.dados));
-            novoBloco.id = gerarId('b_');
-            novoBloco.x = (novoBloco.x || 0) + 20; 
-            novoBloco.y = (novoBloco.y || 0) + 20;
-
-            if (!Array.isArray(campoAtual.blocos)) campoAtual.blocos = [];
-            campoAtual.blocos.push(novoBloco);
-            
-            if (typeof window._codexWizardAtualizarCampo === 'function') {
-                window._codexWizardAtualizarCampo();
-            }
-            return;
-        }
+function colarBloco() {
+    if (!ultimoBloco || !estaEmModoEdicao()) return;
+    const assistente = document.querySelector('#pagina-ficha-nova.wizard-ativo');
+    const campo = assistente
+        ? window._codexWizardObterCampoAtual?.()
+        : getPaginaAtiva()?.paineis?.find(painel => painel.id === obterCampoSelecionado?.());
+    if (!campo) {
+        mostrarNotificacao('Selecione um campo', 'Escolha o campo onde deseja colar o bloco.', 'aviso');
         return;
     }
 
-    // --- FICHA NORMAL ---
-    if (item.tipo === 'bloco') {
-        if (!campoIdParaUsar) {
-            alert("Selecione o campo onde deseja colar o bloco primeiro.");
-            return;
-        }
-        const pag = getPaginaAtiva();
-        const painel = pag.paineis.find(p => p.id === campoIdParaUsar);
-        if (!painel) return;
+    const novoBloco = structuredClone(ultimoBloco);
+    novoBloco.id = gerarId('b_');
+    novoBloco.x = Math.max(0, Math.min((novoBloco.x || 0) + 10, (campo.largura || 0) - (novoBloco.largura || 0)));
+    novoBloco.y = Math.max(0, Math.min((novoBloco.y || 0) + 10, (campo.altura || 0) - (novoBloco.altura || 0)));
+    campo.blocos ??= [];
+    campo.blocos.push(novoBloco);
 
-        const novoBloco = JSON.parse(JSON.stringify(item.dados));
-        novoBloco.id = gerarId('b_');
-        novoBloco.x += 10; novoBloco.y += 10;
-
-        painel.blocos.push(novoBloco);
+    if (assistente) {
+        window._codexWizardAtualizarCampo?.();
+    } else {
         salvarEstado();
-        if (refsRenderizar) refsRenderizar();
+        renderizarPaineis?.();
     }
 }

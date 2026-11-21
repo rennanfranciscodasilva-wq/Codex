@@ -3,12 +3,13 @@
    ============================================================ */
 
 import { iniciarZoom } from './modulos/zoom.js';
+import { configurarMenuFicha } from './modulos/menu-ficha.js';
+import { desmontarCopiarColar } from './modulos/paginas/copiar-colar.js';
 import {
     iniciarPaginas,
     atualizarModoEdicao,
     acionarAdicionarCampo,
     estado,
-    renderizarPaineis,
     renderizarMenu
 } from './modulos/paginas/index.js';
 
@@ -106,6 +107,7 @@ function iniciarFichaNova(container, fichaId, criarModelo) {
                                 <button class="folha-btn-ferramenta" id="btn-add-bloco" data-tooltip="Adicionar Bloco"><i class="fas fa-cube"></i></button>
                                 <button class="folha-btn-ferramenta btn-acao-selecao" id="btn-acao-config" data-tooltip="Configurar"><i class="fas fa-cog"></i></button>
                                 <button class="folha-btn-ferramenta btn-acao-selecao" id="btn-acao-copiar" data-tooltip="Copiar"><i class="fas fa-copy"></i></button>
+                                <button class="folha-btn-ferramenta" id="btn-acao-colar" data-tooltip="Colar bloco" disabled><i class="fas fa-paste"></i></button>
                                 <button class="folha-btn-ferramenta btn-acao-selecao" id="btn-acao-excluir" data-tooltip="Excluir"><i class="fas fa-trash-alt"></i></button>
                             </div>
                         </div>
@@ -114,17 +116,19 @@ function iniciarFichaNova(container, fichaId, criarModelo) {
             </div>
         </main>
     `;
-    for (const id of ['bloco-settings-overlay', 'formula-settings-overlay']) {
-        const modal = container.querySelector('#' + id);
-        if (modal && !document.body.querySelector('body > #' + id)) document.body.appendChild(modal);
+    for (const modal of container.querySelectorAll('.page-settings-overlay')) {
+        if (!document.body.querySelector(':scope > #' + modal.id)) {
+            document.body.appendChild(modal);
+        }
     }
     container.innerHTML = htmlFicha;
 
     const pagina = container.querySelector('#pagina-ficha-nova');
     if (!pagina) return;
+    const abrirFerramentasEdicao = configurarMenuFicha(pagina, atualizarModoEdicao);
 
     const wrapper = pagina.querySelector('#folha-wrapper');
-    if (wrapper) iniciarZoom(pagina, wrapper);
+    const ajustarZoomDoAssistente = iniciarZoom(pagina, wrapper);
 
     iniciarPaginas({
         menu: pagina.querySelector('#folha-paginas-menu'),
@@ -137,22 +141,11 @@ function iniciarFichaNova(container, fichaId, criarModelo) {
     elSistemaNome.textContent = estado.nomeSistema || '';
     elSistemaNome.style.display = estado.nomeSistema ? 'block' : 'none';
 
-    const btnModoEdicao = pagina.querySelector('#btn-modo-edicao');
-    const menuDireito = pagina.querySelector('.folha-menu-lateral.direito');
-    if (btnModoEdicao && menuDireito) {
-        const aplicarModoEdicao = (ativo) => {
-            pagina.classList.toggle('modo-edicao', ativo);
-            menuDireito.classList.toggle('editando', ativo);
-            atualizarModoEdicao();
-        };
-        aplicarModoEdicao(false);
-        btnModoEdicao.addEventListener('click', () => aplicarModoEdicao(!pagina.classList.contains('modo-edicao')));
-    }
-
     configurarBotaoAdicionarCampo();
 
     configurarWizard(pagina, {
-        renderizarPaineis: renderizarPaineis,
+        abrirFerramentasEdicao,
+        ajustarZoomDoAssistente,
         renderizarMenu: renderizarMenu
     });
 
@@ -174,9 +167,11 @@ function configurarBotaoAdicionarCampo() {
 }
 
 export function desmontarPagina() {
+    desmontarCopiarColar();
     const pagina = document.querySelector('#pagina-ficha-nova');
     if (!pagina) return;
     desmontarWizard();
+    document.querySelectorAll('.page-settings-sheet.active').forEach(painel => painel.classList.remove('active'));
     localStorage.removeItem('codex_wizard_novo_sistema');
     window.estadoGlobal = null; // Limpa o estado global
     pagina.dataset.eventosAtivos = 'false';

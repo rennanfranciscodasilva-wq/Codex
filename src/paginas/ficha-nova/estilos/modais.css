@@ -4,14 +4,15 @@
 
 .page-settings-overlay {
     position: fixed; top: 0; left: 0; width: 0; height: 0;
-    z-index: 1000; pointer-events: none; 
+    z-index: 6000; pointer-events: none;
 }
 
 .page-settings-sheet {
-    pointer-events: auto; position: fixed; bottom: 2rem; right: 2rem;
-    width: 320px; 
+    pointer-events: auto; position: fixed;
+    bottom: max(8px, env(safe-area-inset-bottom)); left: 8px;
+    width: min(360px, calc(100vw - 16px));
     /* ALTERAÇÃO AQUI: De 85vh/80vh para 70vh */
-    max-height: 70vh; 
+    max-height: min(70dvh, calc(100dvh - 16px));
     background: #1a140b; 
     border: 1px solid rgba(184, 134, 11, 0.3);
     border-radius: 16px; 
@@ -25,7 +26,15 @@
     visibility: hidden; 
     transform: translateY(150%);
     transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease, visibility 0.3s;
-    touch-action: none; 
+}
+
+.sheet-header-drag { touch-action: none; }
+
+@media (max-width: 600px), (max-height: 500px) {
+    .page-settings-sheet {
+        inset: auto 8px max(8px, env(safe-area-inset-bottom)) 8px !important;
+        margin-inline: auto;
+    }
 }
 
 .page-settings-sheet.active { 

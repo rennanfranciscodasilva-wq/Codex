@@ -2,7 +2,7 @@
    CODEX — Wizard: Passo 2 (Renderização)
    ============================================================ */
 
-import { estado, gerarId, salvarEstado } from '../paginas/estado.js';
+import { estado, gerarId, salvarEstado, GRID } from '../paginas/estado.js';
 import { adicionarBlocoNoPainel } from '../paineis.js';
 import { renderizarBloco } from '../blocos/renderizar.js';
 import { configurarSeletorDestinoWizard } from './passo2-paginas.js';
@@ -40,9 +40,7 @@ export function criarAmbienteDeCampo(refs, cbRenderizarMenu, contadorCampo, camp
     desenharTelaWizard(refs, campoAtual);
     configurarSeletorDestinoWizard(refs);
 
-    setTimeout(() => {
-        configurarBotoesAcaoWizard(refs);
-    }, 150);
+    configurarBotoesAcaoWizard(refs);
 }
 
 function obterBlocoSelecionado(refs) {
@@ -68,7 +66,6 @@ function configurarBotoesAcaoWizard(refs) {
             adicionarBlocoNoPainel(refs._campoAtual);
             desenharTelaWizard(refs, refs._campoAtual);
             configurarSeletorDestinoWizard(refs);
-            setTimeout(() => configurarBotoesAcaoWizard(refs), 50);
         };
     }
 
@@ -120,7 +117,6 @@ function configurarBotoesAcaoWizard(refs) {
                     refs._campoAtual.blocos = refs._campoAtual.blocos.filter(b => b.id !== bloco.id);
                     desenharTelaWizard(refs, refs._campoAtual);
                     configurarSeletorDestinoWizard(refs);
-                    setTimeout(() => configurarBotoesAcaoWizard(refs), 50);
                 }
             } else {
                 alert("Selecione um bloco primeiro.");
@@ -196,11 +192,15 @@ export function desenharTelaWizard(refs, campoAtual) {
 
                 const startX = e.clientX, startY = e.clientY, origX = bloco.x, origY = bloco.y;
                 const folha = document.querySelector('#pagina-ficha-nova .folha');
-                const zoomAtual = parseFloat(folha?.style.zoom || '1') || 1;
+                const zoomAtual = folha.getBoundingClientRect().width / folha.offsetWidth || 1;
 
                 const onMove = (ev) => {
                     let novoX = origX + (ev.clientX - startX) / zoomAtual;
                     let novoY = origY + (ev.clientY - startY) / zoomAtual;
+                    if (estado.modoLayout === 'grid') {
+                        novoX = Math.round(novoX / GRID) * GRID;
+                        novoY = Math.round(novoY / GRID) * GRID;
+                    }
                     if (novoX < 10) novoX = 10; if (novoY < 10) novoY = 10;
                     
                     bloco.x = Math.round(novoX);
@@ -232,7 +232,7 @@ export function desenharTelaWizard(refs, campoAtual) {
                 const startX = e.clientX, startY = e.clientY;
                 const orig = { x: bloco.x, y: bloco.y, largura: bloco.largura, altura: bloco.altura };
                 const folha = document.querySelector('#pagina-ficha-nova .folha');
-                const zoomAtual = parseFloat(folha?.style.zoom || '1') || 1;
+                const zoomAtual = folha.getBoundingClientRect().width / folha.offsetWidth || 1;
                 
                 let minLargura = 50;
                 if (bloco.tipo === 'numerico') minLargura = bloco.modTipo === 'com' ? 140 : 80;

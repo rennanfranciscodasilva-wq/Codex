@@ -45,55 +45,44 @@ export function iniciarRoteador(container) {
 
 export async function navegar(rota, { substituir = false } = {}) {
     const rotaNormalizada = normalizarRota(rota);
-    const rotaBase = rotaNormalizada.split('?')[0]; 
-    const config = rotas[rotaBase];
+    const [rotaBase, queryString] = rotaNormalizada.split(/\?(.*)/s);
+    const config = Object.hasOwn(rotas, rotaBase) ? rotas[rotaBase] : null;
 
     if (!config) {
         console.warn(`[roteador] rota desconhecida: ${rotaNormalizada} → fallback`);
         return navegar(ROTA_FALLBACK, { substituir: true });
     }
 
-    const hashCompleto = window.location.hash.replace(/^#/, '');
-    const queryString = hashCompleto.split('?')[1] || '';
-    const params = new URLSearchParams(queryString);
-    const idParam = params.get('id'); 
-
-    const hashAtual = obterRotaDoHash();
-    
-    if (rotaNormalizada === rotaAtualMontada && hashAtual === rotaNormalizada) {
-        if (!hashCompleto.includes('?')) {
-            return;
-        }
-    }
-
-    // --- A CORREÇÃO ESTÁ AQUI: Mantém o hash original completo (com o ?id=) ---
-    if (hashAtual !== rotaNormalizada) {
-        const hashOriginalCompleto = window.location.hash;
+    const idParam = new URLSearchParams(queryString).get('id');
+    const hashDestino = '#' + rotaNormalizada;
+    if (window.location.hash !== hashDestino) {
         if (substituir) {
-            history.replaceState(null, '', hashOriginalCompleto);
+            history.replaceState(null, '', hashDestino);
         } else {
-            history.pushState(null, '', hashOriginalCompleto);
+            history.pushState(null, '', hashDestino);
         }
     }
+    if (rotaAtualMontada === rotaNormalizada) return;
+    rotaAtualMontada = null;
 
     // Salva no estado global antes de montar
-    window.estadoGlobal = { rotaAtual: rotaNormalizada, idFicha: idParam };
-    definirEstado({ rotaAtual: rotaNormalizada, idFicha: idParam });
+    window.estadoGlobal = { rotaAtual: rotaBase, idFicha: idParam };
+    definirEstado({ rotaAtual: rotaBase, idFicha: idParam });
 
     const pasta = config.pasta;
     await montarPagina({
         rota: rotaBase,
-        caminhoHtml: `${BASE_PAGINA}/${pasta}/index.html`,
-        caminhoCss:  config.css ? `${BASE_PAGINA}/${pasta}/estilo.css` : null,
+        caminhoHtml: `${BASE_PAGINA}/${pasta}/${pasta === 'placeholder' ? 'placeholder' : 'index'}.html`,
+        caminhoCss:  config.css ? `${BASE_PAGINA}/${pasta}/${pasta === 'placeholder' ? 'placeholder' : 'estilo'}.css` : null,
         caminhoJs:   config.js  ? `${BASE_PAGINA}/${pasta}/script.js`  : null,
         container: containerApp
     });
 
-    rotaAtualMontada = rotaNormalizada;
+    if (window.location.hash === hashDestino) rotaAtualMontada = rotaNormalizada;
 }
 
 export function obterRotaAtual() {
-    return obterRotaDoHash() || ROTA_INICIAL;
+    return obterRotaDoHash()?.split('?')[0] || ROTA_INICIAL;
 }
 
 function aoMudarHash() {
@@ -102,16 +91,14 @@ function aoMudarHash() {
 }
 
 function obterRotaDoHash() {
-    const hashCompleto = window.location.hash.replace(/^#/, '');
-    if (!hashCompleto) return null;
-    const rotaLimpa = hashCompleto.split('?')[0];
-    return rotaLimpa || null;
+    return window.location.hash.slice(1) || null;
 }
 
 function normalizarRota(rota) {
     if (!rota) return ROTA_INICIAL;
-    let r = rota.trim();
-    if (!r.startsWith('/')) r = '/' + r;
-    if (r.length > 1 && r.endsWith('/')) r = r.slice(0, -1);
-    return r;
+    const indiceQuery = rota.indexOf('?');
+    const caminho = indiceQuery === -1 ? rota : rota.slice(0, indiceQuery);
+    const query = indiceQuery === -1 ? '' : rota.slice(indiceQuery);
+    const base = caminho.trim().replace(/^\/?|\/+$/g, '');
+    return '/' + base + query;
 }
