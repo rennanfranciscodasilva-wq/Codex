@@ -8,22 +8,66 @@ import {
     atualizarModoEdicao,
     acionarAdicionarCampo,
     estado,
-    salvarEstado,
     renderizarPaineis,
-    renderizarMenu,
-    getPaginaAtiva
+    renderizarMenu
 } from './modulos/paginas/index.js';
 
 import { configurarWizard, abrirWizard, desmontarWizard } from './modulos/wizard/wizard.js';
+import { preencherModelo } from './modulos/paginas/modelo-importado.js';
 
 export function montarPagina(container) {
-    setTimeout(() => {
-        iniciarFichaNova(container);
-    }, 50);
+    const [rota, query] = window.location.hash.slice(1).split('?');
+    const fichaId = new URLSearchParams(query).get('id');
+    return iniciarFichaNova(container, fichaId, rota === '/ficha/nova');
 }
 
-function iniciarFichaNova(container) {
-    container.innerHTML = '';
+function iniciarFichaNova(container, fichaId, criarModelo) {
+    if (fichaId) {
+        const fichasJogador = JSON.parse(localStorage.getItem('codex_fichas_jogador') || '[]');
+        const ficha = fichasJogador.find(f => f.id === fichaId);
+        
+        if (ficha) {
+            const sistemas = JSON.parse(localStorage.getItem('codex_sistemas') || '[]');
+            const modelo = sistemas.find(sistema => sistema.id === ficha.sistemaId);
+            const dados = Array.isArray(ficha.valores) && modelo
+                ? preencherModelo(modelo.layout, ficha.valores)
+                : ficha.dados;
+            if (!dados) {
+                alert('Modelo da ficha não encontrado.');
+                window.location.hash = '#/ficha';
+                return;
+            }
+            estado.paginas = dados.paginas || [];
+            estado.paginaAtivaId = dados.paginaAtivaId || (estado.paginas[0]?.id || null);
+            estado.nomeSistema = modelo?.nome || '';
+            estado.animacaoAtiva = dados.animacaoAtiva ?? true;
+            estado.modoLayout = dados.modoLayout || 'livre';
+            estado.idSistemaAtual = ficha.sistemaId;
+            estado.idFichaAtual = ficha.id;
+        } else {
+            alert("Ficha não encontrada.");
+            window.location.hash = '#/ficha';
+            return;
+        }
+    } else {
+        const dados = JSON.parse(localStorage.getItem('codex_ficha_dados') || 'null');
+        estado.idFichaAtual = null;
+        if (dados && !dados.idFichaAtual && !criarModelo) {
+            estado.paginas = dados.paginas || [];
+            estado.paginaAtivaId = dados.paginaAtivaId || null;
+            estado.nomeSistema = dados.nomeSistema || '';
+            estado.animacaoAtiva = dados.animacaoAtiva ?? true;
+            estado.modoLayout = dados.modoLayout || 'livre';
+            estado.idSistemaAtual = dados.idSistemaAtual || null;
+        } else {
+            estado.paginas = [{ id: 'pag_1', nome: 'Página 1', icone: 'fa-book', descricao: '', paineis: [] }];
+            estado.paginaAtivaId = estado.paginas[0].id;
+            estado.nomeSistema = '';
+            estado.idSistemaAtual = null;
+            estado.animacaoAtiva = true;
+            estado.modoLayout = 'livre';
+        }
+    }
 
     const htmlFicha = `
         <main id="pagina-ficha-nova" class="screen">
@@ -70,6 +114,10 @@ function iniciarFichaNova(container) {
             </div>
         </main>
     `;
+    for (const id of ['bloco-settings-overlay', 'formula-settings-overlay']) {
+        const modal = container.querySelector('#' + id);
+        if (modal && !document.body.querySelector('body > #' + id)) document.body.appendChild(modal);
+    }
     container.innerHTML = htmlFicha;
 
     const pagina = container.querySelector('#pagina-ficha-nova');
@@ -85,14 +133,9 @@ function iniciarFichaNova(container) {
         conteudo: pagina.querySelector('#folha-conteudo')
     });
 
-    // Garante que o nome do sistema apareça logo após iniciar
-    setTimeout(() => {
-        const elSistemaNome = document.querySelector('#folha-sistema-nome');
-        if (elSistemaNome) {
-            elSistemaNome.textContent = estado.nomeSistema || '';
-            elSistemaNome.style.display = estado.nomeSistema ? 'block' : 'none';
-        }
-    }, 0);
+    const elSistemaNome = pagina.querySelector('#folha-sistema-nome');
+    elSistemaNome.textContent = estado.nomeSistema || '';
+    elSistemaNome.style.display = estado.nomeSistema ? 'block' : 'none';
 
     const btnModoEdicao = pagina.querySelector('#btn-modo-edicao');
     const menuDireito = pagina.querySelector('.folha-menu-lateral.direito');
@@ -106,38 +149,20 @@ function iniciarFichaNova(container) {
         btnModoEdicao.addEventListener('click', () => aplicarModoEdicao(!pagina.classList.contains('modo-edicao')));
     }
 
-    // --- VINCULA O BOTÃO DE ADICIONAR CAMPO ---
     configurarBotaoAdicionarCampo();
 
-    configurarWizard({
+    configurarWizard(pagina, {
         renderizarPaineis: renderizarPaineis,
         renderizarMenu: renderizarMenu
     });
 
-    setTimeout(() => {
-        const forcarWizard = localStorage.getItem('codex_abrir_wizard');
-        if (forcarWizard === 'true') {
-            localStorage.removeItem('codex_abrir_wizard');
-            abrirWizard();
-            return;
-        }
-
-        // Só abre o Wizard automaticamente se não houver sistemas criados
-        const sistemas = JSON.parse(localStorage.getItem('codex_sistemas') || '[]');
-        const pag = getPaginaAtiva();
-        const fichaVazia = !pag || !pag.paineis || pag.paineis.length === 0;
-        
-        if (fichaVazia && sistemas.length === 0) {
-            abrirWizard();
-        }
-    }, 300);
+    if (criarModelo && pagina.isConnected) abrirWizard();
 }
 
 function configurarBotaoAdicionarCampo() {
     const btnAddCampo = document.querySelector('#btn-add-campo');
     if (!btnAddCampo) return;
 
-    // Clona para remover listeners antigos e evitar duplicação
     const novoBtn = btnAddCampo.cloneNode(true);
     btnAddCampo.parentNode.replaceChild(novoBtn, btnAddCampo);
 
@@ -152,6 +177,7 @@ export function desmontarPagina() {
     const pagina = document.querySelector('#pagina-ficha-nova');
     if (!pagina) return;
     desmontarWizard();
-    localStorage.removeItem('codex_wizard_novo_sistema'); // Remove a flag ao sair
+    localStorage.removeItem('codex_wizard_novo_sistema');
+    window.estadoGlobal = null; // Limpa o estado global
     pagina.dataset.eventosAtivos = 'false';
 }

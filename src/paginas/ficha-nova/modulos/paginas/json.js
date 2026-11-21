@@ -2,47 +2,87 @@
    MÓDULO: IMPORTAR / EXPORTAR JSON (Ficha Nova)
    ============================================================ */
 
-import { 
-    estado, 
-    salvarEstado, 
-    getPaginaAtiva
-} from './estado.js';
+import { estado } from './estado.js';
+import { importarModelo } from './modelo-importado.js';
 
-let carregarConteudoCallback = null;
-let renderizarMenuCallback = null;
+export function configurarCarregamentoModelo(botao) {
+    if (!botao) return;
 
-export function configurarJSON(carregarConteudo, renderizarMenu) {
-    carregarConteudoCallback = carregarConteudo;
-    renderizarMenuCallback = renderizarMenu;
+    const entrada = document.createElement('input');
+    entrada.type = 'file';
+    entrada.accept = '.json,application/json';
+    entrada.hidden = true;
+    botao.after(entrada);
+    botao.addEventListener('click', () => entrada.click());
+    entrada.addEventListener('change', async () => {
+        const arquivo = entrada.files[0];
+        if (!arquivo) return;
+        botao.disabled = true;
+        try {
+            const texto = await arquivo.text();
+            if (!botao.isConnected) return;
+            const ficha = importarModelo(JSON.parse(texto));
+            window.location.hash = `#/ficha/ficha-nova?id=${ficha.id}`;
+        } catch (erro) {
+            alert(erro instanceof SyntaxError ? 'O arquivo não contém uma ficha válida do Codex.' : erro.message);
+        } finally {
+            entrada.value = '';
+            botao.disabled = false;
+        }
+    });
+}
+
+export function configurarJSON() {
+    configurarCarregamentoModelo(document.querySelector('#btn-importar-ficha'));
 
     const btnExportar = document.querySelector('#btn-exportar-ficha');
-    const btnImportar = document.querySelector('#btn-importar-ficha');
 
-    if (!btnExportar || !btnImportar) return;
+    if (!btnExportar) return;
 
-    // Remove listeners antigos (clone)
+    // Remove listeners antigos
     const novoExport = btnExportar.cloneNode(true);
     btnExportar.parentNode.replaceChild(novoExport, btnExportar);
-    
-    const novoImport = btnImportar.cloneNode(true);
-    btnImportar.parentNode.replaceChild(novoImport, btnImportar);
 
     novoExport.addEventListener('click', (e) => {
         e.preventDefault();
-        const pagAtiva = getPaginaAtiva();
-        let nomeArquivo = "Ficha de Personagem";
-        if (pagAtiva && pagAtiva.nome) {
-            nomeArquivo = pagAtiva.nome.replace(/[\\/:*?"<>|]/g, "").trim();
+        
+        // Pega os metadados do sistema do LocalStorage, se existir
+        let metadadosSistema = {};
+        if (estado.idSistemaAtual) {
+            const sistemas = JSON.parse(localStorage.getItem('codex_sistemas') || '[]');
+            const sist = sistemas.find(s => s.id === estado.idSistemaAtual);
+            if (sist) {
+                metadadosSistema = {
+                    nomeSistema: sist.nome,
+                    descricaoSistema: sist.descricao,
+                    imagemCapa: sist.imagemCapa,
+                    imagemAjustes: sist.imagemAjustes
+                };
+            }
         }
 
         const dados = {
-            app: 'CODEX', versao: '1.0', data: new Date().toISOString(),
-            paginas: estado.paginas, paginaAtivaId: estado.paginaAtivaId
+            app: 'CODEX', 
+            versao: '1.0', 
+            data: new Date().toISOString(),
+            nomeSistema: estado.nomeSistema,
+            nomePersonagem: estado.idFichaAtual
+                ? JSON.parse(localStorage.getItem('codex_fichas_jogador') || '[]')
+                    .find(ficha => ficha.id === estado.idFichaAtual)?.nomePersonagem
+                : undefined,
+            idSistemaAtual: estado.idSistemaAtual,
+            paginas: estado.paginas, 
+            paginaAtivaId: estado.paginaAtivaId,
+            animacaoAtiva: estado.animacaoAtiva,
+            modoLayout: estado.modoLayout,
+            ...metadadosSistema // Adiciona nome, desc, foto do sistema
         };
+        
         const jsonString = JSON.stringify(dados, null, 2);
         const blob = new Blob([jsonString], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
         
+        const nomeArquivo = (estado.nomeSistema || 'Ficha_Codificador').replace(/[\\/:*?"<>|]/g, "").trim();
         const a = document.createElement('a');
         a.href = url;
         a.download = `${nomeArquivo}.json`;
@@ -50,39 +90,5 @@ export function configurarJSON(carregarConteudo, renderizarMenu) {
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
-    });
-
-    novoImport.addEventListener('click', (e) => {
-        e.preventDefault();
-        e.stopPropagation(); 
-        const inputFile = document.createElement('input');
-        inputFile.type = 'file';
-        inputFile.accept = '.json';
-        
-        inputFile.addEventListener('change', (event) => {
-            const file = event.target.files[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = (ev) => {
-                try {
-                    const dados = JSON.parse(ev.target.result);
-                    if (!dados.paginas || !Array.isArray(dados.paginas)) {
-                        return alert("Arquivo JSON inválido.");
-                    }
-                    if (confirm("Deseja substituir a ficha atual por este arquivo?")) {
-                        estado.paginas = dados.paginas;
-                        estado.paginaAtivaId = dados.paginaAtivaId || dados.paginas[0].id;
-                        salvarEstado();
-                        if (renderizarMenuCallback) renderizarMenuCallback();
-                        if (carregarConteudoCallback) carregarConteudoCallback();
-                        alert("Ficha importada com sucesso!");
-                    }
-                } catch (err) {
-                    alert("Erro ao ler o JSON: " + err.message);
-                }
-            };
-            reader.readAsText(file);
-        });
-        inputFile.click();
     });
 }

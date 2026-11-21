@@ -12,7 +12,8 @@ const rotas = {
     '/login':               { pasta: 'login',        css: true, js: true },
     '/ficha':               { pasta: 'ficha',        css: true, js: true },
     '/ficha/nova':          { pasta: 'ficha-nova',   css: true, js: true },
-    '/ficha/personagens':   { pasta: 'personagens',  css: true, js: true },
+    '/ficha/personagens':   { pasta: 'personagens',  css: true, js: true }, 
+    '/ficha/ficha-nova':    { pasta: 'ficha-nova',   css: true, js: true }, 
     '/ficha/old-dragon':    { pasta: 'placeholder',  css: true, js: true },
     '/ficha/vastura':       { pasta: 'placeholder',  css: true, js: true },
     '/materiais':           { pasta: 'placeholder',  css: true, js: true },
@@ -44,36 +45,44 @@ export function iniciarRoteador(container) {
 
 export async function navegar(rota, { substituir = false } = {}) {
     const rotaNormalizada = normalizarRota(rota);
-    const config = rotas[rotaNormalizada];
+    const rotaBase = rotaNormalizada.split('?')[0]; 
+    const config = rotas[rotaBase];
 
     if (!config) {
         console.warn(`[roteador] rota desconhecida: ${rotaNormalizada} → fallback`);
         return navegar(ROTA_FALLBACK, { substituir: true });
     }
 
+    const hashCompleto = window.location.hash.replace(/^#/, '');
+    const queryString = hashCompleto.split('?')[1] || '';
+    const params = new URLSearchParams(queryString);
+    const idParam = params.get('id'); 
+
     const hashAtual = obterRotaDoHash();
     
     if (rotaNormalizada === rotaAtualMontada && hashAtual === rotaNormalizada) {
-        const hashCompleto = window.location.hash.replace(/^#/, '');
         if (!hashCompleto.includes('?')) {
             return;
         }
     }
 
+    // --- A CORREÇÃO ESTÁ AQUI: Mantém o hash original completo (com o ?id=) ---
     if (hashAtual !== rotaNormalizada) {
-        const novoHash = `#${rotaNormalizada}`;
+        const hashOriginalCompleto = window.location.hash;
         if (substituir) {
-            history.replaceState(null, '', novoHash);
+            history.replaceState(null, '', hashOriginalCompleto);
         } else {
-            history.pushState(null, '', novoHash);
+            history.pushState(null, '', hashOriginalCompleto);
         }
     }
 
-    definirEstado({ rotaAtual: rotaNormalizada });
+    // Salva no estado global antes de montar
+    window.estadoGlobal = { rotaAtual: rotaNormalizada, idFicha: idParam };
+    definirEstado({ rotaAtual: rotaNormalizada, idFicha: idParam });
 
     const pasta = config.pasta;
     await montarPagina({
-        rota: rotaNormalizada,
+        rota: rotaBase,
         caminhoHtml: `${BASE_PAGINA}/${pasta}/index.html`,
         caminhoCss:  config.css ? `${BASE_PAGINA}/${pasta}/estilo.css` : null,
         caminhoJs:   config.js  ? `${BASE_PAGINA}/${pasta}/script.js`  : null,

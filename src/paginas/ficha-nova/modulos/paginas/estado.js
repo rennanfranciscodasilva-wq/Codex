@@ -1,6 +1,8 @@
 /* ============================================================
-   MÓDULO: ESTADO GLOBAL (Ficha Nova)
+   MÓDULO: ESTADO GLOBAL (Ficha Nova) - MULTI-FICHAS
    ============================================================ */
+
+import { extrairValores } from './modelo-importado.js';
 
 export const MAX_PAGINAS = 10;
 export const GRID = 20;
@@ -12,7 +14,9 @@ export let estado = {
     paginaAtivaId: null,
     animacaoAtiva: true,
     modoLayout: 'livre',
-    nomeSistema: '' // Nome do sistema (definido no Wizard ou manualmente)
+    nomeSistema: '',
+    idSistemaAtual: null, // ID do molde (ex: sist_dnd)
+    idFichaAtual: null    // ID da ficha do jogador (ex: ficha_joao)
 };
 
 export const areaTransferenciaCodex = { tipo: null, dados: null };
@@ -22,14 +26,30 @@ export function gerarId(prefixo) {
 }
 
 export function salvarEstado() {
+    if (localStorage.getItem('codex_wizard_novo_sistema') === 'true') return;
+
     const dados = { 
         paginas: estado.paginas, 
         paginaAtivaId: estado.paginaAtivaId,
         animacaoAtiva: estado.animacaoAtiva,
         modoLayout: estado.modoLayout,
-        nomeSistema: estado.nomeSistema
+        nomeSistema: estado.nomeSistema,
+        idSistemaAtual: estado.idSistemaAtual,
+        idFichaAtual: estado.idFichaAtual
     };
-    localStorage.setItem('codex_ficha_dados', JSON.stringify(dados));
+
+    if (!estado.idFichaAtual) {
+        localStorage.setItem('codex_ficha_dados', JSON.stringify(dados));
+        return;
+    }
+
+    const fichasJogador = JSON.parse(localStorage.getItem('codex_fichas_jogador') || '[]');
+    const ficha = fichasJogador.find(f => f.id === estado.idFichaAtual);
+    if (!ficha) return;
+
+    if (Array.isArray(ficha.valores)) ficha.valores = extrairValores(dados);
+    else ficha.dados = dados;
+    localStorage.setItem('codex_fichas_jogador', JSON.stringify(fichasJogador));
 }
 
 export function getPaginaAtiva() {

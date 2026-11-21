@@ -1,0 +1,136 @@
+#pagina-personagens {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    width: 100%;
+    height: 100%;
+    overflow-y: auto;
+    background: var(--cor-fundo-base);
+    padding: 2rem;
+    box-sizing: border-box;
+}
+
+.personagens-container {
+    max-width: 1200px;
+    width: 100%;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.cabecalho-personagens {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid rgba(212, 175, 55, 0.2);
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.btn-voltar {
+    background: transparent;
+    border: none;
+    color: var(--cor-dourado);
+    font-size: 1rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: color 0.2s, transform 0.2s;
+    font-family: var(--fonte-titulo);
+}
+.btn-voltar:hover { color: #fff; transform: translateX(-3px); }
+
+.info-sistema-topo { text-align: center; flex: 1; min-width: 200px; }
+.info-sistema-topo h1 {
+    font-family: var(--fonte-titulo);
+    color: var(--cor-dourado-claro);
+    margin: 0 0 0.5rem 0;
+    font-size: 2rem;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+}
+.info-sistema-topo p { margin: 0; color: var(--cor-texto-suave); font-size: 0.95rem; font-style: italic; }
+
+.btn-criar-personagem {
+    background: linear-gradient(180deg, #2e7d32, #1b5e20);
+    border: 1px solid #4caf50;
+    color: #fff;
+    padding: 0.8rem 1.5rem;
+    border-radius: 8px;
+    font-family: var(--fonte-titulo);
+    font-size: 0.95rem;
+    font-weight: bold;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: all 0.2s;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+}
+.btn-criar-personagem:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 15px rgba(76, 175, 80, 0.4);
+    filter: brightness(1.1);
+}
+
+.lista-personagens {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 1.5rem;
+    align-content: start;
+    padding-bottom: 2rem;
+}
+
+.card-personagem {
+    background: rgba(20, 15, 8, 0.85);
+    border: 1px solid rgba(212, 175, 55, 0.3);
+    border-radius: 12px;
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+.card-personagem:hover {
+    border-color: var(--cor-dourado-claro);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 15px rgba(212, 175, 55, 0.15);
+    transform: translateY(-5px);
+}
+
+.avatar-personagem {
+    width: 90px; height: 90px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, var(--cor-marrom-fundo-1), var(--cor-marrom-fundo-3));
+    border: 2px solid var(--cor-dourado);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 2.5rem; color: var(--cor-dourado);
+    margin-bottom: 1rem;
+}
+
+.nome-personagem { font-family: var(--fonte-titulo); font-size: 1.3rem; color: var(--cor-dourado-claro); margin: 0 0 0.5rem 0; }
+.info-personagem { font-size: 0.85rem; color: var(--cor-texto-suave); margin-bottom: 1rem; }
+
+.btn-excluir-personagem {
+    position: absolute; top: 10px; right: 10px;
+    background: rgba(180, 40, 40, 0.2); border: 1px solid #b42828;
+    color: #ff8a8a; width: 32px; height: 32px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; opacity: 0; transition: all 0.2s;
+}
+.card-personagem:hover .btn-excluir-personagem { opacity: 1; }
+.btn-excluir-personagem:hover { background: #b42828; color: #fff; transform: scale(1.1); }
+
+.msg-sem-personagens {
+    grid-column: 1 / -1; text-align: center; padding: 4rem 2rem;
+    color: var(--cor-texto-suave); font-style: italic; font-size: 1.1rem;
+    background: rgba(0,0,0,0.2); border-radius: 12px;
+    border: 1px dashed rgba(212, 175, 55, 0.3);
+}

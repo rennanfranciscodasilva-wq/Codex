@@ -47,30 +47,6 @@ export function setElementoSelecionado(tipo, painelId, blocoId = null) {
 export function iniciarPaginas(elementos) {
     refs = elementos;
 
-    // --- A CORREÇÃO ESTÁ AQUI ---
-    // Se for uma nova ficha, ignora o cache antigo e começa do zero
-    const isNovoSistema = localStorage.getItem('codex_wizard_novo_sistema') === 'true';
-    
-    if (isNovoSistema) {
-        estado.paginas = [{ id: gerarId('pag_'), nome: 'Página 1', icone: 'fa-book', descricao: '', paineis: [] }];
-        estado.paginaAtivaId = estado.paginas[0].id;
-        estado.nomeSistema = '';
-        estado.animacaoAtiva = true;
-        estado.modoLayout = 'livre';
-    } else {
-        const cache = localStorage.getItem('codex_ficha_dados');
-        if (cache) {
-            try {
-                const dados = JSON.parse(cache);
-                estado.paginas = dados.paginas || [];
-                estado.paginaAtivaId = dados.paginaAtivaId || null;
-                if (dados.animacaoAtiva !== undefined) estado.animacaoAtiva = dados.animacaoAtiva;
-                if (dados.modoLayout !== undefined) estado.modoLayout = dados.modoLayout;
-                if (dados.nomeSistema !== undefined) estado.nomeSistema = dados.nomeSistema;
-            } catch (e) {}
-        }
-    }
-
     if (estado.paginas.length === 0) {
         estado.paginas.push({ id: gerarId('pag_'), nome: 'Página 1', icone: 'fa-book', descricao: '', paineis: [] });
         estado.paginaAtivaId = estado.paginas[0].id;
@@ -89,7 +65,7 @@ export function iniciarPaginas(elementos) {
         trocarPagina: trocarPagina,
         encontrarPrimeiroSlotLivre: encontrarPrimeiroSlotLivre
     });
-    configurarJSON(carregarConteudoPaginaAtiva, renderizarMenu);
+    configurarJSON();
 
     configurarSheetCampo(() => renderizarPaineis());
     configurarSheetBloco(() => renderizarPaineis(), renderizarBloco);

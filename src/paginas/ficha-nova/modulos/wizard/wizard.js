@@ -8,6 +8,7 @@ import { renderizarBloco } from '../blocos/renderizar.js';
 import { configurarPreviewImagem } from './passo1-preview.js';
 import { criarAmbienteDeCampo, desenharTelaWizard } from './passo2-render.js';
 import { capturarCampoAtual, executarFinalizar } from './finalizar.js';
+import { configurarCarregamentoModelo } from '../paginas/json.js';
 
 let refs = null;
 let cbRenderizarPaineis = null;
@@ -23,8 +24,8 @@ let sistemaEmCriacao = {
 let contadorCampo = 1;
 let acaoPendente = null;
 
-async function injetarHTMLWizard() {
-    if (document.querySelector('#wizard-overlay')) return;
+function injetarHTMLWizard(pagina) {
+    if (pagina.querySelector('#wizard-overlay')) return;
 
     const wizardHTML = `
         <div id="wizard-overlay" class="hidden">
@@ -68,7 +69,8 @@ async function injetarHTMLWizard() {
                     </div>
                 </div>
 
-                <button id="btn-wizard-proximo" style="margin-top: 1rem;">Próximo Passo</button>
+                <button id="btn-wizard-carregar-modelo" type="button" class="btn-secondary">Carregar modelo</button>
+                <button id="btn-wizard-proximo" type="button" style="margin-top: 1rem;">Próximo Passo</button>
             </div>
 
             <div id="wizard-step-2">
@@ -91,39 +93,15 @@ async function injetarHTMLWizard() {
         </div>
     `;
 
-    const main = document.querySelector('#pagina-ficha-nova');
-    if (main) main.insertAdjacentHTML('beforeend', wizardHTML);
-
-    try {
-        const resposta = await fetch('/src/paginas/ficha-nova/index.html');
-        const htmlTexto = await resposta.text();
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(htmlTexto, 'text/html');
-
-        const blocoOverlay = doc.querySelector('#bloco-settings-overlay');
-        const formulaOverlay = doc.querySelector('#formula-settings-overlay');
-
-        if (blocoOverlay && !document.querySelector('#bloco-settings-overlay')) {
-            document.body.appendChild(blocoOverlay);
-        }
-        if (formulaOverlay && !document.querySelector('#formula-settings-overlay')) {
-            document.body.appendChild(formulaOverlay);
-        }
-    } catch (e) {
-        console.error("Erro ao buscar HTML original dos modais:", e);
-    }
+    pagina.insertAdjacentHTML('beforeend', wizardHTML);
 }
 
-export async function configurarWizard(callbacks) {
+export function configurarWizard(pagina, callbacks) {
     cbRenderizarPaineis = callbacks.renderizarPaineis || null;
     cbRenderizarMenu = callbacks.renderizarMenu || null;
 
-    await injetarHTMLWizard();
+    injetarHTMLWizard(pagina);
 
-    const pagina = document.querySelector('#pagina-ficha-nova');
-    if (!pagina) return;
-
-    // Passa renderizarBloco como segundo argumento para a sheet de configurações
     configurarSheetBloco(() => desenharTelaWizard(refs, sistemaEmCriacao.campoAtual), renderizarBloco);
 
     refs = {
@@ -153,6 +131,7 @@ export async function configurarWizard(callbacks) {
     refs.overlay.dataset.eventosAtivos = 'true';
 
     configurarPreviewImagem(refs, sistemaEmCriacao);
+    configurarCarregamentoModelo(pagina.querySelector('#btn-wizard-carregar-modelo'));
 
     refs.btnProximo.addEventListener('click', () => {
         const nome = refs.inputNome.value.trim();
@@ -173,27 +152,23 @@ export async function configurarWizard(callbacks) {
 export function abrirWizard() {
     if (!refs || !refs.overlay) return;
     
-    // Define a flag para indicar que é uma NOVA ficha.
     localStorage.setItem('codex_wizard_novo_sistema', 'true');
     
-    // Reseta as variáveis do Wizard em memória (o cache antigo NÃO é tocado)
-    sistemaEmCriacao = { 
+    Object.assign(sistemaEmCriacao, {
         nome: '', 
         descricao: '', 
         imagemCapa: '', 
         imagemAjustes: { zoom: 0.5, posX: 0, posY: 0 }, 
         campos: [],
         campoAtual: null
-    };
+    });
     contadorCampo = 1;
 
-    limparEditor(); // Limpa a tela visualmente
+    limparEditor(); 
 
-    // Exibe a tela do passo 1
     refs.overlay.classList.remove('hidden');
     refs.step1.classList.remove('hidden');
     
-    // Limpa os inputs do passo 1
     if (refs.inputNome) refs.inputNome.value = '';
     if (refs.inputDesc) refs.inputDesc.value = '';
     if (refs.inputImagem) refs.inputImagem.value = '';
@@ -217,7 +192,6 @@ export function desmontarWizard() {
     if (refs && refs.pagina) {
         refs.pagina.classList.remove('wizard-ativo', 'modo-edicao');
         
-        // Restaura os botões que o Wizard escondeu
         const btnAddCampo = refs.pagina.querySelector('#btn-add-campo');
         const btnAnimacao = refs.pagina.querySelector('#btn-toggle-animacao');
         const btnModoEdicao = refs.pagina.querySelector('#btn-modo-edicao');
@@ -227,7 +201,6 @@ export function desmontarWizard() {
     }
 }
 
-// --- FUNÇÃO CENTRAL DE LIMPEZA VISUAL ---
 function limparEditor() {
     if (!refs || !refs.overlay) return;
 
@@ -358,6 +331,7 @@ function entrarNoModoEditor() {
         estado.paginaAtivaId = paginaNova.id;
         salvarEstado();
     } else {
+        // Reseta para a primeira página ao entrar no editor
         estado.paginaAtivaId = estado.paginas[0].id;
         salvarEstado();
     }
@@ -367,6 +341,10 @@ function entrarNoModoEditor() {
 
 function executarProximoCampo() {
     capturarCampoAtual(sistemaEmCriacao);
+    
+    // Limpa o campo atual APÓS capturar, para o próximo ser criado do zero
+    sistemaEmCriacao.campoAtual = null;
+    
     contadorCampo++;
     sistemaEmCriacao.campoAtual = {
         id: gerarId('p_'),

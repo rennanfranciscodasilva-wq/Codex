@@ -91,7 +91,6 @@ export async function montarPagina({ rota, caminhoHtml, caminhoCss, caminhoJs, c
 
     const wrapper = document.createElement('div');
     wrapper.className = 'pagina-wrapper pagina-entrando';
-    wrapper.dataset.rota = rota;
     wrapper.style.visibility = 'hidden';
     wrapper.innerHTML = html;
     
@@ -145,6 +144,7 @@ function esconderPaginaAtual() {
             if (finalizado) return;
             finalizado = true;
             elemento.style.display = 'none';
+            elemento.remove();
             elemento.classList.remove('pagina-saindo');
             resolve();
         };

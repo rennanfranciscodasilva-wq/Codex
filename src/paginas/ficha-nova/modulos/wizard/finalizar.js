@@ -1,20 +1,21 @@
 /* ============================================================
-   CODEX — Wizard: Finalizar
+   CODEX — Wizard: Finalizar - SINGLE SLOT
    ============================================================ */
 
-import { estado, gerarId, salvarEstado } from '../paginas/estado.js';
+import { estado, gerarId } from '../paginas/estado.js';
 
 export function capturarCampoAtual(sistemaEmCriacao) {
     const campo = sistemaEmCriacao.campoAtual;
     if (!campo) return;
     if (!campo.blocos || campo.blocos.length === 0) return;
 
+    const jaCapturado = sistemaEmCriacao.campos.some(c => c.id === campo.id);
+    if (jaCapturado) return;
+
     sistemaEmCriacao.campos.push({
         ...JSON.parse(JSON.stringify(campo)),
         paginaDestino: estado.paginaAtivaId
     });
-
-    sistemaEmCriacao.campoAtual = null;
 }
 
 export function executarFinalizar(sistemaEmCriacao, refs) {
@@ -34,21 +35,6 @@ export function executarFinalizar(sistemaEmCriacao, refs) {
         const index = estado.paginas.findIndex(p => p.id === id);
         if (index >= 0 && (index + 1) > maiorPagina) maiorPagina = index + 1;
     });
-
-    let alertaVazias = false;
-    for (let i = 1; i < maiorPagina; i++) {
-        const pagId = estado.paginas[i] ? estado.paginas[i].id : null;
-        if (!pagId || !paginasUsadas.has(pagId)) {
-            alertaVazias = true;
-            break;
-        }
-    }
-
-    if (alertaVazias) {
-        if (!confirm("Você está salvando conteúdo em páginas avançadas, mas algumas páginas anteriores estão vazias. Deseja continuar?")) {
-            return;
-        }
-    }
 
     const paginasFinais = [];
     const maxPaginas = Math.max(1, maiorPagina);
@@ -80,9 +66,12 @@ export function executarFinalizar(sistemaEmCriacao, refs) {
         modoLayout: estado.modoLayout
     };
 
+    const idSistema = gerarId('sist_');
+
+    // 1. Salva o MOLDE do sistema
     const sistemasSalvos = JSON.parse(localStorage.getItem('codex_sistemas') || '[]');
     sistemasSalvos.push({
-        id: gerarId('sist_'),
+        id: idSistema,
         nome: sistemaEmCriacao.nome,
         descricao: sistemaEmCriacao.descricao,
         imagemCapa: sistemaEmCriacao.imagemCapa,
@@ -92,13 +81,7 @@ export function executarFinalizar(sistemaEmCriacao, refs) {
     });
     localStorage.setItem('codex_sistemas', JSON.stringify(sistemasSalvos));
 
-    // --- SALVA O NOME DO SISTEMA NO ESTADO DA FICHA (para aparecer no topo) ---
-    estado.nomeSistema = sistemaEmCriacao.nome;
-    estado.paginas = paginasFinais;
-    estado.paginaAtivaId = paginasFinais[0].id;
-    salvarEstado();
-    
-    localStorage.removeItem('codex_wizard_novo_sistema'); // Limpa a flag
+    localStorage.removeItem('codex_wizard_novo_sistema');
     localStorage.removeItem('codex_abrir_wizard');
     
     refs.overlay.classList.add('hidden');
@@ -110,5 +93,6 @@ export function executarFinalizar(sistemaEmCriacao, refs) {
     if (btnAnimacao) btnAnimacao.style.display = '';
     if (btnModoEdicao) btnModoEdicao.style.display = '';
     
-    window.location.hash = '#/ficha';
+    // Redireciona para a ficha (agora usando o id do sistema)
+    window.location.hash = `#/ficha/personagens?id=${idSistema}`;
 }
