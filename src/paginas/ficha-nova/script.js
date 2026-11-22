@@ -2,6 +2,7 @@
    CODEX — Página: Ficha Nova (Maestro)
    ============================================================ */
 
+import { armazenamentoBiblioteca, prepararBiblioteca } from '../../servicos/armazenamento/biblioteca.js';
 import { iniciarZoom } from './modulos/zoom.js';
 import { configurarMenuFicha } from './modulos/menu-ficha.js';
 import { desmontarCopiarColar } from './modulos/paginas/copiar-colar.js';
@@ -16,19 +17,22 @@ import {
 import { configurarWizard, abrirWizard, desmontarWizard } from './modulos/wizard/wizard.js';
 import { preencherModelo } from './modulos/paginas/modelo-importado.js';
 
-export function montarPagina(container) {
-    const [rota, query] = window.location.hash.slice(1).split('?');
+export async function montarPagina(container) {
+    const rota = window.location.hash;
+    await prepararBiblioteca();
+    if (window.location.hash !== rota || !container.isConnected) return;
+    const [rotaFicha, query] = rota.slice(1).split('?');
     const fichaId = new URLSearchParams(query).get('id');
-    return iniciarFichaNova(container, fichaId, rota === '/ficha/nova');
+    return iniciarFichaNova(container, fichaId, rotaFicha === '/ficha/nova');
 }
 
 function iniciarFichaNova(container, fichaId, criarModelo) {
     if (fichaId) {
-        const fichasJogador = JSON.parse(localStorage.getItem('codex_fichas_jogador') || '[]');
+        const fichasJogador = JSON.parse(armazenamentoBiblioteca.getItem('codex_fichas_jogador') || '[]');
         const ficha = fichasJogador.find(f => f.id === fichaId);
         
         if (ficha) {
-            const sistemas = JSON.parse(localStorage.getItem('codex_sistemas') || '[]');
+            const sistemas = JSON.parse(armazenamentoBiblioteca.getItem('codex_sistemas') || '[]');
             const modelo = sistemas.find(sistema => sistema.id === ficha.sistemaId);
             const dados = Array.isArray(ficha.valores) && modelo
                 ? preencherModelo(modelo.layout, ficha.valores)

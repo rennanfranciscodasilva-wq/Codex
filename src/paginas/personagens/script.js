@@ -1,8 +1,12 @@
 /* ============================================================
    CODEX — Página: Personagens (Lista por Sistema)
    ============================================================ */
+import { armazenamentoBiblioteca, prepararBiblioteca } from '../../servicos/armazenamento/biblioteca.js';
 
-export function montarPagina(container) {
+export async function montarPagina(container) {
+    const rota = window.location.hash;
+    await prepararBiblioteca();
+    if (window.location.hash !== rota || !container.isConnected) return;
     console.log("🐛 [PERSONAGENS] montarPagina chamada");
     
     // LÊ O ID DIRETAMENTE DA URL
@@ -20,7 +24,7 @@ export function montarPagina(container) {
         return;
     }
 
-    const sistemas = JSON.parse(localStorage.getItem('codex_sistemas') || '[]');
+    const sistemas = JSON.parse(armazenamentoBiblioteca.getItem('codex_sistemas') || '[]');
     const sistema = sistemas.find(s => s.id === idSistema);
 
     if (!sistema) {
@@ -66,7 +70,7 @@ function renderizarListaPersonagens(paginaEl, idSistema, sistema) {
         return;
     }
 
-    const todasFichas = JSON.parse(localStorage.getItem('codex_fichas_jogador') || '[]');
+    const todasFichas = JSON.parse(armazenamentoBiblioteca.getItem('codex_fichas_jogador') || '[]');
     const fichasDoSistema = todasFichas.filter(f => f.sistemaId === idSistema);
 
     console.log(`🐛 [PERSONAGENS] Encontradas ${fichasDoSistema.length} fichas para este sistema.`);
@@ -104,7 +108,7 @@ function renderizarListaPersonagens(paginaEl, idSistema, sistema) {
             e.stopPropagation();
             if (confirm(`Tem certeza que deseja excluir o personagem "${ficha.nomePersonagem}"?`)) {
                 const fichasAtualizadas = todasFichas.filter(f => f.id !== ficha.id);
-                localStorage.setItem('codex_fichas_jogador', JSON.stringify(fichasAtualizadas));
+                armazenamentoBiblioteca.setItem('codex_fichas_jogador', JSON.stringify(fichasAtualizadas));
                 
                 const cache = JSON.parse(localStorage.getItem('codex_ficha_dados') || '{}');
                 if (cache.idFichaAtual === ficha.id) {
@@ -131,9 +135,9 @@ function criarNovoPersonagem(idSistema, sistema) {
         dados: JSON.parse(JSON.stringify(sistema.layout)) 
     };
 
-    const fichas = JSON.parse(localStorage.getItem('codex_fichas_jogador') || '[]');
+    const fichas = JSON.parse(armazenamentoBiblioteca.getItem('codex_fichas_jogador') || '[]');
     fichas.push(novaFicha);
-    localStorage.setItem('codex_fichas_jogador', JSON.stringify(fichas));
+    armazenamentoBiblioteca.setItem('codex_fichas_jogador', JSON.stringify(fichas));
 
     window.location.hash = `#/ficha/ficha-nova?id=${novaFicha.id}`;
 }

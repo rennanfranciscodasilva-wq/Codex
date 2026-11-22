@@ -8,14 +8,15 @@ const cacheModulos = new Map();
 /**
  * Importa (ou reaproveita do cache) o módulo de uma página.
  * @param {string} caminho - ex.: '/src/paginas/inicio/script.js'
+ * @param {Function} importar - fun??o que importa o m?dulo
  * @returns {Promise<object>}
  */
-export async function carregarModulo(caminho) {
+export async function carregarModulo(caminho, importar) {
     if (cacheModulos.has(caminho)) {
         return cacheModulos.get(caminho);
     }
 
-    const promessa = import(/* @vite-ignore */ caminho);
+    const promessa = importar();
     cacheModulos.set(caminho, promessa);
 
     try {

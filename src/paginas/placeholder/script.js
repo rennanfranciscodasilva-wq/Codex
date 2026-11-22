@@ -3,7 +3,6 @@
    ============================================================ */
 
 import { obterEstado } from '../../nucleo/estado.js';
-import { criarCabecalho } from '../../componentes/cabecalho/cabecalho.js';
 
 const TITULOS = {
     '/ficha/nova':       { titulo: 'NOVA FICHA',      desc: 'A criação de ficha do zero ainda está sendo forjada.' },
@@ -21,12 +20,6 @@ const TITULOS = {
 export function montarPagina(container) {
     const pagina = container.querySelector('#pagina-placeholder');
     if (!pagina) return;
-
-    // Injeta título CodeX no topo (sempre visível)
-    if (!pagina.querySelector('#home-btn')) {
-        const titulo = criarCabecalho({ rotaHome: '/inicio' });
-        pagina.insertBefore(titulo, pagina.firstChild);
-    }
 
     const rota = obterEstado().rotaAtual || '/inicio';
     const dados = TITULOS[rota] || { titulo: 'EM CONSTRUÇÃO', desc: 'Esta seção ainda está sendo forjada.' };

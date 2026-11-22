@@ -37,17 +37,32 @@ function aoClicar(evento) {
 
     // Só processa se o clique foi DENTRO do elemento
     const rect = alvo.getBoundingClientRect();
-    if (
+    if (evento.detail !== 0 && (
         evento.clientX < rect.left ||
         evento.clientX > rect.right ||
         evento.clientY < rect.top ||
         evento.clientY > rect.bottom
-    ) {
+    )) {
         return;
     }
 
     evento.preventDefault();
+    if (
+        rota === '/inicio' &&
+        alvo.matches('.codex-global-header .codex-title') &&
+        fichaAbertaOuNoPassoDois() &&
+        !window.confirm('Você quer voltar para o início do Codex?')
+    ) return;
+
     navegar(rota);
+}
+
+function fichaAbertaOuNoPassoDois() {
+    const ficha = document.querySelector('.pagina-wrapper:not(.pagina-saindo, .pagina-entrando) #pagina-ficha-nova');
+    if (!ficha) return false;
+
+    const assistente = ficha.querySelector('#wizard-overlay:not(.hidden)');
+    return !assistente || Boolean(assistente.querySelector('#wizard-step-2.active'));
 }
 
 /* ---------- Previne href="#" solto ---------- */

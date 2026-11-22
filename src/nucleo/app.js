@@ -10,6 +10,7 @@ import '../sistema-visual/index.css';
 import { iniciarRoteador } from './roteador.js';
 import { iniciarNavegacao } from './navegacao.js';
 import { observarEstado } from './estado.js';
+import { iniciarSincronizacao } from '../servicos/sincronizacao/sincronizacao.js';
 
 /**
  * Inicializa o Codex.
@@ -23,6 +24,7 @@ function iniciarCodex() {
 
     // Ativa navegação global (cliques em [data-rota])
     iniciarNavegacao();
+    iniciarSincronizacao();
 
     // Ativa roteador (monta a página inicial)
     iniciarRoteador(container);

@@ -2,6 +2,8 @@
    MÓDULO: ESTADO GLOBAL (Ficha Nova) - MULTI-FICHAS
    ============================================================ */
 
+import { armazenamentoBiblioteca } from '../../../../servicos/armazenamento/biblioteca.js';
+import { salvarRascunho } from '../wizard/rascunho.js';
 import { extrairValores } from './modelo-importado.js';
 
 export const MAX_PAGINAS = 10;
@@ -26,7 +28,7 @@ export function gerarId(prefixo) {
 }
 
 export function salvarEstado({ redefinirLayout = false } = {}) {
-    if (localStorage.getItem('codex_wizard_novo_sistema') === 'true') return;
+    if (localStorage.getItem('codex_wizard_novo_sistema') === 'true') return salvarRascunho();
 
     const dados = { 
         paginas: estado.paginas, 
@@ -43,14 +45,14 @@ export function salvarEstado({ redefinirLayout = false } = {}) {
         return;
     }
 
-    const fichasJogador = JSON.parse(localStorage.getItem('codex_fichas_jogador') || '[]');
+    const fichasJogador = JSON.parse(armazenamentoBiblioteca.getItem('codex_fichas_jogador') || '[]');
     const ficha = fichasJogador.find(f => f.id === estado.idFichaAtual);
     if (!ficha) return;
 
     if (redefinirLayout) delete ficha.valores;
     if (Array.isArray(ficha.valores)) ficha.valores = extrairValores(dados);
     else ficha.dados = dados;
-    localStorage.setItem('codex_fichas_jogador', JSON.stringify(fichasJogador));
+    armazenamentoBiblioteca.setItem('codex_fichas_jogador', JSON.stringify(fichasJogador));
 }
 
 export function getPaginaAtiva() {

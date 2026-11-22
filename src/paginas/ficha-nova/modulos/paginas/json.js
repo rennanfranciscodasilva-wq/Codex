@@ -2,6 +2,7 @@
    MÓDULO: IMPORTAR / EXPORTAR JSON (Ficha Nova)
    ============================================================ */
 
+import { armazenamentoBiblioteca } from '../../../../servicos/armazenamento/biblioteca.js';
 import { estado } from './estado.js';
 import { importarModelo } from './modelo-importado.js';
 
@@ -21,7 +22,7 @@ export function configurarCarregamentoModelo(botao) {
         try {
             const texto = await arquivo.text();
             if (!botao.isConnected) return;
-            const ficha = importarModelo(JSON.parse(texto));
+            const ficha = importarModelo(JSON.parse(texto), armazenamentoBiblioteca);
             window.location.hash = `#/ficha/ficha-nova?id=${ficha.id}`;
         } catch (erro) {
             alert(erro instanceof SyntaxError ? 'O arquivo não contém uma ficha válida do Codex.' : erro.message);
@@ -49,7 +50,7 @@ export function configurarJSON() {
         // Pega os metadados do sistema do LocalStorage, se existir
         let metadadosSistema = {};
         if (estado.idSistemaAtual) {
-            const sistemas = JSON.parse(localStorage.getItem('codex_sistemas') || '[]');
+            const sistemas = JSON.parse(armazenamentoBiblioteca.getItem('codex_sistemas') || '[]');
             const sist = sistemas.find(s => s.id === estado.idSistemaAtual);
             if (sist) {
                 metadadosSistema = {
@@ -67,7 +68,7 @@ export function configurarJSON() {
             data: new Date().toISOString(),
             nomeSistema: estado.nomeSistema,
             nomePersonagem: estado.idFichaAtual
-                ? JSON.parse(localStorage.getItem('codex_fichas_jogador') || '[]')
+                ? JSON.parse(armazenamentoBiblioteca.getItem('codex_fichas_jogador') || '[]')
                     .find(ficha => ficha.id === estado.idFichaAtual)?.nomePersonagem
                 : undefined,
             idSistemaAtual: estado.idSistemaAtual,

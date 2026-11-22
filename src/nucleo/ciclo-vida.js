@@ -11,7 +11,7 @@ let paginaAtual = null;
 let navegacaoEmAndamento = 0;
 const cacheDom = new Map();
 
-export async function montarPagina({ rota, caminhoHtml, caminhoCss, caminhoJs, container }) {
+export async function montarPagina({ rota, carregarHtml, caminhoCss, carregarCss, caminhoJs, importarModulo, container }) {
     const idNavegacao = ++navegacaoEmAndamento;
 
     // ---- INJEÇÃO DO CABEÇALHO E CONTAINER PRINCIPAL ----
@@ -48,79 +48,61 @@ export async function montarPagina({ rota, caminhoHtml, caminhoCss, caminhoJs, c
     // Se por algum motivo o mainContent não existir na tela, recria ele
     if (!mainContent) {
         window._codexHeaderInjetado = false;
-        return montarPagina({ rota, caminhoHtml, caminhoCss, caminhoJs, container });
+        return montarPagina({ rota, carregarHtml, caminhoCss, carregarCss, caminhoJs, importarModulo, container });
     }
 
     await esconderPaginaAtual();
 
     if (idNavegacao !== navegacaoEmAndamento) return;
 
-    // ---------- CACHE HIT ----------
     const emCache = cacheDom.get(rota);
-    if (emCache) {
-        const el = emCache.elemento;
-        el.style.visibility = 'hidden';
-        el.style.display = ''; 
-        el.classList.add('pagina-entrando');
-        mainContent.appendChild(el);
-
-        if (emCache.modulo && typeof emCache.modulo.montarPagina === 'function') {
-            await emCache.modulo.montarPagina(el);
-        }
-
-        void el.offsetHeight;
-        el.style.visibility = '';
-        el.classList.remove('pagina-entrando');
-
-        paginaAtual = { rota, modulo: emCache.modulo, container: mainContent, caminhoCss, elemento: el };
-        return;
-    }
-
-    // ---------- PRIMEIRA MONTAGEM ----------
-    let html;
-    try {
-        const resposta = await fetch(caminhoHtml);
-        if (!resposta.ok) throw new Error(`HTTP ${resposta.status} em ${caminhoHtml}`);
-        html = await resposta.text();
-    } catch (erro) {
-        console.error('[ciclo-vida] falha ao carregar página:', erro);
-        return;
-    }
-
-    if (idNavegacao !== navegacaoEmAndamento) return;
-
-    const wrapper = document.createElement('div');
-    wrapper.className = 'pagina-wrapper pagina-entrando';
-    wrapper.style.visibility = 'hidden';
-    wrapper.innerHTML = html;
-    
-    wrapper.style.flex = '1';
+    const wrapper = emCache?.elemento ?? document.createElement('div');
+    wrapper.classList.add('pagina-wrapper', 'pagina-entrando');
     wrapper.style.display = 'flex';
+    wrapper.style.flex = '1';
     wrapper.style.flexDirection = 'column';
     wrapper.style.minHeight = '0';
 
-    mainContent.appendChild(wrapper);
+    let modulo = emCache?.modulo;
+    try {
+        if (!emCache) {
+            const [html, moduloPagina] = await Promise.all([
+                carregarHtml(),
+                carregarModulo(caminhoJs, importarModulo),
+                injetarCss(caminhoCss, carregarCss)
+            ]);
+            wrapper.innerHTML = html;
+            modulo = moduloPagina;
+        }
 
-    if (caminhoCss) await injetarCssEAguardar(caminhoCss);
-
-    let modulo = null;
-    if (caminhoJs) modulo = await carregarModulo(caminhoJs);
+        if (idNavegacao !== navegacaoEmAndamento) return false;
+        mainContent.appendChild(wrapper);
+        await modulo?.montarPagina?.(wrapper);
+    } catch (erro) {
+        wrapper.remove();
+        if (idNavegacao !== navegacaoEmAndamento) return false;
+        cacheDom.delete(rota);
+        console.error('[ciclo-vida] falha ao abrir a página:', rota, erro);
+        const aviso = document.createElement('section');
+        aviso.className = 'screen';
+        aviso.innerHTML = '<p role="alert">Não foi possível abrir esta página.</p><button type="button" class="btn-primary">Recarregar página</button>';
+        aviso.querySelector('button').addEventListener('click', () => window.location.reload());
+        mainContent.appendChild(aviso);
+        paginaAtual = { elemento: aviso };
+        return false;
+    }
 
     if (idNavegacao !== navegacaoEmAndamento) {
         wrapper.remove();
-        return;
-    }
-
-    if (modulo && typeof modulo.montarPagina === 'function') {
-        await modulo.montarPagina(wrapper);
+        return false;
     }
 
     void wrapper.offsetHeight;
-    wrapper.style.visibility = '';
     wrapper.classList.remove('pagina-entrando');
 
     cacheDom.set(rota, { elemento: wrapper, modulo, caminhoCss });
     paginaAtual = { rota, modulo, container: mainContent, caminhoCss, elemento: wrapper };
+    return true;
 }
 
 function esconderPaginaAtual() {
@@ -165,19 +147,17 @@ export function destruirPagina(rota) {
 
 export function rotaAtual() { return paginaAtual ? paginaAtual.rota : null; }
 
-function injetarCssEAguardar(href) {
-    const id = `css-pagina-${href.replace(/\//g, '-')}`;
-    if (document.getElementById(id)) return Promise.resolve();
+async function injetarCss(caminho, carregarCss) {
+    const id = `css-pagina-${caminho.replace(/\//g, '-')}`;
+    if (document.getElementById(id)) return;
 
-    return new Promise((resolve) => {
-        const link = document.createElement('link');
-        link.id = id;
-        link.rel = 'stylesheet';
-        link.href = href;
-        link.addEventListener('load', resolve, { once: true });
-        link.addEventListener('error', resolve, { once: true });
-        document.head.appendChild(link);
-    });
+    const css = await carregarCss();
+    if (document.getElementById(id)) return;
+
+    const estilo = document.createElement('style');
+    estilo.id = id;
+    estilo.textContent = css;
+    document.head.appendChild(estilo);
 }
 
 function removerCss(href) {

@@ -3,12 +3,14 @@ node_modules/
 
 # Arquivos gerados pelo Vite
 dist/
+.codex-review-build/
 
 # Variáveis de ambiente e informações privadas
 .env
 .env.*
 !.env.example
 .env.local
+.secret.local
 
 # Arquivos do sistema
 .DS_Store

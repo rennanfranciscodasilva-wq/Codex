@@ -2,7 +2,9 @@
    CODEX — Wizard: Finalizar - SINGLE SLOT
    ============================================================ */
 
+import { armazenamentoBiblioteca } from '../../../../servicos/armazenamento/biblioteca.js';
 import { estado, gerarId } from '../paginas/estado.js';
+import { excluirRascunho } from './rascunho.js';
 
 export function capturarCampoAtual(sistemaEmCriacao) {
     const campo = sistemaEmCriacao.campoAtual;
@@ -69,7 +71,7 @@ export function executarFinalizar(sistemaEmCriacao, refs) {
     const idSistema = gerarId('sist_');
 
     // 1. Salva o MOLDE do sistema
-    const sistemasSalvos = JSON.parse(localStorage.getItem('codex_sistemas') || '[]');
+    const sistemasSalvos = JSON.parse(armazenamentoBiblioteca.getItem('codex_sistemas') || '[]');
     sistemasSalvos.push({
         id: idSistema,
         nome: sistemaEmCriacao.nome,
@@ -79,7 +81,8 @@ export function executarFinalizar(sistemaEmCriacao, refs) {
         layout: estruturaLayout,
         naNuvem: false
     });
-    localStorage.setItem('codex_sistemas', JSON.stringify(sistemasSalvos));
+    armazenamentoBiblioteca.setItem('codex_sistemas', JSON.stringify(sistemasSalvos));
+    excluirRascunho();
 
     localStorage.removeItem('codex_wizard_novo_sistema');
     localStorage.removeItem('codex_abrir_wizard');

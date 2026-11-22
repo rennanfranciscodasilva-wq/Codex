@@ -64,6 +64,7 @@ function configurarBotoesAcaoWizard(refs) {
             e.preventDefault();
             e.stopPropagation();
             adicionarBlocoNoPainel(refs._campoAtual);
+            salvarEstado();
             desenharTelaWizard(refs, refs._campoAtual);
             configurarSeletorDestinoWizard(refs);
         };
@@ -115,6 +116,7 @@ function configurarBotoesAcaoWizard(refs) {
                 const label = (bloco.tituloBloco || bloco.texto || '(sem título)').slice(0, 30);
                 if (confirm(`Excluir o bloco "${label}"?`)) {
                     refs._campoAtual.blocos = refs._campoAtual.blocos.filter(b => b.id !== bloco.id);
+                    salvarEstado();
                     desenharTelaWizard(refs, refs._campoAtual);
                     configurarSeletorDestinoWizard(refs);
                 }
@@ -212,6 +214,7 @@ export function desenharTelaWizard(refs, campoAtual) {
                 const onUp = () => {
                     document.removeEventListener('pointermove', onMove);
                     document.removeEventListener('pointerup', onUp);
+                    salvarEstado();
                 };
 
                 document.addEventListener('pointermove', onMove);
@@ -268,6 +271,7 @@ export function desenharTelaWizard(refs, campoAtual) {
                 const onUp = () => {
                     document.removeEventListener('pointermove', onMove);
                     document.removeEventListener('pointerup', onUp);
+                    salvarEstado();
                 };
 
                 document.addEventListener('pointermove', onMove);

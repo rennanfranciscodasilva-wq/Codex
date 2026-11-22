@@ -7,6 +7,7 @@ import { configurarPreviewImagem } from './passo1-preview.js';
 import { criarAmbienteDeCampo } from './passo2-render.js';
 import { capturarCampoAtual, executarFinalizar } from './finalizar.js';
 import { configurarCarregamentoModelo } from '../paginas/json.js';
+import { excluirRascunho, lerRascunho, observarRascunho, salvarRascunho } from './rascunho.js';
 
 let refs = null;
 let cbRenderizarMenu = null;
@@ -164,6 +165,19 @@ export function abrirWizard() {
 
     refs.overlay.classList.remove('hidden');
     refs.step1.classList.remove('hidden');
+
+    const rascunho = lerRascunho();
+    if (rascunho?.sistema?.campoAtual && Array.isArray(rascunho.paginas)) {
+        Object.assign(sistemaEmCriacao, rascunho.sistema);
+        contadorCampo = rascunho.contador;
+        estado.paginas = rascunho.paginas;
+        estado.paginaAtivaId = rascunho.paginaAtivaId;
+        refs.inputNome.value = sistemaEmCriacao.nome;
+        refs.inputDesc.value = sistemaEmCriacao.descricao;
+        refs.inputImagem.value = sistemaEmCriacao.imagemCapa;
+        entrarNoModoEditor(true);
+        return;
+    }
     
     if (refs.inputNome) refs.inputNome.value = '';
     if (refs.inputDesc) refs.inputDesc.value = '';
@@ -181,6 +195,7 @@ export function abrirWizard() {
 }
 
 export function desmontarWizard() {
+    observarRascunho(null);
     if (refs && refs.overlay) {
         refs.overlay.classList.add('hidden');
         refs.overlay.classList.remove('wizard-modo-editor');
@@ -240,6 +255,7 @@ function solicitarConfirmacao(acao) {
 
         document.querySelector('#btn-cancelar-voltar').onclick = () => {
             fecharModal();
+            excluirRascunho();
             limparEditor();
             
             refs.overlay.classList.remove('hidden');
@@ -277,7 +293,7 @@ function fecharModal() {
     acaoPendente = null;
 }
 
-function entrarNoModoEditor() {
+function entrarNoModoEditor(restaurando = false) {
     refs.step1.classList.add('hidden');
     refs.step2.classList.add('active');
     refs.overlay.classList.add('wizard-modo-editor');
@@ -299,7 +315,7 @@ function entrarNoModoEditor() {
         elSistemaNome.style.display = sistemaEmCriacao.nome ? 'block' : 'none';
     }
 
-    sistemaEmCriacao.campoAtual = {
+    sistemaEmCriacao.campoAtual ??= {
         id: gerarId('p_'),
         titulo: 'Campo ' + contadorCampo,
         x: 40, y: 30,
@@ -319,13 +335,18 @@ function entrarNoModoEditor() {
         estado.paginas = [paginaNova];
         estado.paginaAtivaId = paginaNova.id;
         salvarEstado();
-    } else {
+    } else if (!restaurando) {
         // Reseta para a primeira página ao entrar no editor
         estado.paginaAtivaId = estado.paginas[0].id;
         salvarEstado();
     }
 
     criarAmbienteDeCampo(refs, cbRenderizarMenu, contadorCampo, sistemaEmCriacao.campoAtual);
+    observarRascunho(() => ({
+        sistema: sistemaEmCriacao, contador: contadorCampo,
+        paginas: estado.paginas, paginaAtivaId: estado.paginaAtivaId
+    }));
+    salvarRascunho();
 }
 
 function executarProximoCampo() {
@@ -344,4 +365,5 @@ function executarProximoCampo() {
         blocos: []
     };
     criarAmbienteDeCampo(refs, cbRenderizarMenu, contadorCampo, sistemaEmCriacao.campoAtual);
+    salvarRascunho();
 }

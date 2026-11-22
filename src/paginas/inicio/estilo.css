@@ -215,6 +215,46 @@
     transition-delay: calc(var(--index) * 0.05s);
     animation: none;
 }
+/* ---------- RÓTULOS DO MENU ---------- */
+#pagina-inicio :is(.center-dice, .orbit-item)::after {
+    content: attr(aria-label);
+    position: absolute;
+    bottom: calc(100% + 0.5rem);
+    left: 50%;
+    transform: translate(-50%, 0.25rem);
+    padding: 0.35rem 0.75rem;
+    border: 1px solid var(--cor-marrom-borda);
+    border-radius: 0.4rem;
+    background: var(--cor-marrom-fundo-3);
+    color: var(--cor-texto-titulo);
+    box-shadow: 0 4px 12px rgb(0 0 0 / 45%);
+    font-size: 0.875rem;
+    font-weight: 600;
+    line-height: 1.25;
+    text-shadow: none;
+    white-space: nowrap;
+    pointer-events: none;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 150ms ease, transform 150ms ease, visibility 150ms;
+}
+
+#pagina-inicio .menu-orbit:not(.hidden) :is(.center-dice, .orbit-item):is(:hover, :focus-visible)::after {
+    opacity: 1;
+    visibility: visible;
+    transform: translate(-50%, 0);
+}
+
+#pagina-inicio .orbit-item:focus-visible {
+    z-index: var(--z-dado-central, 5);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    #pagina-inicio :is(.center-dice, .orbit-item)::after {
+        transition: none;
+    }
+}
+
 #pagina-inicio .orbit-item:nth-child(1) { --angle: 0deg;      --delay: 0.1s;  --index: 0; }
 #pagina-inicio .orbit-item:nth-child(2) { --angle: 51.4deg;   --delay: 0.2s;  --index: 1; }
 #pagina-inicio .orbit-item:nth-child(3) { --angle: 102.8deg;  --delay: 0.3s;  --index: 2; }

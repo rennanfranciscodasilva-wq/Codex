@@ -1,10 +1,17 @@
 /* ============================================================
    CODEX — Página: Ficha (seleção de sistema)
    ============================================================ */
+import {
+    armazenamentoBiblioteca, copiarBibliotecaLocal, excluirModeloComFichas, prepararBiblioteca,
+    temBibliotecaLocalParaCopiar
+} from '../../servicos/armazenamento/biblioteca.js';
 
 let refs = null;
 
 export async function montarPagina(container) {
+    const rota = window.location.hash;
+    await prepararBiblioteca();
+    if (window.location.hash !== rota || !container.isConnected) return;
     const pagina = container.querySelector('#pagina-ficha');
     if (!pagina) return;
 
@@ -42,9 +49,33 @@ function renderizarSistemas() {
         });
     }
 
-    const sistemas = JSON.parse(localStorage.getItem('codex_sistemas') || '[]');
+    if (temBibliotecaLocalParaCopiar()) {
+        const copiar = document.createElement('button');
+        copiar.type = 'button';
+        copiar.className = 'btn-secondary';
+        copiar.textContent = 'Copiar fichas e modelos deste navegador para minha conta';
+        copiar.onclick = () => {
+            if (!window.confirm('Copiar os dados locais para a conta conectada?')) return;
+            copiarBibliotecaLocal();
+            renderizarSistemas();
+        };
+        refs.containerCards.appendChild(copiar);
+    }
 
-    sistemas.forEach(sist => {
+    let sistemas;
+    try {
+        sistemas = JSON.parse(armazenamentoBiblioteca.getItem('codex_sistemas') || '[]');
+        if (!Array.isArray(sistemas)) throw new TypeError('Lista de sistemas inválida');
+    } catch (erro) {
+        console.error('[ficha] falha ao ler os sistemas salvos:', erro);
+        const aviso = document.createElement('p');
+        aviso.setAttribute('role', 'status');
+        aviso.textContent = 'Não foi possível carregar os sistemas salvos neste navegador.';
+        refs.containerCards.prepend(aviso);
+        return;
+    }
+
+    sistemas.filter(sist => sist && typeof sist === 'object' && sist.id != null).forEach(sist => {
         const card = document.createElement('a');
         card.href = '#'; // O href evita que o navegador recarregue, mas o clique será tratado abaixo
         card.className = 'ficha-card';
@@ -96,10 +127,8 @@ function renderizarSistemas() {
         btnDel.addEventListener('click', (e) => {
             e.preventDefault();
             e.stopPropagation();
-            if (confirm(`Deseja realmente excluir o sistema "${sist.nome}"?`)) {
-                const sistemasAtuais = JSON.parse(localStorage.getItem('codex_sistemas') || '[]');
-                const novosSistemas = sistemasAtuais.filter(s => s.id !== sist.id);
-                localStorage.setItem('codex_sistemas', JSON.stringify(novosSistemas));
+            if (confirm(`Excluir o modelo "${sist.nome}" e todos os personagens criados a partir dele?`)) {
+                excluirModeloComFichas(sist.id);
                 renderizarSistemas();
             }
         });

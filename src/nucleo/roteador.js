@@ -5,24 +5,26 @@
 import { montarPagina } from './ciclo-vida.js';
 import { definirEstado } from './estado.js';
 
-const BASE_PAGINA = '/src/paginas';
+const paginasHtml = import.meta.glob('../paginas/*/*.html', { query: '?raw', import: 'default' });
+const paginasCss = import.meta.glob('../paginas/*/{estilo,placeholder}.css', { query: '?inline', import: 'default' });
+const paginasJs = import.meta.glob('../paginas/*/script.js');
 
 const rotas = {
-    '/inicio':              { pasta: 'inicio',       css: true, js: true },
-    '/login':               { pasta: 'login',        css: true, js: true },
-    '/ficha':               { pasta: 'ficha',        css: true, js: true },
-    '/ficha/nova':          { pasta: 'ficha-nova',   css: true, js: true },
-    '/ficha/personagens':   { pasta: 'personagens',  css: true, js: true }, 
-    '/ficha/ficha-nova':    { pasta: 'ficha-nova',   css: true, js: true }, 
-    '/ficha/old-dragon':    { pasta: 'placeholder',  css: true, js: true },
-    '/ficha/vastura':       { pasta: 'placeholder',  css: true, js: true },
-    '/materiais':           { pasta: 'placeholder',  css: true, js: true },
-    '/itens':               { pasta: 'placeholder',  css: true, js: true },
-    '/equipamentos':        { pasta: 'placeholder',  css: true, js: true },
-    '/deuses':              { pasta: 'placeholder',  css: true, js: true },
-    '/magias':              { pasta: 'placeholder',  css: true, js: true },
-    '/bestiario':           { pasta: 'placeholder',  css: true, js: true },
-    '/perfil':              { pasta: 'perfil',       css: true, js: true }
+    '/inicio':              { pasta: 'inicio' },
+    '/login':               { pasta: 'login' },
+    '/ficha':               { pasta: 'ficha' },
+    '/ficha/nova':          { pasta: 'ficha-nova' },
+    '/ficha/personagens':   { pasta: 'personagens' },
+    '/ficha/ficha-nova':    { pasta: 'ficha-nova' },
+    '/ficha/old-dragon':    { pasta: 'placeholder' },
+    '/ficha/vastura':       { pasta: 'placeholder' },
+    '/materiais':           { pasta: 'placeholder' },
+    '/itens':               { pasta: 'placeholder' },
+    '/equipamentos':        { pasta: 'placeholder' },
+    '/deuses':              { pasta: 'placeholder' },
+    '/magias':              { pasta: 'placeholder' },
+    '/bestiario':           { pasta: 'placeholder' },
+    '/perfil':              { pasta: 'perfil' }
 };
 
 const ROTA_INICIAL = '/inicio';
@@ -70,15 +72,19 @@ export async function navegar(rota, { substituir = false } = {}) {
     definirEstado({ rotaAtual: rotaBase, idFicha: idParam });
 
     const pasta = config.pasta;
-    await montarPagina({
+    const base = '../paginas/' + pasta;
+    const caminhoCss = base + (pasta === 'placeholder' ? '/placeholder.css' : '/estilo.css');
+    const montada = await montarPagina({
         rota: rotaBase,
-        caminhoHtml: `${BASE_PAGINA}/${pasta}/${pasta === 'placeholder' ? 'placeholder' : 'index'}.html`,
-        caminhoCss:  config.css ? `${BASE_PAGINA}/${pasta}/${pasta === 'placeholder' ? 'placeholder' : 'estilo'}.css` : null,
-        caminhoJs:   config.js  ? `${BASE_PAGINA}/${pasta}/script.js`  : null,
+        carregarHtml: paginasHtml[base + (pasta === 'placeholder' ? '/placeholder.html' : '/index.html')],
+        caminhoCss,
+        carregarCss: paginasCss[caminhoCss],
+        caminhoJs: base + '/script.js',
+        importarModulo: paginasJs[base + '/script.js'],
         container: containerApp
     });
 
-    if (window.location.hash === hashDestino) rotaAtualMontada = rotaNormalizada;
+    if (montada && window.location.hash === hashDestino) rotaAtualMontada = rotaNormalizada;
 }
 
 export function obterRotaAtual() {

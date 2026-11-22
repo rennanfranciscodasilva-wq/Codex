@@ -3,13 +3,20 @@
    ============================================================ */
 
 import { obterEstado, observarEstado, definirPersonagemAtivo } from '../../nucleo/estado.js';
+import { observarSincronizacao, sincronizarAgora } from '../../servicos/sincronizacao/sincronizacao.js';
 
 export function criarCabecalho({ rotaHome = '/inicio' } = {}) {
     const container = document.createElement('header');
     container.className = 'codex-global-header';
     
     container.innerHTML = `
-        <div class="header-left"></div>
+        <div class="header-left">
+            <div class="header-backup" hidden>
+                <span class="header-backup-tempo"></span>
+                <button type="button" class="header-backup-enviar">Sincronizar agora</button>
+                <small class="header-backup-status" role="status"></small>
+            </div>
+        </div>
         
         <div class="header-center">
             <a class="codex-title" href="#${rotaHome}" data-rota="${rotaHome}">
@@ -40,6 +47,21 @@ export function criarCabecalho({ rotaHome = '/inicio' } = {}) {
 let sistemaSelecionado = null;
 
 function inicializarLogica(header) {
+    const backup = header.querySelector('.header-backup');
+    const tempo = backup.querySelector('.header-backup-tempo');
+    const enviar = backup.querySelector('.header-backup-enviar');
+    const status = backup.querySelector('.header-backup-status');
+    enviar.addEventListener('click', sincronizarAgora);
+    observarSincronizacao(estado => {
+        backup.hidden = !estado;
+        if (!estado) return;
+        tempo.textContent = estado.tempo;
+        tempo.setAttribute('aria-label', 'Próximo backup em ' + estado.tempo);
+        enviar.textContent = estado.saldo == null ? 'Sincronizar agora' : 'Sincronizar agora · ' + estado.saldo;
+        enviar.disabled = !estado.disponivel;
+        if (status.textContent !== estado.mensagem) status.textContent = estado.mensagem;
+        status.title = estado.mensagem;
+    });
     const btnSeletor = header.querySelector('#btn-seletor');
     const dropdown = header.querySelector('#dropdown-personagens');
     const nomePersonagemAtivo = header.querySelector('#nome-personagem-ativo');
