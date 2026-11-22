@@ -442,3 +442,22 @@
         padding: 1.5rem;
     }
 }
+.perfil-lista-fichas {
+    display: grid;
+    gap: 0.5rem;
+    width: 100%;
+    padding: 0;
+    margin: 0;
+    list-style: none;
+}
+
+.perfil-lista-fichas li {
+    display: grid;
+    gap: 0.2rem;
+    padding: 0.7rem 0.85rem;
+    border: 1px solid var(--cor-marrom-borda);
+    border-radius: 0.5rem;
+}
+
+.perfil-lista-fichas a { color: var(--cor-dourado-claro); }
+.perfil-lista-fichas small { color: var(--cor-texto-suave); }

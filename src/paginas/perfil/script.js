@@ -6,19 +6,21 @@ import { obterEstado, observarEstado, definirEstado } from '../../nucleo/estado.
 import { sair } from '../../servicos/autenticacao/autenticacao.js';
 import { mostrarNotificacao } from '../../componentes/notificacoes/notificacoes.js';
 import { doc, updateDoc } from 'firebase/firestore';
-import { db } from '../../servicos/firebase/config.js'; // <-- CAMINHO CORRIGIDO
+import { auth, db } from '../../servicos/firebase/config.js';
 
 let refs = null;
 let cancelarObservacao = null;
 let emailVisivel = true;
 
-export function montarPagina(container) {
+export async function montarPagina(container) {
     const pagina = container.querySelector('#pagina-perfil');
     if (!pagina) return;
 
     // Trava de segurança: se não estiver logado, vai para a Home
-    const estadoAtual = obterEstado();
-    if (!estadoAtual.usuario) {
+    const rota = window.location.hash;
+    await auth.authStateReady();
+    if (!container.isConnected || window.location.hash !== rota) return;
+    if (!auth.currentUser) {
         window.location.hash = '#/inicio';
         return;
     }
@@ -34,7 +36,6 @@ export function montarPagina(container) {
         tabContents: pagina.querySelectorAll('.perfil-tab-content'),
         btnEditarAvatar: pagina.querySelector('#btn-editar-avatar'),
         btnEditarPerfil: pagina.querySelector('#btn-editar-perfil'),
-        btnModoEdicaoFichas: pagina.querySelector('#btn-modo-edicao-fichas'),
         containerFichas: pagina.querySelector('#perfil-fichas-categorias'),
         configEmailInput: pagina.querySelector('#config-email-input'),
         
@@ -45,7 +46,8 @@ export function montarPagina(container) {
 
     // 2. Atualiza dados iniciais
     atualizarDadosUsuario();
-    renderizarFichas(); // Renderiza o estado vazio
+    let fichas = obterEstado().personagens;
+    renderizarFichas(fichas);
 
     // 3. Observa mudanças de estado
     if (cancelarObservacao) cancelarObservacao();
@@ -54,6 +56,10 @@ export function montarPagina(container) {
             window.location.hash = '#/inicio';
         } else {
             atualizarDadosUsuario();
+            if (fichas !== estado.personagens) {
+                fichas = estado.personagens;
+                renderizarFichas(fichas);
+            }
         }
     });
 
@@ -99,17 +105,31 @@ function atualizarDadosUsuario() {
     }
 }
 
-function renderizarFichas() {
-    const fichas = []; // Vazio, aguardando integração com banco de fichas
+function renderizarFichas(fichas) {
     if (fichas.length === 0) {
         refs.containerFichas.innerHTML = `
             <div class="empty-state" style="text-align: center; color: #888; margin-top: 2rem;">
                 <i class="fas fa-scroll" style="font-size: 3rem; margin-bottom: 1rem; color: rgba(212, 175, 55, 0.2);"></i>
                 <p>Você ainda não criou nenhuma ficha.</p>
-                <a href="#/ficha/nova" style="color: var(--cor-dourado); text-decoration: none; font-weight: bold;">Criar minha primeira ficha</a>
+                <a href="#/ficha" style="color: var(--cor-dourado); text-decoration: none; font-weight: bold;">Abrir biblioteca de fichas</a>
             </div>
         `;
+        return;
     }
+
+    const lista = document.createElement('ul');
+    lista.className = 'perfil-lista-fichas';
+    for (const ficha of fichas) {
+        const item = document.createElement('li');
+        const link = document.createElement('a');
+        link.href = '#/ficha/ficha-nova?' + new URLSearchParams({ id: ficha.id });
+        link.textContent = ficha.nome;
+        const sistema = document.createElement('small');
+        sistema.textContent = ficha.sistema;
+        item.append(link, sistema);
+        lista.append(item);
+    }
+    refs.containerFichas.replaceChildren(lista);
 }
 
 /* ============================================================
@@ -155,18 +175,6 @@ function ativarEventos() {
             } catch (erro) {
                 console.error("Erro ao sair:", erro);
                 mostrarNotificacao('Erro', 'Não foi possível sair da conta.', 'erro');
-            }
-        });
-    }
-
-    // --- 4. Modo Edição de Fichas (Visual) ---
-    if (refs.btnModoEdicaoFichas) {
-        refs.btnModoEdicaoFichas.addEventListener('click', () => {
-            const ativo = refs.btnModoEdicaoFichas.classList.toggle('active');
-            if (ativo) {
-                refs.btnModoEdicaoFichas.innerHTML = '<i class="fas fa-check"></i>';
-            } else {
-                refs.btnModoEdicaoFichas.innerHTML = '<i class="fas fa-pen"></i>';
             }
         });
     }

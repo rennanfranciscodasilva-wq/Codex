@@ -3,6 +3,7 @@
    ============================================================ */
 
 import { obterEstado, observarEstado, definirPersonagemAtivo } from '../../nucleo/estado.js';
+import { version as versaoCodex } from '../../../package.json';
 import { observarSincronizacao, sincronizarAgora } from '../../servicos/sincronizacao/sincronizacao.js';
 import { consultarEmailConfirmado } from '../../servicos/autenticacao/autenticacao.js';
 import { auth } from '../../servicos/firebase/config.js';
@@ -38,7 +39,7 @@ export function criarCabecalho({ rotaHome = '/inicio' } = {}) {
         
         <div class="header-center">
             <a class="codex-title" href="#${rotaHome}" data-rota="${rotaHome}">
-                Code<span>X</span>
+                Code<span>X</span><small class="codex-versao" aria-label="Versão ${versaoCodex}">${versaoCodex}</small>
             </a>
         </div>
         
@@ -233,61 +234,47 @@ function renderizarDropdown(dropdown, labelAtivo) {
         return;
     }
 
-    // Extrai os sistemas únicos e ordena alfabeticamente
-    const sistemasSet = new Set(personagens.map(p => p.sistema));
-    const sistemas = Array.from(sistemasSet).sort();
+    const sistemas = [...new Set(personagens.map(personagem => personagem.sistema))].sort();
+    const grupoSistemas = document.createElement('div');
+    grupoSistemas.className = 'dropdown-sistemas-wrapper';
+    dropdown.replaceChildren(grupoSistemas);
 
-    let html = '';
-
-    // --- PARTE DE CIMA: SISTEMAS ---
-    html += `<div class="dropdown-sistemas-wrapper">`;
-    sistemas.forEach(sis => {
-        const isSelected = sistemaSelecionado === sis;
-        const btnClass = isSelected ? 'dropdown-item sistema-item selected' : 'dropdown-item sistema-item';
-        html += `<button class="${btnClass}" data-sistema="${sis}">
-                    <i class="fas fa-book"></i> ${sis}
-                 </button>`;
-    });
-    html += `</div>`;
-
-    // --- DIVISÓRIA E PERSONAGENS ---
-    if (sistemaSelecionado) {
-        html += `<div class="dropdown-divider"></div>`;
-        
-        const personagensFiltrados = personagens.filter(p => p.sistema === sistemaSelecionado);
-        
-        html += `<div class="dropdown-personagens-wrapper">`;
-        personagensFiltrados.forEach(p => {
-            const isActive = estado.personagemAtivo && estado.personagemAtivo.id === p.id;
-            const activeClass = isActive ? 'dropdown-item personagem-item active' : 'dropdown-item personagem-item';
-            html += `<button class="${activeClass}" data-id="${p.id}" data-nome="${p.nome}" data-sistema="${p.sistema}">
-                        <i class="fas fa-user"></i> ${p.nome}
-                     </button>`;
-        });
-        html += `</div>`;
-    }
-
-    dropdown.innerHTML = html;
-
-    // Eventos dos Sistemas
-    dropdown.querySelectorAll('.sistema-item').forEach(btn => {
-        btn.onclick = () => {
-            sistemaSelecionado = btn.dataset.sistema;
+    for (const sistema of sistemas) {
+        const botao = criarItemPersonagem(sistema, 'fa-book', 'sistema-item');
+        botao.classList.toggle('selected', sistemaSelecionado === sistema);
+        botao.onclick = () => {
+            sistemaSelecionado = sistema;
             renderizarDropdown(dropdown, labelAtivo);
         };
-    });
+        grupoSistemas.append(botao);
+    }
 
-    // Eventos dos Personagens
-    dropdown.querySelectorAll('.personagem-item').forEach(btn => {
-        btn.onclick = () => {
-            const id = btn.dataset.id;
-            const nome = btn.dataset.nome;
-            const sistema = btn.dataset.sistema;
-            
-            definirPersonagemAtivo({ id, nome, sistema });
-            labelAtivo.textContent = nome;
+    if (!sistemaSelecionado) return;
+    const divisoria = document.createElement('div');
+    divisoria.className = 'dropdown-divider';
+    const grupoPersonagens = document.createElement('div');
+    grupoPersonagens.className = 'dropdown-personagens-wrapper';
+    dropdown.append(divisoria, grupoPersonagens);
+
+    for (const personagem of personagens.filter(item => item.sistema === sistemaSelecionado)) {
+        const botao = criarItemPersonagem(personagem.nome, 'fa-user', 'personagem-item');
+        botao.classList.toggle('active', estado.personagemAtivo?.id === personagem.id);
+        botao.onclick = () => {
+            definirPersonagemAtivo(personagem);
             dropdown.classList.add('hidden');
             sistemaSelecionado = null;
         };
-    });
+        grupoPersonagens.append(botao);
+    }
+}
+
+function criarItemPersonagem(nome, icone, classe) {
+    const botao = document.createElement('button');
+    botao.type = 'button';
+    botao.className = 'dropdown-item ' + classe;
+    const imagem = document.createElement('i');
+    imagem.className = 'fas ' + icone;
+    imagem.setAttribute('aria-hidden', 'true');
+    botao.append(imagem, ' ' + nome);
+    return botao;
 }

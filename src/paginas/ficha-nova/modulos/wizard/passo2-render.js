@@ -7,7 +7,7 @@ import { mostrarAviso, confirmarAcao } from '../../../../componentes/dialogos/di
 import { estado, gerarId, salvarEstado, GRID } from '../paginas/estado.js';
 import { adicionarBlocoNoPainel } from '../paineis.js';
 import { renderizarBloco } from '../blocos/renderizar.js';
-import { adicionarIndicadorDescricao } from '../descricao.js';
+import { adicionarDescricaoAoTitulo } from '../descricao.js';
 import { configurarSeletorDestinoWizard } from './passo2-paginas.js';
 import { copiarElemento } from '../paginas/copiar-colar.js'; // Importando a nova função
 
@@ -161,7 +161,7 @@ export function desenharTelaWizard(refs, campoAtual) {
     inputTitulo.value = painel.titulo;
     inputTitulo.addEventListener('input', (e) => { painel.titulo = e.target.value; });
     header.appendChild(inputTitulo);
-    adicionarIndicadorDescricao(header, painel.descricao);
+    adicionarDescricaoAoTitulo(header, painel.descricao);
     elPainel.appendChild(header);
 
     const conteudo = document.createElement('div');

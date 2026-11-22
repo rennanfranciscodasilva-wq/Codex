@@ -37,53 +37,76 @@ export function configurarDescricao(sheet, aoAlterar) {
 }
 
 let contadorDescricao = 0;
+const descricoesPorTitulo = new WeakMap();
 
-export function adicionarIndicadorDescricao(titulo, descricao) {
-    if (typeof descricao !== 'string' || !descricao.trim()) return;
+export function adicionarDescricaoAoTitulo(titulo, descricao) {
+    if (!titulo) return;
+    const texto = typeof descricao === 'string' ? descricao.trim() : '';
+    const atualizarDescricao = descricoesPorTitulo.get(titulo);
+    if (atualizarDescricao) {
+        atualizarDescricao(texto);
+        return;
+    }
+    if (!texto) return;
 
-    const botao = document.createElement('button');
-    botao.type = 'button';
-    botao.className = 'ficha-descricao-botao';
-    botao.textContent = '?';
-    botao.setAttribute('aria-label', 'Mostrar descrição');
     const dica = document.createElement('div');
     dica.id = 'ficha-descricao-' + ++contadorDescricao;
     dica.className = 'ficha-descricao-dica';
     dica.setAttribute('popover', 'auto');
-    dica.textContent = descricao.trim();
-    botao.setAttribute('aria-controls', dica.id);
-    botao.setAttribute('aria-expanded', 'false');
-    dica.addEventListener('toggle', evento => {
-        botao.setAttribute('aria-expanded', String(evento.newState === 'open'));
-    });
+    dica.setAttribute('role', 'tooltip');
+    const entrada = titulo.matches('.painel-header, .bloco-titulo-wrapper') ? titulo.querySelector('input') : null;
+    const ancoraAcessivel = entrada ?? titulo;
+    function atualizar(valor) {
+        dica.textContent = valor;
+        if (valor) ancoraAcessivel.setAttribute('aria-describedby', dica.id);
+        else {
+            ocultar();
+            ancoraAcessivel.removeAttribute('aria-describedby');
+        }
+        if (!entrada) titulo.tabIndex = valor ? 0 : -1;
+    }
+    descricoesPorTitulo.set(titulo, atualizar);
 
     function mostrar() {
-        if (dica.matches(':popover-open')) return;
+        if (!dica.textContent || dica.matches(':popover-open')) return;
         dica.showPopover();
         const zoom = dica.currentCSSZoom;
         if (zoom && zoom !== 1 && !dica.style.zoom) dica.style.zoom = 1 / zoom;
-        const ancora = botao.getBoundingClientRect();
+        const ancora = titulo.getBoundingClientRect();
         const caixa = dica.getBoundingClientRect();
         const margem = 8;
-        dica.style.left = Math.max(margem, Math.min(ancora.right - caixa.width, document.documentElement.clientWidth - caixa.width - margem)) + 'px';
+        const esquerda = ancora.left + (ancora.width - caixa.width) / 2;
+        dica.style.left = Math.max(margem, Math.min(esquerda, document.documentElement.clientWidth - caixa.width - margem)) + 'px';
         const abaixo = ancora.bottom + margem;
-        const alturaTela = document.documentElement.clientHeight;
-        const topo = abaixo + caixa.height <= alturaTela - margem ? abaixo : ancora.top - caixa.height - margem;
-        dica.style.top = Math.max(margem, topo) + 'px';
+        const acima = ancora.top - caixa.height - margem;
+        const limite = document.documentElement.clientHeight - caixa.height - margem;
+        dica.style.top = Math.max(margem, Math.min(acima >= margem ? acima : abaixo, limite)) + 'px';
     }
 
-    botao.addEventListener('pointerdown', evento => evento.stopPropagation());
-    botao.addEventListener('pointerenter', evento => {
+    function ocultar() {
+        if (dica.matches(':popover-open')) dica.hidePopover();
+    }
+
+    let toqueEmDescricaoAberta = false;
+    titulo.addEventListener('pointerdown', evento => {
+        if (evento.pointerType === 'touch') toqueEmDescricaoAberta = dica.matches(':popover-open');
+    });
+    titulo.addEventListener('pointerenter', evento => {
         if (evento.pointerType === 'mouse') mostrar();
     });
-    botao.addEventListener('pointerleave', evento => {
-        if (evento.pointerType === 'mouse' && dica.matches(':popover-open')) dica.hidePopover();
+    titulo.addEventListener('pointerleave', evento => {
+        if (evento.pointerType === 'mouse') ocultar();
     });
-    botao.addEventListener('click', evento => {
-        evento.stopPropagation();
-        if (dica.matches(':popover-open')) dica.hidePopover();
+    titulo.addEventListener('focusin', evento => {
+        if (evento.target === (entrada ?? titulo) && evento.target.matches(':focus-visible')) mostrar();
+    });
+    titulo.addEventListener('focusout', ocultar);
+    titulo.addEventListener('click', evento => {
+        if (evento.pointerType !== 'touch' || titulo.closest('.modo-edicao') ||
+            evento.target.closest('input:not([readonly]), textarea:not([readonly]), button, a')) return;
+        if (toqueEmDescricaoAberta) ocultar();
         else mostrar();
     });
-    titulo.classList.add('com-descricao');
-    titulo.append(botao, dica);
+    titulo.append(dica);
+    atualizar(texto);
 }

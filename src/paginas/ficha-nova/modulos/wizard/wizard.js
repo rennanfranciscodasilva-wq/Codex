@@ -10,6 +10,7 @@ import { capturarCampoAtual, executarFinalizar } from './finalizar.js';
 import { configurarCarregamentoModelo } from '../paginas/json.js';
 import { validarNomeNaConta } from '../../../../servicos/armazenamento/biblioteca.js';
 import { excluirRascunho, lerRascunho, observarRascunho, salvarRascunho } from './rascunho.js';
+import { configurarOrigemFormulas } from '../automacao.js';
 
 let refs = null;
 let cbRenderizarMenu = null;
@@ -76,7 +77,7 @@ function injetarHTMLWizard(pagina) {
                         <i class="fas fa-times"></i> Cancelar
                     </button>
                     <button id="btn-wizard-proximo-campo">Salvar e Criar Próximo Campo</button>
-                    <button id="btn-wizard-finalizar">Finalizar e Ir para Ficha</button>
+                    <button id="btn-wizard-finalizar">Finalizar e ir para Personagens</button>
                 </div>
             </div>
 
@@ -203,6 +204,7 @@ export function abrirWizard() {
 export function desmontarWizard() {
     // A folha e o assistente saem juntos com a transição da página.
     observarRascunho(null);
+    configurarOrigemFormulas(null);
 }
 
 function limparEditor() {
@@ -239,12 +241,14 @@ function solicitarConfirmacao(acao) {
     refs.modalAcoes.innerHTML = '';
 
     if (acao === 'cancelar') {
-        refs.modalTexto.textContent = "O que deseja fazer com a ficha em criação?";
+        refs.modalTexto.textContent = 'O que deseja fazer com o modelo em criação?';
         refs.modalAcoes.innerHTML = `
             <button class="btn-secondary" id="btn-cancelar-voltar">Voltar ao Passo 1</button>
-            <button class="btn-secondary" id="btn-cancelar-finalizar">Finalizar Ficha</button>
+            <button class="btn-secondary" id="btn-cancelar-finalizar">Finalizar e ir para Personagens</button>
+            <button class="btn-secondary" id="btn-cancelar-edicao">Cancelar</button>
         `;
         refs.modal.classList.remove('hidden');
+        document.querySelector('#btn-cancelar-edicao').onclick = fecharModal;
 
         document.querySelector('#btn-cancelar-voltar').onclick = () => {
             fecharModal();
@@ -265,11 +269,11 @@ function solicitarConfirmacao(acao) {
 
     refs.modalTexto.textContent = acao === 'proximo'
         ? 'Deseja salvar este campo e criar um novo?'
-        : 'Deseja finalizar a ficha e criar o molde do sistema?';
+        : 'Deseja salvar o modelo e ir para o seletor de personagens?';
     
     refs.modalAcoes.innerHTML = `
         <button class="btn-secondary" id="btn-modal-cancelar">Cancelar</button>
-        <button class="btn-primary" id="btn-modal-confirmar">Sim, Continuar</button>
+        <button class="btn-primary" id="btn-modal-confirmar">${acao === 'finalizar' ? 'Finalizar modelo' : 'Sim, continuar'}</button>
     `;
     refs.modal.classList.remove('hidden');
 
@@ -334,6 +338,19 @@ function entrarNoModoEditor(restaurando = false) {
         salvarEstado();
     }
 
+    configurarOrigemFormulas(() => {
+        if (!refs.pagina.classList.contains('wizard-ativo')) return null;
+        const paginas = estado.paginas.map(pagina => ({ ...pagina, paineis: [] }));
+        const porId = new Map(paginas.map(pagina => [pagina.id, pagina]));
+        const campoAtual = sistemaEmCriacao.campoAtual;
+        for (const campo of sistemaEmCriacao.campos) {
+            if (campo.id !== campoAtual?.id) {
+                (porId.get(campo.paginaDestino) ?? paginas[0])?.paineis.push(campo);
+            }
+        }
+        if (campoAtual) (porId.get(estado.paginaAtivaId) ?? paginas[0])?.paineis.push(campoAtual);
+        return paginas;
+    });
     criarAmbienteDeCampo(refs, cbRenderizarMenu, contadorCampo, sistemaEmCriacao.campoAtual);
     observarRascunho(() => ({
         sistema: sistemaEmCriacao, contador: contadorCampo,

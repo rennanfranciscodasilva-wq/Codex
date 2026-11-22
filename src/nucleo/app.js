@@ -36,7 +36,7 @@ function iniciarCodex() {
         }
     });
 
-    console.log('%cCodex iniciado ⚔', 'color:#d4af37;font-weight:bold;font-size:14px;');
+    console.log('%cCodex iniciado', 'color:#d4af37;font-weight:bold;font-size:14px;');
 }
 
 // Executa quando o DOM estiver pronto

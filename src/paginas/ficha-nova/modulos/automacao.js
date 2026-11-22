@@ -3,7 +3,7 @@
    ============================================================ */
 
 import { mostrarAviso, confirmarAcao } from '../../../componentes/dialogos/dialogos.js';
-import { estado, getPaginaAtiva } from './paginas/index.js';
+import { estado } from './paginas/index.js';
 
 // CRIAÇÃO DO BARRAMENTO DE EVENTOS (Para atualizar a tela em tempo real)
 export const formulaEventBus = new EventTarget();
@@ -12,6 +12,15 @@ let formulaAtual = [];
 let blocoAlvoId = null;
 let painelAlvoId = null;
 let callbackSalvar = null;
+let obterPaginasDoRascunho;
+
+export function configurarOrigemFormulas(obterPaginas) {
+    obterPaginasDoRascunho = obterPaginas;
+}
+
+function obterPaginasParaFormulas() {
+    return obterPaginasDoRascunho?.() ?? estado.paginas;
+}
 
 export function configurarEditorFormula(onSalvar) {
     callbackSalvar = onSalvar;
@@ -20,10 +29,12 @@ export function configurarEditorFormula(onSalvar) {
     const btnClose = document.querySelector('#formula-sheet-close-btn');
     const btnSalvar = document.querySelector('#btn-salvar-formula');
     const listaCampos = document.querySelector('#formula-campos-list');
+    const busca = document.querySelector('#formula-busca');
     const operadores = document.querySelectorAll('.op-btn');
     const dragHandle = document.querySelector('#formula-sheet-header-drag');
 
     if (!sheet || !builder) return;
+    busca?.addEventListener('input', renderizarCamposDisponiveis);
 
     // Lógica de Arrastar a Janela (Livre pela tela)
     let isDraggingSheet = false, startX = 0, startY = 0, initialX = 0, initialY = 0;
@@ -63,11 +74,7 @@ export function configurarEditorFormula(onSalvar) {
         btnSalvar.addEventListener('click', () => {
             if (!validarFormula()) return;
             
-            const pag = getPaginaAtiva();
-            if (!pag) return;
-            const painel = pag.paineis.find(p => p.id === painelAlvoId);
-            if (!painel) return;
-            const bloco = painel.blocos.find(b => b.id === blocoAlvoId);
+            const bloco = encontrarBlocoPorId(painelAlvoId, blocoAlvoId);
             if (!bloco) return;
             
             // Prevenção de ciclos indiretos
@@ -97,6 +104,7 @@ export function configurarEditorFormula(onSalvar) {
             formulaAtual = [];
         }
 
+        if (busca) busca.value = '';
         renderizarCamposDisponiveis();
         renderizarFormula();
 
@@ -120,43 +128,62 @@ export function configurarEditorFormula(onSalvar) {
 
     function renderizarCamposDisponiveis() {
         if (!listaCampos) return;
-        listaCampos.innerHTML = '';
-        
-        estado.paginas.forEach(pag => {
-            const numericos = [];
-            
-            pag.paineis.forEach(painel => {
-                painel.blocos.forEach(bloco => {
-                    if (bloco.tipo === 'numerico' && bloco.id !== blocoAlvoId) {
-                        numericos.push({ painelId: painel.id, blocoId: bloco.id, nome: bloco.tituloBloco || 'Sem Título' });
-                    }
-                });
-            });
+        const consulta = normalizarBusca(busca?.value || '').trim();
+        const termos = consulta ? consulta.split(/\s+/) : [];
+        listaCampos.replaceChildren();
+        listaCampos.scrollTop = 0;
 
-            if (numericos.length > 0) {
-                const group = document.createElement('div');
-                group.className = 'formula-group';
-                group.innerHTML = `<div class="formula-group-title">Página: ${escapeHtml(pag.nome)}</div>`;
-                
-                numericos.forEach(b => {
+        for (const [indice, pag] of obterPaginasParaFormulas().entries()) {
+            const nomePagina = pag.nome || `Página ${indice + 1}`;
+            const grupo = document.createElement('section');
+            grupo.className = 'formula-group';
+            const titulo = document.createElement('h4');
+            titulo.className = 'formula-group-title';
+            titulo.textContent = nomePagina;
+            grupo.append(titulo);
+
+            for (const painel of pag.paineis ?? []) {
+                const nomeCampo = painel.titulo || 'Campo sem título';
+                const submenu = document.createElement('details');
+                submenu.className = 'formula-campo-grupo';
+                submenu.open = Boolean(consulta);
+                const resumo = document.createElement('summary');
+                resumo.textContent = nomeCampo;
+                submenu.append(resumo);
+
+                for (const bloco of painel.blocos ?? []) {
+                    if (bloco.tipo !== 'numerico' || (painel.id === painelAlvoId && bloco.id === blocoAlvoId)) continue;
+                    const nome = bloco.tituloBloco || 'Sem título';
+                    const caminho = normalizarBusca(`${nomePagina} ${nomeCampo} ${nome}`);
+                    if (!termos.every(termo => caminho.includes(termo))) continue;
+
                     const btn = document.createElement('button');
+                    btn.type = 'button';
                     btn.className = 'formula-field-btn';
-                    btn.textContent = b.nome;
+                    btn.textContent = nome;
                     btn.onclick = () => {
                         formulaAtual.push({ 
                             tipo: 'campo', 
                             id: 'c_' + Date.now(), 
-                            blocoId: b.blocoId, 
-                            painelId: b.painelId, 
-                            nome: b.nome 
+                            blocoId: bloco.id,
+                            painelId: painel.id,
+                            nome
                         });
                         renderizarFormula();
                     };
-                    group.appendChild(btn);
-                });
-                listaCampos.appendChild(group);
+                    submenu.append(btn);
+                }
+                if (submenu.childElementCount > 1) grupo.append(submenu);
             }
-        });
+            if (grupo.childElementCount > 1) listaCampos.append(grupo);
+        }
+        if (!listaCampos.childElementCount) {
+            const vazio = document.createElement('p');
+            vazio.className = 'formula-busca-vazia';
+            vazio.setAttribute('role', 'status');
+            vazio.textContent = consulta ? 'Nenhum resultado encontrado.' : 'Nenhum outro bloco numérico disponível.';
+            listaCampos.append(vazio);
+        }
     }
 
     function renderizarFormula() {
@@ -221,8 +248,8 @@ function detectarCiclo(alvoId, formula, origemId, visitados = new Set()) {
 }
 
 function encontrarBlocoPorId(painelId, blocoId) {
-    for (const pag of estado.paginas) {
-        const painel = pag.paineis.find(p => p.id === painelId);
+    for (const pag of obterPaginasParaFormulas()) {
+        const painel = pag.paineis?.find(p => p.id === painelId);
         if (painel) {
             const bloco = painel.blocos.find(b => b.id === blocoId);
             if (bloco) return bloco;
@@ -231,14 +258,8 @@ function encontrarBlocoPorId(painelId, blocoId) {
     return null;
 }
 
-function escapeHtml(str) {
-    if (typeof str !== 'string') return '';
-    return str
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#39;');
+function normalizarBusca(texto) {
+    return texto.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase();
 }
 
 export function calcularFormula(formula, visitados = new Set()) {

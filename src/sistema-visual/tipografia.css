@@ -28,17 +28,6 @@
     text-shadow: var(--brilho-forte);
 }
 
-.codex-title::after {
-    content: "⚔ RPG ⚔";
-    display: block;
-    font-size: clamp(0.55rem, 1.4vw, 0.9rem);
-    letter-spacing: clamp(4px, 1.2vw, 12px);
-    color: var(--cor-texto-suave);
-    text-shadow: 0 0 6px var(--cor-dourado-medio);
-    font-weight: 400;
-    margin-top: clamp(0.3rem, 1vh, 0.8rem);
-}
-
 @keyframes titlePulse {
     0%   { text-shadow: var(--brilho-medio); }
     100% { text-shadow: var(--brilho-forte); }

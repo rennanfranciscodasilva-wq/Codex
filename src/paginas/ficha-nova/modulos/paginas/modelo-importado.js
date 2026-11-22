@@ -126,7 +126,7 @@ function identificarEstrutura(modelo) {
                 bloco.tipo ||= 'textual';
                 bloco.modelo ||= 'padrao';
                 bloco.alignTitulo ||= 'left';
-                bloco.alignConteudo ||= 'left';
+                bloco.alignConteudo ||= bloco.tipo === 'numerico' ? 'center' : 'left';
             }
         }
     }

@@ -5,7 +5,7 @@
 import { confirmarAcao } from '../../../../componentes/dialogos/dialogos.js';
 import { estado, salvarEstado, getPaginaAtiva, estaEmModoEdicao } from '../paginas/index.js';
 import { configurarEditorFormula, formulaEventBus } from '../automacao.js';
-import { configurarDescricao } from '../descricao.js';
+import { adicionarDescricaoAoTitulo, configurarDescricao } from '../descricao.js';
 
 let blocoSendoEditadoId = null;
 let painelPaiIdTemp = null;
@@ -42,6 +42,7 @@ export function configurarSheetBloco(renderizarCallback) {
 
     const wrapAlinhamento = document.querySelector('#bloco-sheet-alinhamento-wrapper');
     const selectAlignTitulo = document.querySelector('#bloco-sheet-align-titulo');
+    const campoAlignTitulo = selectAlignTitulo?.closest('.sheet-field');
     const selectAlignConteudo = document.querySelector('#bloco-sheet-align-conteudo');
 
     const wrapUrl = document.querySelector('#bloco-sheet-url-wrapper');
@@ -93,7 +94,9 @@ export function configurarSheetBloco(renderizarCallback) {
         if (descricao === undefined) delete bloco.descricao;
         else bloco.descricao = descricao;
         salvarEstado({ descricaoEditada: { tipo: 'bloco', id: bloco.id, descricao: descricao ?? null } });
-        atualizarBlocoNaFolha();
+        const campo = document.querySelector(`#pagina-ficha-nova .painel[data-painel-id="${CSS.escape(String(painelPaiIdTemp))}"]`);
+        const elemento = campo?.querySelector(`.bloco[data-bloco-id="${CSS.escape(String(bloco.id))}"]`);
+        adicionarDescricaoAoTitulo(elemento?.querySelector('.bloco-titulo-wrapper') ?? elemento, descricao);
     });
 
     configurarEditorFormula(() => {
@@ -138,6 +141,7 @@ export function configurarSheetBloco(renderizarCallback) {
     const atualizarInterface = () => {
         if (!selectTipo) return;
         const tipo = selectTipo.value;
+        const temAlinhamento = tipo === 'textual' || tipo === 'numerico';
         const modelo = tipo === 'textual' ? selectModeloTxt?.value : (tipo === 'numerico' ? selectModeloNum?.value : '');
         const temTitulo = modelo && modelo.includes('titulo');
 
@@ -145,7 +149,8 @@ export function configurarSheetBloco(renderizarCallback) {
         if (wrapModeloNum) wrapModeloNum.style.display = (tipo === 'numerico') ? 'flex' : 'none';
         if (wrapModificador) wrapModificador.style.display = (tipo === 'numerico') ? 'flex' : 'none';
         if (wrapAutomacao) wrapAutomacao.style.display = (tipo === 'numerico') ? 'flex' : 'none';
-        if (wrapAlinhamento) wrapAlinhamento.style.display = temTitulo ? 'flex' : 'none';
+        if (wrapAlinhamento) wrapAlinhamento.style.display = temAlinhamento ? 'flex' : 'none';
+        if (campoAlignTitulo) campoAlignTitulo.style.display = temTitulo ? 'flex' : 'none';
         if (wrapUrl) wrapUrl.style.display = (tipo === 'imagem') ? 'flex' : 'none';
 
         if (blocoImgControles) {
@@ -308,9 +313,13 @@ export function configurarSheetBloco(renderizarCallback) {
         const b = obterBlocoAtual();
         if (!b) return;
 
+        const virandoNumerico = b.tipo !== 'numerico' && selectTipo?.value === 'numerico';
         if (selectTipo) b.tipo = selectTipo.value;
         if (selectAlignTitulo) b.alignTitulo = selectAlignTitulo.value;
-        if (selectAlignConteudo) b.alignConteudo = selectAlignConteudo.value;
+        if (selectAlignConteudo) {
+            if (virandoNumerico) selectAlignConteudo.value = 'center';
+            b.alignConteudo = selectAlignConteudo.value;
+        }
         
         if (b.tipo === 'textual') {
             if (selectModeloTxt) b.modelo = selectModeloTxt.value;

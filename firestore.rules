@@ -69,8 +69,9 @@ service cloud.firestore {
 
     // Preserva a regra da coleção antiga de nível superior.
     match /fichas/{fichaId} {
-      allow read, write: if request.auth != null
-        && request.auth.uid == resource.data.donoId;
+      allow read, delete: if titular(resource.data.donoId);
+      allow update: if titular(resource.data.donoId)
+        && request.resource.data.donoId == resource.data.donoId;
     }
   }
 }

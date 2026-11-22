@@ -23,11 +23,13 @@ export function mostrarNotificacao(titulo, mensagem, tipo = 'erro') {
     toast.innerHTML = `
         <div class="toast-icon"><i class="fas ${icone}"></i></div>
         <div class="toast-content">
-            <h4 class="toast-title">${titulo}</h4>
-            <p class="toast-msg">${mensagem}</p>
+            <h4 class="toast-title"></h4>
+            <p class="toast-msg"></p>
         </div>
         <button class="toast-close"><i class="fas fa-times"></i></button>
     `;
+    toast.querySelector('.toast-title').textContent = titulo;
+    toast.querySelector('.toast-msg').textContent = mensagem;
 
     container.appendChild(toast);
 

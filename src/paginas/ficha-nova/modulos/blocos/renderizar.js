@@ -7,7 +7,7 @@ import {
 } from '../paginas/index.js';
 import { calcularFormula, formulaEventBus } from '../automacao.js';
 import { iniciarArrastoBloco, iniciarResizeBloco } from './interacoes.js';
-import { adicionarIndicadorDescricao } from '../descricao.js';
+import { adicionarDescricaoAoTitulo } from '../descricao.js';
 
 const BLOCO_ALT_MIN = 40;
 
@@ -21,7 +21,7 @@ export function renderizarBloco(bloco, painelPaiId, renderizarPaineisCallback) {
     if (!bloco.tipo) bloco.tipo = 'textual';
     if (!bloco.modelo) bloco.modelo = 'padrao';
     if (!bloco.alignTitulo) bloco.alignTitulo = 'left';
-    if (!bloco.alignConteudo) bloco.alignConteudo = 'left';
+    if (!bloco.alignConteudo) bloco.alignConteudo = bloco.tipo === 'numerico' ? 'center' : 'left';
 
     const isExpansivel = bloco.modelo && bloco.modelo.includes('expansivel');
     if (bloco.tipo === 'textual' && isExpansivel) {
@@ -49,7 +49,7 @@ export function renderizarBloco(bloco, painelPaiId, renderizarPaineisCallback) {
     if ((bloco.tipo === 'textual' || bloco.tipo === 'numerico') && bloco.modelo.includes('titulo')) {
         el.appendChild(criarTituloWrapper(bloco, painelPaiId));
     } else {
-        adicionarIndicadorDescricao(el, bloco.descricao);
+        adicionarDescricaoAoTitulo(el, bloco.descricao);
     }
 
     // --- CONTEÚDO ---
@@ -148,7 +148,7 @@ function criarTituloWrapper(bloco, painelPaiId) {
     });
     
     tituloWrapper.appendChild(inputTitulo);
-    adicionarIndicadorDescricao(tituloWrapper, bloco.descricao);
+    adicionarDescricaoAoTitulo(tituloWrapper, bloco.descricao);
     if (estaEmModoEdicao()) {
         const alca = document.createElement('span');
         alca.className = 'bloco-titulo-alca';

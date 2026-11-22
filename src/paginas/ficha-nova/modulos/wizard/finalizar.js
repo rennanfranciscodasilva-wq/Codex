@@ -24,6 +24,9 @@ export function capturarCampoAtual(sistemaEmCriacao) {
 export async function executarFinalizar(sistemaEmCriacao, refs) {
     const rota = window.location.hash;
     if (refs.finalizando) return;
+    if (!sistemaEmCriacao.campos.length && !sistemaEmCriacao.campoAtual?.blocos?.length) {
+        return mostrarAviso('Adicione pelo menos um campo com blocos antes de finalizar o modelo.');
+    }
     refs.finalizando = true;
     try {
         await validarNomeNaConta('codex_sistemas', { nome: sistemaEmCriacao.nome });
@@ -124,6 +127,5 @@ export async function executarFinalizar(sistemaEmCriacao, refs) {
     if (btnAnimacao) btnAnimacao.style.display = '';
     if (btnModoEdicao) btnModoEdicao.style.display = '';
     
-    // Redireciona para a ficha (agora usando o id do sistema)
-    window.location.hash = `#/ficha/personagens?id=${idSistema}`;
+    window.location.hash = '#/ficha/personagens?' + new URLSearchParams({ id: idSistema });
 }

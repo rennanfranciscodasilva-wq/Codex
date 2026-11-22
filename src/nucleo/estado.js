@@ -6,6 +6,7 @@
 import { observarAutenticacao } from '../servicos/autenticacao/autenticacao.js';
 import { doc, getDoc, runTransaction } from 'firebase/firestore';
 import { db } from '../servicos/firebase/config.js';
+import { armazenamentoBiblioteca, prepararBiblioteca } from '../servicos/armazenamento/biblioteca.js';
 
 const estadoInicial = {
     tema: 'escuro',
@@ -18,12 +19,16 @@ const estadoInicial = {
 
 let estado = { ...estadoInicial };
 const ouvintes = new Set();
+let sessaoPerfil = 0;
 
 // Conecta o Firebase ao estado global.
 observarAutenticacao(async (userFirebase) => {
+    const sessao = ++sessaoPerfil;
     if (userFirebase) {
         // 1. Define o usuário básico primeiro (para o site não travar enquanto busca)
         definirEstado({
+            personagens: [],
+            personagemAtivo: null,
             usuario: {
                 uid: userFirebase.uid,
                 email: userFirebase.email,
@@ -31,11 +36,15 @@ observarAutenticacao(async (userFirebase) => {
                 fotoUrl: null
             }
         });
+        prepararBiblioteca().then(() => {
+            if (sessao === sessaoPerfil) atualizarPersonagensDaBiblioteca();
+        }).catch(erro => console.error('[estado] Falha ao preparar biblioteca:', erro));
 
         // 2. Busca os dados complementares (nome, foto) no Firestore
         try {
             const docRef = doc(db, 'usuarios', userFirebase.uid);
             const docSnap = await getDoc(docRef);
+            if (sessao !== sessaoPerfil) return;
 
             if (docSnap.exists()) {
                 const dados = docSnap.data();
@@ -63,6 +72,7 @@ observarAutenticacao(async (userFirebase) => {
                     transacao.set(docRef, inicial);
                     return inicial;
                 });
+                if (sessao !== sessaoPerfil) return;
                 
                 // E já atualiza o estado local
                 definirEstado({
@@ -76,6 +86,7 @@ observarAutenticacao(async (userFirebase) => {
                 });
             }
         } catch (erro) {
+            if (sessao !== sessaoPerfil) return;
             console.error("[estado] Erro ao buscar dados do usuário no Firestore:", erro);
             // Mesmo se der erro no Firestore, garante que o usuário tenha o nome do email
             definirEstado({
@@ -88,8 +99,6 @@ observarAutenticacao(async (userFirebase) => {
             });
         }
 
-        // 3. Busca os personagens assim que o usuário logar
-        carregarPersonagensDoUsuario(userFirebase.uid);
     } else {
         // Se deslogar, limpa o usuário E os personagens
         definirEstado({ 
@@ -99,6 +108,8 @@ observarAutenticacao(async (userFirebase) => {
         });
     }
 });
+
+window.addEventListener('codex-biblioteca', atualizarPersonagensDaBiblioteca);
 
 /**
  * Retorna cópia do estado (evita mutação externa acidental).
@@ -155,46 +166,20 @@ function notificar() {
     });
 }
 
-/* ============================================================
-   FUNÇÃO: Buscar no Cache + Firebase (Mantendo Únicos)
-   ============================================================ */
-export async function carregarPersonagensDoUsuario(uid) {
+function atualizarPersonagensDaBiblioteca() {
+    if (!estado.usuario) return;
     try {
-        // 1. Busca no Cache (LocalStorage)
-        const cacheStr = localStorage.getItem(`codex_personagens_${uid}`);
-        let personagensCache = cacheStr ? JSON.parse(cacheStr) : [];
-
-        // 2. Busca no Firebase (Simulação por enquanto)
-        // TODO: Substitua este bloco pela chamada real ao Firestore no futuro.
-        const personagensFirebase = await new Promise((resolve) => {
-            setTimeout(() => {
-                // Quando o Firebase for conectado, ele vai retornar um array aqui.
-                // Para testar o visual do menu sem Firebase, você pode simular:
-                /*
-                resolve([
-                    { id: '1', nome: 'Kael, o Bárbaro', sistema: 'Vastura' },
-                    { id: '2', nome: 'Lyra, a Feiticeira', sistema: 'Vastura' },
-                    { id: '3', nome: 'Thorin', sistema: 'Old Dragon' }
-                ]);
-                */
-                resolve([]); 
-            }, 500);
-        });
-
-        // 3. Junta as duas listas e remove duplicados
-        const todosPersonagens = [...personagensCache, ...personagensFirebase];
-        
-        // O Map garante que se um personagem estiver nos dois lugares, ele apareça só uma vez.
-        const unicos = new Map();
-        todosPersonagens.forEach(p => unicos.set(p.id, p));
-        
-        const listaFinal = Array.from(unicos.values());
-
-        // 4. Atualiza o estado global (o cabeçalho vai reagir a isso)
-        definirEstado({ personagens: listaFinal });
-
+        const sistemas = JSON.parse(armazenamentoBiblioteca.getItem('codex_sistemas') || '[]');
+        const nomes = new Map(sistemas.map(sistema => [sistema.id, sistema.nome]));
+        const fichas = JSON.parse(armazenamentoBiblioteca.getItem('codex_fichas_jogador') || '[]');
+        const personagens = fichas.map(ficha => ({
+            id: ficha.id,
+            nome: ficha.nomePersonagem || 'Sem nome',
+            sistema: nomes.get(ficha.sistemaId) || 'Sem sistema'
+        }));
+        const ativo = personagens.find(personagem => personagem.id === estado.personagemAtivo?.id) || null;
+        definirEstado({ personagens, personagemAtivo: ativo });
     } catch (erro) {
-        console.error('[estado] Erro ao carregar personagens:', erro);
-        definirEstado({ personagens: [] });
+        console.warn('[estado] Não foi possível ler os personagens:', erro);
     }
 }

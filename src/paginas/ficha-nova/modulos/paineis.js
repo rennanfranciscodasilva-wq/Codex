@@ -8,7 +8,7 @@ import {
     estado, salvarEstado, GRID, getPaginaAtiva, estaEmModoEdicao, setElementoSelecionado, gerarId, gerarNomeUnico 
 } from './paginas/index.js';
 import { renderizarBloco, configurarSheetBloco } from './blocos/index.js';
-import { adicionarIndicadorDescricao, configurarDescricao } from './descricao.js';
+import { adicionarDescricaoAoTitulo, configurarDescricao } from './descricao.js';
 import { encaixarNasGuias } from './regua.js';
 
 /* ============================================================
@@ -56,7 +56,7 @@ export function renderizarPainel(painel, renderizarPaineisCallback, renderizarBl
 
     header.appendChild(alcaArrasto);
     header.appendChild(inputTitulo);
-    adicionarIndicadorDescricao(header, painel.descricao);
+    adicionarDescricaoAoTitulo(header, painel.descricao);
     el.appendChild(header);
 
     // --- CONTEÚDO ---
@@ -217,7 +217,8 @@ export function configurarSheetCampo(renderizarCallback) {
         if (descricao === undefined) delete campo.descricao;
         else campo.descricao = descricao;
         salvarEstado({ descricaoEditada: { tipo: 'campo', id: campo.id, descricao: descricao ?? null } });
-        campoRenderizarCallback?.();
+        const elemento = document.querySelector(`#pagina-ficha-nova .painel[data-painel-id="${CSS.escape(String(campo.id))}"] > .painel-header`);
+        adicionarDescricaoAoTitulo(elemento, descricao);
     });
 
     let isDragging = false, startX = 0, startY = 0, initialX = 0, initialY = 0;
