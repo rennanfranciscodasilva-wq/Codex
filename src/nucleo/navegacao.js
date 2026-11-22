@@ -3,6 +3,7 @@
    ============================================================ */
 
 import { navegar } from './roteador.js';
+import { confirmarAcao } from '../componentes/dialogos/dialogos.js';
 
 let inicializado = false;
 
@@ -24,7 +25,7 @@ export function irPara(rota) {
 
 /* ---------- Handler ---------- */
 
-function aoClicar(evento) {
+async function aoClicar(evento) {
     const alvo = evento.target.closest('[data-rota]');
     if (!alvo) return;
 
@@ -47,14 +48,15 @@ function aoClicar(evento) {
     }
 
     evento.preventDefault();
+    const origem = window.location.hash;
     if (
         rota === '/inicio' &&
         alvo.matches('.codex-global-header .codex-title') &&
         fichaAbertaOuNoPassoDois() &&
-        !window.confirm('Você quer voltar para o início do Codex?')
+        !(await confirmarAcao('Você quer voltar para o início do Codex?'))
     ) return;
 
-    navegar(rota);
+    if (window.location.hash === origem) navegar(rota);
 }
 
 function fichaAbertaOuNoPassoDois() {

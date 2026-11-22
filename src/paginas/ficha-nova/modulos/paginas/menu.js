@@ -2,6 +2,7 @@
    MÓDULO: MENU LATERAL (Ficha Nova)
    ============================================================ */
 
+import { mostrarAviso, confirmarAcao } from '../../../../componentes/dialogos/dialogos.js';
 import { 
     estado, 
     salvarEstado, 
@@ -38,6 +39,9 @@ export function renderizarMenu() {
         const btn = document.createElement('button');
         btn.className = `folha-pagina-btn ${isAtiva ? 'ativa' : ''}`;
         btn.dataset.pageId = pag.id;
+        const nome = pag.nome?.trim() || `Página ${index + 1}`;
+        btn.title = nome;
+        btn.setAttribute('aria-label', nome);
         
         // MOSTRA APENAS O NÚMERO
         btn.innerHTML = `<span style="font-weight: bold; font-size: 1.1rem;">${index + 1}</span>`;
@@ -51,12 +55,12 @@ export function renderizarMenu() {
             btnX.innerHTML = '<i class="fas fa-times"></i>';
             btnX.title = 'Excluir esta página';
 
-            btnX.addEventListener('click', (e) => {
+            btnX.addEventListener('click', async (e) => {
                 e.preventDefault();
                 e.stopPropagation();
 
                 if (estado.paginas.length <= 1) {
-                    alert("Você precisa ter pelo menos uma página no sistema.");
+                    mostrarAviso("Você precisa ter pelo menos uma página no sistema.");
                     return;
                 }
 
@@ -72,7 +76,7 @@ export function renderizarMenu() {
                     }
                 }
 
-                if (confirm(mensagem)) {
+                if ((await confirmarAcao(mensagem))) {
                     const index = estado.paginas.findIndex(p => p.id === pag.id);
                     if (index === -1) return;
                     estado.paginas.splice(index, 1);
@@ -100,7 +104,7 @@ export function renderizarMenu() {
 
 export function adicionarPagina() {
     if (!estaEmModoEdicao()) return;
-    if (estado.paginas.length >= MAX_PAGINAS) return alert(`Limite de ${MAX_PAGINAS} páginas.`);
+    if (estado.paginas.length >= MAX_PAGINAS) return mostrarAviso(`Limite de ${MAX_PAGINAS} páginas.`);
 
     const novaPagina = {
         id: gerarId('pag_'),
@@ -147,7 +151,7 @@ export function trocarPagina(id) {
 }
 
 export function excluirPagina(id) {
-    if (estado.paginas.length <= 1) return alert("Mínimo de 1 página.");
+    if (estado.paginas.length <= 1) return mostrarAviso("Mínimo de 1 página.");
     const index = estado.paginas.findIndex(p => p.id === id);
     if (index === -1) return;
     estado.paginas.splice(index, 1);
@@ -163,7 +167,7 @@ export function excluirPagina(id) {
 
 export function duplicarPaginaAtual() {
     if (!estaEmModoEdicao()) return;
-    if (estado.paginas.length >= MAX_PAGINAS) return alert(`Limite de ${MAX_PAGINAS} páginas.`);
+    if (estado.paginas.length >= MAX_PAGINAS) return mostrarAviso(`Limite de ${MAX_PAGINAS} páginas.`);
     
     const pagAtual = getPaginaAtiva();
     if (!pagAtual) return;

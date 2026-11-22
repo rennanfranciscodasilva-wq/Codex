@@ -4,7 +4,7 @@
    ============================================================ */
 
 import { observarAutenticacao } from '../servicos/autenticacao/autenticacao.js';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { doc, getDoc, runTransaction } from 'firebase/firestore';
 import { db } from '../servicos/firebase/config.js';
 
 const estadoInicial = {
@@ -52,10 +52,16 @@ observarAutenticacao(async (userFirebase) => {
             } else {
                 // Se o usuário existe no Auth mas não tem documento no Firestore,
                 // criamos um documento básico para ele não ficar sem dados.
-                await setDoc(docRef, {
-                    nome: userFirebase.email.split('@')[0],
-                    email: userFirebase.email,
-                    fotoUrl: ""
+                const dados = await runTransaction(db, async transacao => {
+                    const perfil = await transacao.get(docRef);
+                    if (perfil.exists()) return perfil.data();
+                    const inicial = {
+                        nome: userFirebase.email.split('@')[0],
+                        email: userFirebase.email,
+                        fotoUrl: ""
+                    };
+                    transacao.set(docRef, inicial);
+                    return inicial;
                 });
                 
                 // E já atualiza o estado local
@@ -63,8 +69,9 @@ observarAutenticacao(async (userFirebase) => {
                     usuario: {
                         uid: userFirebase.uid,
                         email: userFirebase.email,
-                        nome: userFirebase.email.split('@')[0],
-                        fotoUrl: null
+                        nome: dados.nome || userFirebase.email.split('@')[0],
+                        fotoUrl: dados.fotoUrl || null,
+                        ultimaTrocaNome: dados.ultimaTrocaNome || null
                     }
                 });
             }

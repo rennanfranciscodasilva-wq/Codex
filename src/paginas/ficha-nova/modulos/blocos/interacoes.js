@@ -2,6 +2,9 @@
    MÓDULO: INTERAÇÕES DE BLOCO (arrasto, resize, excluir)
    ============================================================ */
 
+import { ajustarTituloAoRedimensionar, redimensionar } from '../redimensionamento.js';
+import { encaixarNasGuias } from '../regua.js';
+import { confirmarAcao } from '../../../../componentes/dialogos/dialogos.js';
 import { 
     estado, 
     salvarEstado, 
@@ -33,7 +36,7 @@ export function iniciarArrastoBloco(e, bloco, painelPaiId) {
 
     const folha = document.querySelector('#pagina-ficha-nova .folha');
     if (!folha) return;
-    const zoomAtual = parseFloat(folha.style.zoom || '1') || 1;
+    const zoomAtual = folha.getBoundingClientRect().width / folha.offsetWidth || 1;
     const startX = e.clientX, startY = e.clientY, origX = bloco.x, origY = bloco.y;
 
     const onMove = (ev) => {
@@ -45,6 +48,8 @@ export function iniciarArrastoBloco(e, bloco, painelPaiId) {
             novoX = Math.round(novoX / GRID) * GRID; 
             novoY = Math.round(novoY / GRID) * GRID;
         }
+
+        ({ x: novoX, y: novoY } = encaixarNasGuias(folha, elArea, novoX, novoY, bloco.largura, bloco.altura, zoomAtual));
 
         // 2. Limites
         const maxX = elArea.clientWidth - bloco.largura - 10, maxY = elArea.clientHeight - bloco.altura - 10;
@@ -105,38 +110,28 @@ export function iniciarResizeBloco(e, bloco, lado, painelPaiId) {
         minLargura = bloco.modTipo === 'com' ? 140 : 80;
     }
 
-    let blocoAltMin = 28;
+    let minAltura = 28;
+    let passoAltura = 0;
+    const campoTexto = elBloco.querySelector('.bloco-textarea');
+    const proporcional = estaEmModoEdicao() && estado.redimensionarEmConjunto;
+    if (campoTexto && (proporcional || lado === 'topo' || lado === 'base')) {
+        const borda = getComputedStyle(elBloco);
+        const interno = getComputedStyle(campoTexto.parentElement);
+        passoAltura = parseFloat(getComputedStyle(campoTexto).lineHeight);
+        minAltura = passoAltura + parseFloat(borda.borderTopWidth) + parseFloat(borda.borderBottomWidth)
+            + parseFloat(interno.paddingTop) + parseFloat(interno.paddingBottom);
+    }
 
     const onMove = (ev) => {
         const dx = (ev.clientX - startX) / zoomAtual, dy = (ev.clientY - startY) / zoomAtual;
-        let { x, y, largura, altura } = orig;
-        if (lado === 'dir') largura = orig.largura + dx;
-        if (lado === 'esq') { largura = orig.largura - dx; x = orig.x + dx; }
-        if (lado === 'base') altura = orig.altura + dy;
-        if (lado === 'topo') { altura = orig.altura - dy; y = orig.y + dy; }
-
-        if (largura < minLargura) { if (lado === 'esq') x = orig.x + (orig.largura - minLargura); largura = minLargura; }
-        if (altura < blocoAltMin) { if (lado === 'topo') y = orig.y + (orig.altura - blocoAltMin); altura = blocoAltMin; }
-
-        if (x < 10) { largura += x - 10; x = 10; }
-        if (y < 10) { altura += y - 10; y = 10; }
-        if (x + largura > elArea.clientWidth - 10) largura = elArea.clientWidth - 10 - x;
-        if (y + altura > elArea.clientHeight - 10) altura = elArea.clientHeight - 10 - y;
-
-        // Snap no Grid para o Resize
-        if (estado.modoLayout === 'grid') {
-            if (lado === 'dir') largura = Math.round((x + largura) / GRID) * GRID - x;
-            if (lado === 'base') altura = Math.round((y + altura) / GRID) * GRID - y;
-            if (lado === 'esq') { const novaLarg = Math.round((x + largura) / GRID) * GRID; largura = x + largura - novaLarg; x = novaLarg; }
-            if (lado === 'topo') { const novaAlt = Math.round((y + altura) / GRID) * GRID; altura = y + altura - novaAlt; y = novaAlt; }
-        }
-
-        x = Math.round(x); y = Math.round(y);
-        largura = Math.round(largura); altura = Math.round(altura);
-
-        bloco.x = x; bloco.y = y; bloco.largura = largura; bloco.altura = altura;
-        elBloco.style.left = x + 'px'; elBloco.style.top = y + 'px'; 
-        elBloco.style.width = largura + 'px'; elBloco.style.height = altura + 'px';
+        const dimensoes = redimensionar(orig, lado, dx, dy, {
+            minLargura, minAltura, passoAltura, proporcional, limiteX: elArea.clientWidth, limiteY: elArea.clientHeight,
+            grade: estado.modoLayout === 'grid' ? GRID : 0
+        });
+        ajustarTituloAoRedimensionar(bloco, elBloco, dimensoes);
+        Object.assign(bloco, dimensoes);
+        elBloco.style.left = bloco.x + 'px'; elBloco.style.top = bloco.y + 'px';
+        elBloco.style.width = bloco.largura + 'px'; elBloco.style.height = bloco.altura + 'px';
     };
     
     const onUp = () => {
@@ -150,7 +145,7 @@ export function iniciarResizeBloco(e, bloco, lado, painelPaiId) {
     document.addEventListener('pointerup', onUp);
 }
 
-export function excluirBloco(painelPaiId, blocoId, renderizarPaineisCallback) {
+export async function excluirBloco(painelPaiId, blocoId, renderizarPaineisCallback) {
     const pag = getPaginaAtiva();
     if (!pag) return;
     const painel = pag.paineis.find(p => p.id === painelPaiId);
@@ -161,7 +156,7 @@ export function excluirBloco(painelPaiId, blocoId, renderizarPaineisCallback) {
 
     const nome = bloco.tituloBloco || bloco.texto || '(sem título)';
     const label = nome.length > 30 ? nome.slice(0, 30) + '…' : nome;
-    if (!confirm(`Excluir o bloco "${label}"?`)) return;
+    if (!(await confirmarAcao(`Excluir o bloco "${label}"?`))) return;
 
     if (blocoSendoEditadoId === blocoId) {
         blocoSendoEditadoId = null;

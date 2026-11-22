@@ -2,7 +2,8 @@
    MÓDULO: IMPORTAR / EXPORTAR JSON (Ficha Nova)
    ============================================================ */
 
-import { armazenamentoBiblioteca } from '../../../../servicos/armazenamento/biblioteca.js';
+import { mostrarAviso } from '../../../../componentes/dialogos/dialogos.js';
+import { armazenamentoBiblioteca, prepararBiblioteca } from '../../../../servicos/armazenamento/biblioteca.js';
 import { estado } from './estado.js';
 import { importarModelo } from './modelo-importado.js';
 
@@ -21,11 +22,12 @@ export function configurarCarregamentoModelo(botao) {
         botao.disabled = true;
         try {
             const texto = await arquivo.text();
+            await prepararBiblioteca({ atualizar: true });
             if (!botao.isConnected) return;
             const ficha = importarModelo(JSON.parse(texto), armazenamentoBiblioteca);
             window.location.hash = `#/ficha/ficha-nova?id=${ficha.id}`;
         } catch (erro) {
-            alert(erro instanceof SyntaxError ? 'O arquivo não contém uma ficha válida do Codex.' : erro.message);
+            mostrarAviso(erro instanceof SyntaxError ? 'O arquivo não contém uma ficha válida do Codex.' : erro.message);
         } finally {
             entrada.value = '';
             botao.disabled = false;
@@ -49,10 +51,12 @@ export function configurarJSON() {
         
         // Pega os metadados do sistema do LocalStorage, se existir
         let metadadosSistema = {};
+        let layout = estado;
         if (estado.idSistemaAtual) {
             const sistemas = JSON.parse(armazenamentoBiblioteca.getItem('codex_sistemas') || '[]');
             const sist = sistemas.find(s => s.id === estado.idSistemaAtual);
             if (sist) {
+                if (estado.editandoModelo) layout = sist.layout;
                 metadadosSistema = {
                     nomeSistema: sist.nome,
                     descricaoSistema: sist.descricao,
@@ -72,10 +76,10 @@ export function configurarJSON() {
                     .find(ficha => ficha.id === estado.idFichaAtual)?.nomePersonagem
                 : undefined,
             idSistemaAtual: estado.idSistemaAtual,
-            paginas: estado.paginas, 
-            paginaAtivaId: estado.paginaAtivaId,
-            animacaoAtiva: estado.animacaoAtiva,
-            modoLayout: estado.modoLayout,
+            paginas: layout.paginas,
+            paginaAtivaId: layout.paginaAtivaId,
+            animacaoAtiva: layout.animacaoAtiva,
+            modoLayout: layout.modoLayout,
             ...metadadosSistema // Adiciona nome, desc, foto do sistema
         };
         

@@ -120,6 +120,10 @@
     font-family: var(--fonte-corpo); 
 }
 
+.sheet-field.descricao-texto[hidden] {
+    display: none;
+}
+
 .sheet-input {
     background: rgba(0, 0, 0, 0.4); 
     border: 1px solid var(--cor-marrom-borda);

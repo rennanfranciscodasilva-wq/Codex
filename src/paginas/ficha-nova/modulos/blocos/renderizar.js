@@ -7,6 +7,7 @@ import {
 } from '../paginas/index.js';
 import { calcularFormula, formulaEventBus } from '../automacao.js';
 import { iniciarArrastoBloco, iniciarResizeBloco } from './interacoes.js';
+import { adicionarIndicadorDescricao } from '../descricao.js';
 
 const BLOCO_ALT_MIN = 40;
 
@@ -46,7 +47,9 @@ export function renderizarBloco(bloco, painelPaiId, renderizarPaineisCallback) {
 
     // --- TÍTULO ---
     if ((bloco.tipo === 'textual' || bloco.tipo === 'numerico') && bloco.modelo.includes('titulo')) {
-        el.appendChild(criarTituloWrapper(bloco, el));
+        el.appendChild(criarTituloWrapper(bloco, painelPaiId));
+    } else {
+        adicionarIndicadorDescricao(el, bloco.descricao);
     }
 
     // --- CONTEÚDO ---
@@ -54,7 +57,10 @@ export function renderizarBloco(bloco, painelPaiId, renderizarPaineisCallback) {
     conteudoInterno.className = 'bloco-interno';
 
     if (bloco.tipo === 'textual') conteudoInterno.appendChild(criarConteudoTextual(bloco, el));
-    else if (bloco.tipo === 'numerico') conteudoInterno.appendChild(criarConteudoNumerico(bloco, el));
+    else if (bloco.tipo === 'numerico') {
+        conteudoInterno.classList.add('bloco-interno-numerico');
+        conteudoInterno.appendChild(criarConteudoNumerico(bloco, el));
+    }
     else if (bloco.tipo === 'imagem') conteudoInterno.appendChild(criarConteudoImagem(bloco, painelPaiId));
 
     el.appendChild(conteudoInterno);
@@ -103,14 +109,13 @@ export function renderizarBloco(bloco, painelPaiId, renderizarPaineisCallback) {
 }
 
 /* --- CRIAR TÍTULO --- */
-function criarTituloWrapper(bloco, el) {
+function criarTituloWrapper(bloco, painelPaiId) {
     const tituloWrapper = document.createElement('div');
     tituloWrapper.className = 'bloco-titulo-wrapper';
     tituloWrapper.style.justifyContent = bloco.alignTitulo; 
     
     if (bloco.larguraTitulo) {
         tituloWrapper.style.width = bloco.larguraTitulo + 'px';
-        tituloWrapper.style.maxWidth = 'none';
     }
 
     const inputTitulo = document.createElement('input');
@@ -130,12 +135,60 @@ function criarTituloWrapper(bloco, el) {
         inputTitulo.style.cursor = inputTitulo.readOnly ? 'default' : 'text';
     }
 
+    const medidor = document.createElement('span');
+    medidor.className = 'bloco-titulo-medidor';
+    medidor.setAttribute('aria-hidden', 'true');
+    medidor.textContent = inputTitulo.value || inputTitulo.placeholder;
+    tituloWrapper.appendChild(medidor);
+
     inputTitulo.addEventListener('input', (e) => {
         bloco.tituloBloco = e.target.value;
-        salvarEstado();
+        medidor.textContent = inputTitulo.value || inputTitulo.placeholder;
+        salvarEstado(estaEmModoEdicao() ? { tituloModelo: bloco.id } : { preenchimento: true });
     });
     
     tituloWrapper.appendChild(inputTitulo);
+    adicionarIndicadorDescricao(tituloWrapper, bloco.descricao);
+    if (estaEmModoEdicao()) {
+        const alca = document.createElement('span');
+        alca.className = 'bloco-titulo-alca';
+        alca.title = 'Arraste para ajustar a largura do título';
+        alca.setAttribute('aria-hidden', 'true');
+        tituloWrapper.appendChild(alca);
+
+        let arrasto;
+        alca.addEventListener('pointerdown', evento => {
+            if (evento.button !== 0 || arrasto || !estaEmModoEdicao()) return;
+            evento.preventDefault();
+            evento.stopPropagation();
+            setElementoSelecionado('bloco', painelPaiId, bloco.id);
+            const zoom = parseFloat(alca.closest('.folha')?.style.zoom) || 1;
+            const estiloAba = getComputedStyle(tituloWrapper);
+            const margem = ['paddingLeft', 'paddingRight', 'borderLeftWidth', 'borderRightWidth']
+                .reduce((total, propriedade) => total + parseFloat(estiloAba[propriedade]), 0);
+            const minimo = Math.ceil(medidor.getBoundingClientRect().width / zoom + margem);
+            arrasto = {
+                ponteiro: evento.pointerId, inicio: evento.clientX, zoom, minimo,
+                largura: parseFloat(estiloAba.width), alterou: false
+            };
+            alca.setPointerCapture(evento.pointerId);
+        });
+        alca.addEventListener('pointermove', evento => {
+            if (arrasto?.ponteiro !== evento.pointerId) return;
+            const delta = (evento.clientX - arrasto.inicio) / arrasto.zoom;
+            if (!arrasto.alterou && !delta) return;
+            const maximo = alca.closest('.bloco').clientWidth;
+            const largura = Math.min(maximo, Math.max(arrasto.minimo, Math.round(arrasto.largura + delta)));
+            if (!arrasto.alterou && largura === arrasto.largura) return;
+            arrasto.alterou = true;
+            bloco.larguraTitulo = largura;
+            tituloWrapper.style.width = largura + 'px';
+        });
+        alca.addEventListener('lostpointercapture', () => {
+            if (arrasto?.alterou) salvarEstado();
+            arrasto = null;
+        });
+    }
     return tituloWrapper;
 }
 
@@ -155,15 +208,13 @@ function criarConteudoTextual(bloco, el) {
         textarea.style.cursor = 'text';
     }
     
-    textarea.addEventListener('input', (e) => {
-        if (estaEmModoEdicao()) return;
-        bloco.texto = e.target.value;
-    });
-
-    textarea.addEventListener('change', () => {
-        if (estaEmModoEdicao()) return;
-        salvarEstado();
-    });
+    function gravarTexto() {
+        if (estaEmModoEdicao() || bloco.texto === textarea.value) return;
+        bloco.texto = textarea.value;
+        salvarEstado({ preenchimento: true });
+    }
+    textarea.addEventListener('input', gravarTexto);
+    textarea.addEventListener('change', gravarTexto);
     
     return textarea;
 }
@@ -172,8 +223,13 @@ function criarConteudoTextual(bloco, el) {
 function criarConteudoNumerico(bloco, el) {
     const numWrapper = document.createElement('div');
     numWrapper.className = 'bloco-numerico-wrapper';
-    numWrapper.style.justifyContent = bloco.alignConteudo; 
-    numWrapper.style.flexDirection = bloco.modPosicao === 'embaixo' ? 'column' : 'row';
+    numWrapper.classList.toggle('com-modificador', bloco.modTipo === 'com');
+    if (bloco.modPosicao === 'embaixo') {
+        numWrapper.classList.add('modificador-embaixo');
+        numWrapper.style.alignItems = bloco.alignConteudo;
+    } else {
+        numWrapper.style.justifyContent = bloco.alignConteudo;
+    }
 
     numWrapper.addEventListener('pointerdown', (e) => e.stopPropagation(), { capture: true });
 
@@ -226,18 +282,16 @@ function criarConteudoNumerico(bloco, el) {
         modDisplay.style.color = mod > 0 ? '#2e7d32' : (mod < 0 ? '#c62828' : '#6b4f1d');
     };
 
-    inputNum.addEventListener('change', (e) => {
+    function gravarNumero() {
         if (temFormula || estaEmModoEdicao()) return;
-        bloco.valorNumerico = e.target.value;
+        if (bloco.valorNumerico === inputNum.value) return;
+        bloco.valorNumerico = inputNum.value;
         calcularModificador();
-        salvarEstado();
-        if (typeof formulaEventBus !== 'undefined') formulaEventBus.dispatchEvent(new Event('formulaAtualizada'));
-    });
-
-    inputNum.addEventListener('input', () => {
-        if (temFormula || estaEmModoEdicao()) return;
-        calcularModificador();
-    });
+        salvarEstado({ preenchimento: true });
+        formulaEventBus.dispatchEvent(new Event('formulaAtualizada'));
+    }
+    inputNum.addEventListener('input', gravarNumero);
+    inputNum.addEventListener('change', gravarNumero);
 
     inputNum.addEventListener('pointerdown', (e) => e.stopPropagation(), { capture: true });
     inputNum.addEventListener('click', (e) => {
@@ -247,7 +301,7 @@ function criarConteudoNumerico(bloco, el) {
 
     if (typeof formulaEventBus !== 'undefined') {
         formulaEventBus.addEventListener('formulaAtualizada', () => {
-            if (document.body.contains(el)) { atualizarValorCalculado(); calcularModificador(); }
+            if (document.body.contains(el) && temFormula) { atualizarValorCalculado(); calcularModificador(); }
         });
     }
 

@@ -4,6 +4,11 @@
 
 import { obterEstado, observarEstado, definirPersonagemAtivo } from '../../nucleo/estado.js';
 import { observarSincronizacao, sincronizarAgora } from '../../servicos/sincronizacao/sincronizacao.js';
+import { consultarEmailConfirmado } from '../../servicos/autenticacao/autenticacao.js';
+import { auth } from '../../servicos/firebase/config.js';
+import { onIdTokenChanged } from 'firebase/auth';
+import { confirmarAcao } from '../dialogos/dialogos.js';
+import { areaDasConfirmacoes, definirPausaDeConfirmacoes, EVENTO_CONFIRMACOES, fimDaPausa } from '../dialogos/confirmacoes.js';
 
 export function criarCabecalho({ rotaHome = '/inicio' } = {}) {
     const container = document.createElement('header');
@@ -12,8 +17,21 @@ export function criarCabecalho({ rotaHome = '/inicio' } = {}) {
     container.innerHTML = `
         <div class="header-left">
             <div class="header-backup" hidden>
-                <span class="header-backup-tempo"></span>
-                <button type="button" class="header-backup-enviar">Sincronizar agora</button>
+                <div class="header-backup-controles" hidden>
+                    <span class="header-backup-tempo"></span>
+                    <span class="header-backup-carregando" hidden aria-hidden="true"></span>
+                    <button type="button" class="header-backup-enviar">Sincronizar agora</button>
+                </div>
+                <div class="header-notificacoes" hidden>
+                    <button type="button" class="header-notificacoes-sino" aria-label="Notificações" aria-expanded="false" aria-controls="header-lista-notificacoes">
+                        <i class="fas fa-bell" aria-hidden="true"></i>
+                        <span class="header-notificacoes-contagem" aria-hidden="true"></span>
+                    </button>
+                    <ul class="header-notificacoes-lista" id="header-lista-notificacoes" aria-label="Notificações" hidden>
+                        <li hidden><a href="#/confirmar-email" class="header-confirmar-email">E-mail pendente · Confirmar</a></li>
+                        <li hidden><button type="button" class="header-confirmacoes">Confirmações pausadas · Reativar</button></li>
+                    </ul>
+                </div>
                 <small class="header-backup-status" role="status"></small>
             </div>
         </div>
@@ -34,6 +52,7 @@ export function criarCabecalho({ rotaHome = '/inicio' } = {}) {
             </div>
 
             <a href="#/login" class="btn-usuario" id="btn-usuario-header">
+                <img class="header-usuario-avatar" alt="" hidden>
                 <i class="fas fa-user-circle"></i>
                 <span id="nome-usuario-header">Entrar</span>
             </a>
@@ -48,16 +67,95 @@ let sistemaSelecionado = null;
 
 function inicializarLogica(header) {
     const backup = header.querySelector('.header-backup');
+    const controles = backup.querySelector('.header-backup-controles');
+    const notificacoes = backup.querySelector('.header-notificacoes');
+    const sino = notificacoes.querySelector('.header-notificacoes-sino');
+    const contagem = sino.querySelector('.header-notificacoes-contagem');
+    const lista = notificacoes.querySelector('.header-notificacoes-lista');
+    const confirmarEmail = lista.querySelector('.header-confirmar-email');
+    const botaoConfirmacoes = header.querySelector('.header-confirmacoes');
+    function mostrarNotificacoes(aberto) {
+        lista.hidden = !aberto;
+        sino.setAttribute('aria-expanded', String(aberto));
+        if (aberto) {
+            const ancora = sino.getBoundingClientRect();
+            const limite = document.documentElement.clientWidth - lista.offsetWidth - 8;
+            lista.style.left = Math.max(8, Math.min(limite, ancora.left)) + 'px';
+            lista.style.top = ancora.bottom + 7 + 'px';
+        }
+    }
+    function atualizarNotificacoes() {
+        const total = Array.from(lista.children).filter(item => !item.hidden).length;
+        notificacoes.hidden = !total;
+        backup.hidden = controles.hidden && !total;
+        contagem.textContent = total;
+        sino.setAttribute('aria-label', total === 1 ? 'Notificações, 1 pendente' : `Notificações, ${total} pendentes`);
+        if (!total) mostrarNotificacoes(false);
+    }
+    sino.addEventListener('click', () => mostrarNotificacoes(lista.hidden));
+    window.addEventListener('resize', () => {
+        if (!lista.hidden) mostrarNotificacoes(true);
+    });
+    document.addEventListener('click', evento => {
+        if (!notificacoes.contains(evento.target)) mostrarNotificacoes(false);
+    });
+    notificacoes.addEventListener('keydown', evento => {
+        if (evento.key !== 'Escape' || lista.hidden) return;
+        evento.preventDefault();
+        mostrarNotificacoes(false);
+        sino.focus();
+    });
+    confirmarEmail.addEventListener('click', () => mostrarNotificacoes(false));
+    let relogioConfirmacoes;
+    function atualizarConfirmacoes() {
+        clearTimeout(relogioConfirmacoes);
+        const fim = fimDaPausa(areaDasConfirmacoes());
+        botaoConfirmacoes.parentElement.hidden = !fim;
+        atualizarNotificacoes();
+        if (fim) relogioConfirmacoes = setTimeout(atualizarConfirmacoes, fim - Date.now() + 50);
+    }
+    botaoConfirmacoes.addEventListener('click', async () => {
+        const area = areaDasConfirmacoes();
+        mostrarNotificacoes(false);
+        if (fimDaPausa(area) && await confirmarAcao('Reativar os avisos e confirmações desta área?')) {
+            definirPausaDeConfirmacoes(area, false);
+        }
+    });
+    window.addEventListener(EVENTO_CONFIRMACOES, atualizarConfirmacoes);
+    window.addEventListener('hashchange', () => {
+        mostrarNotificacoes(false);
+        atualizarConfirmacoes();
+    });
+    window.addEventListener('storage', atualizarConfirmacoes);
+    window.addEventListener('focus', atualizarConfirmacoes);
+    observarEstado(atualizarConfirmacoes);
+    atualizarConfirmacoes();
     const tempo = backup.querySelector('.header-backup-tempo');
+    const carregando = backup.querySelector('.header-backup-carregando');
     const enviar = backup.querySelector('.header-backup-enviar');
     const status = backup.querySelector('.header-backup-status');
     enviar.addEventListener('click', sincronizarAgora);
+    onIdTokenChanged(auth, user => {
+        confirmarEmail.parentElement.hidden = !user?.email || user.emailVerified;
+        atualizarNotificacoes();
+    });
+    window.addEventListener('focus', async () => {
+        if (confirmarEmail.parentElement.hidden || window.location.hash === '#/confirmar-email') return;
+        try {
+            await consultarEmailConfirmado(auth.currentUser);
+        } catch (erro) {
+            console.warn('[autenticacao] Não foi possível atualizar a confirmação:', erro.code);
+        }
+    });
     observarSincronizacao(estado => {
-        backup.hidden = !estado;
+        controles.hidden = !estado;
+        status.hidden = !estado;
+        atualizarNotificacoes();
         if (!estado) return;
         tempo.textContent = estado.tempo;
+        carregando.hidden = !estado.processando;
         tempo.setAttribute('aria-label', 'Próximo backup em ' + estado.tempo);
-        enviar.textContent = estado.saldo == null ? 'Sincronizar agora' : 'Sincronizar agora · ' + estado.saldo;
+        enviar.textContent = estado.saldo == null ? 'Sincronizar agora' : `Sincronizar agora · ${estado.saldo}/5`;
         enviar.disabled = !estado.disponivel;
         if (status.textContent !== estado.mensagem) status.textContent = estado.mensagem;
         status.title = estado.mensagem;
@@ -67,10 +165,21 @@ function inicializarLogica(header) {
     const nomePersonagemAtivo = header.querySelector('#nome-personagem-ativo');
     const nomeUsuarioHeader = header.querySelector('#nome-usuario-header');
     const btnUsuarioHeader = header.querySelector('#btn-usuario-header');
+    const avatar = btnUsuarioHeader.querySelector('img');
+    const avatarPadrao = btnUsuarioHeader.querySelector('i');
+    avatar.onload = () => { avatar.hidden = false; avatarPadrao.hidden = true; };
+    avatar.onerror = () => { avatar.hidden = true; avatarPadrao.hidden = false; };
 
-    observarEstado((estado) => {
+    const atualizarCabecalho = estado => {
+        const foto = estado.usuario?.fotoUrl || '';
+        if (foto !== (avatar.getAttribute('src') || '')) {
+            avatar.hidden = true;
+            avatarPadrao.hidden = false;
+            if (foto) avatar.setAttribute('src', foto);
+            else avatar.removeAttribute('src');
+        }
         if (estado.usuario) {
-            nomeUsuarioHeader.textContent = estado.usuario.email.split('@')[0];
+            nomeUsuarioHeader.textContent = estado.usuario.nome || estado.usuario.email?.split('@')[0] || 'Perfil';
             // Se estiver logado, o botão leva para o perfil
             btnUsuarioHeader.setAttribute('href', '#/perfil');
         } else {
@@ -88,7 +197,9 @@ function inicializarLogica(header) {
         if (!dropdown.classList.contains('hidden')) {
             renderizarDropdown(dropdown, nomePersonagemAtivo);
         }
-    });
+    };
+    atualizarCabecalho(obterEstado());
+    observarEstado(atualizarCabecalho);
 
     btnSeletor.addEventListener('click', (e) => {
         e.stopPropagation();

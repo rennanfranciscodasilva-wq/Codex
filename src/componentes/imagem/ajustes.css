@@ -1,0 +1,33 @@
+.ajustes-imagem:not([hidden]) {
+    display: grid;
+    gap: 0.65rem;
+    padding: 0.65rem;
+    border: 1px solid var(--cor-marrom-borda);
+    border-radius: 0.45rem;
+    background: var(--cor-marrom-fundo-3);
+}
+
+.ajustes-imagem-linha {
+    display: grid;
+    grid-template-columns: 1.75rem minmax(0, 1fr) 1.75rem;
+    align-items: center;
+    gap: 0.2rem 0.4rem;
+    color: var(--cor-texto-titulo);
+    font-size: 0.82rem;
+}
+.ajustes-imagem-linha span { grid-column: 1 / 3; }
+.ajustes-imagem-linha output { text-align: right; font-variant-numeric: tabular-nums; }
+.ajustes-imagem-linha input[type="range"] { width: 100%; min-width: 0; accent-color: var(--cor-dourado); padding: 0; }
+.ajustes-imagem-linha button {
+    padding: 0;
+    height: 1.75rem;
+    border: 1px solid var(--cor-marrom-borda);
+    border-radius: 0.3rem;
+    background: var(--cor-marrom-fundo-1);
+    color: var(--cor-dourado);
+    cursor: pointer;
+}
+.ajustes-imagem-linha button:is(:hover, :focus-visible) { border-color: var(--cor-dourado); }
+
+.previa-imagem-status { margin: 0; color: var(--cor-texto-suave); font-size: 0.8rem; }
+.previa-imagem-status:empty, .previa-imagem [hidden], .previa-imagem[hidden] { display: none; }

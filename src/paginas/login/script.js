@@ -2,7 +2,7 @@
    CODEX — Página: Login / Registro
    ============================================================ */
 
-import { registrar, entrar } from '../../servicos/autenticacao/autenticacao.js';
+import { registrar, entrar, recuperarSenha } from '../../servicos/autenticacao/autenticacao.js';
 import { mostrarNotificacao } from '../../componentes/notificacoes/notificacoes.js';
 import { doc, setDoc } from 'firebase/firestore';
 import { db } from '../../servicos/firebase/config.js';
@@ -48,10 +48,32 @@ function ativarEventos(pagina) {
     refs.tabLogin.addEventListener('click', () => alternarAba(true));
     refs.tabRegister.addEventListener('click', () => alternarAba(false));
 
+    const botaoRecuperar = pagina.querySelector('#recuperar-senha');
+    botaoRecuperar.addEventListener('click', async () => {
+        const campoEmail = pagina.querySelector('#login-email');
+        const email = campoEmail.value.trim();
+        if (!emailValido(email)) {
+            mostrarNotificacao('Informe seu e-mail', 'Preencha o campo de e-mail para recuperar a senha.', 'aviso');
+            campoEmail.focus();
+            return;
+        }
+        botaoRecuperar.disabled = true;
+        try {
+            await recuperarSenha(email);
+            avisarRecuperacao();
+        } catch (erro) {
+            if (erro.code === 'auth/user-not-found') avisarRecuperacao();
+            else tratarErroFirebase(erro, 'recuperação');
+        } finally {
+            botaoRecuperar.disabled = false;
+        }
+    });
+
     // --- REGISTRO ---
     const btnSubmitRegistro = refs.formRegister.querySelector('button[type="submit"]');
-    btnSubmitRegistro.addEventListener('click', async (e) => {
+    refs.formRegister.addEventListener('submit', async (e) => {
         e.preventDefault();
+        if (btnSubmitRegistro.disabled) return;
         
         const email = pagina.querySelector('#reg-email').value.trim();
         const senha = pagina.querySelector('#reg-password').value;
@@ -66,30 +88,34 @@ function ativarEventos(pagina) {
             return;
         }
 
+        btnSubmitRegistro.disabled = true;
         try {
             // 1. Cria a conta no Firebase Auth
-            const credencial = await registrar(email, senha);
-            const user = credencial.user;
+            const user = await registrar(email, senha);
 
             // 2. Cria o documento no Firestore usando o UID gerado pelo Auth
             await setDoc(doc(db, 'usuarios', user.uid), {
                 nome: nome || email.split('@')[0],
                 email: email,
                 fotoUrl: ""
+            }, { merge: true }).catch(erro => {
+                console.warn('[cadastro] Não foi possível salvar o perfil:', erro.code);
             });
 
-            refs.formRegister.reset();
-            mostrarNotificacao('Conta Criada!', 'Sua conta foi criada com sucesso. Bem-vindo ao Codex!', 'sucesso');
-            setTimeout(() => { window.location.hash = '#/perfil'; }, 1500);
+            e.target.reset();
+            window.location.hash = '#/confirmar-email';
         } catch (erro) {
             tratarErroFirebase(erro, 'registro');
+        } finally {
+            btnSubmitRegistro.disabled = false;
         }
     });
 
     // --- LOGIN ---
     const btnSubmitLogin = refs.formLogin.querySelector('button[type="submit"]');
-    btnSubmitLogin.addEventListener('click', async (e) => {
+    refs.formLogin.addEventListener('submit', async (e) => {
         e.preventDefault();
+        if (btnSubmitLogin.disabled) return;
         
         const email = pagina.querySelector('#login-email').value.trim();
         const senha = pagina.querySelector('#login-password').value;
@@ -99,13 +125,16 @@ function ativarEventos(pagina) {
             return;
         }
 
+        btnSubmitLogin.disabled = true;
         try {
             await entrar(email, senha);
-            refs.formLogin.reset();
+            e.target.reset();
             mostrarNotificacao('Bem-vindo!', 'Login realizado com sucesso.', 'sucesso');
             setTimeout(() => { window.location.hash = '#/perfil'; }, 1000);
         } catch (erro) {
             tratarErroFirebase(erro, 'login');
+        } finally {
+            btnSubmitLogin.disabled = false;
         }
     });
 }
@@ -118,6 +147,10 @@ function emailValido(email) {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
 
+function avisarRecuperacao() {
+    mostrarNotificacao('Recuperação de senha', 'Se existir uma conta com esse e-mail, você receberá um link para redefinir a senha.', 'sucesso');
+}
+
 function tratarErroFirebase(erro, contexto) {
     console.error("Erro no " + contexto + ":", erro);
     
@@ -127,8 +160,8 @@ function tratarErroFirebase(erro, contexto) {
         'auth/weak-password': 'A senha é muito fraca. Use pelo menos 6 caracteres, misturando letras e números.',
         'auth/invalid-email': 'O formato do e-mail está incorreto. Verifique se digitou corretamente.',
         'auth/invalid-credential': 'E-mail ou senha incorretos. Verifique os dados e tente novamente.',
-        'auth/wrong-password': 'A senha está incorreta. Verifique e tente novamente.',
-        'auth/user-not-found': 'Não encontramos uma conta com este e-mail. Que tal criar uma nova conta?',
+        'auth/wrong-password': 'E-mail ou senha incorretos. Verifique os dados e tente novamente.',
+        'auth/user-not-found': 'E-mail ou senha incorretos. Verifique os dados e tente novamente.',
         'auth/too-many-requests': 'Muitas tentativas sem sucesso. Aguarde alguns minutos antes de tentar novamente.',
         'auth/network-request-failed': 'Falha de conexão com a internet. Verifique sua rede e tente novamente.'
     };

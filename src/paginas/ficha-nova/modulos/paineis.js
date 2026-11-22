@@ -2,10 +2,14 @@
    MÓDULO: PAINÉIS (Renderizar, Interagir e Configurar)
    ============================================================ */
 
+import { redimensionar } from './redimensionamento.js';
+import { aplicarMedidas, capturarBlocos } from './medidas.js';
 import { 
     estado, salvarEstado, GRID, getPaginaAtiva, estaEmModoEdicao, setElementoSelecionado, gerarId, gerarNomeUnico 
 } from './paginas/index.js';
 import { renderizarBloco, configurarSheetBloco } from './blocos/index.js';
+import { adicionarIndicadorDescricao, configurarDescricao } from './descricao.js';
+import { encaixarNasGuias } from './regua.js';
 
 /* ============================================================
    1. RENDERIZAR PAINEL
@@ -40,14 +44,19 @@ export function renderizarPainel(painel, renderizarPaineisCallback, renderizarBl
     inputTitulo.type = 'text';
     inputTitulo.className = 'painel-titulo';
     inputTitulo.value = painel.titulo;
-    inputTitulo.readOnly = estaEmModoEdicao(); 
+    inputTitulo.readOnly = !estaEmModoEdicao();
     inputTitulo.addEventListener('input', (e) => {
+        if (!estaEmModoEdicao()) {
+            inputTitulo.value = painel.titulo;
+            return;
+        }
         painel.titulo = e.target.value;
         salvarEstado();
     });
 
     header.appendChild(alcaArrasto);
     header.appendChild(inputTitulo);
+    adicionarIndicadorDescricao(header, painel.descricao);
     el.appendChild(header);
 
     // --- CONTEÚDO ---
@@ -105,7 +114,7 @@ export function iniciarArrastoPainel(e, painel) {
 
     const folha = document.querySelector('#pagina-ficha-nova .folha');
     if (!folha) return;
-    const zoomAtual = parseFloat(folha.style.zoom || '1') || 1;
+    const zoomAtual = folha.getBoundingClientRect().width / folha.offsetWidth || 1;
     const startX = e.clientX, startY = e.clientY, origX = painel.x, origY = painel.y;
 
     const onMove = (ev) => {
@@ -116,6 +125,8 @@ export function iniciarArrastoPainel(e, painel) {
             novoX = Math.round(novoX / GRID) * GRID; 
             novoY = Math.round(novoY / GRID) * GRID;
         }
+
+        ({ x: novoX, y: novoY } = encaixarNasGuias(folha, elArea, novoX, novoY, painel.largura, painel.altura, zoomAtual));
 
         const maxX = elArea.clientWidth - painel.largura - 10, maxY = elArea.clientHeight - painel.altura - 10;
         if (novoX < 10) novoX = 10; if (novoY < 10) novoY = 10;
@@ -146,7 +157,8 @@ export function iniciarResizePainel(e, painel, lado) {
     
     const elPainel = document.querySelector(`.painel[data-painel-id="${painel.id}"]`);
     const elArea = document.querySelector(`#pagina-ficha-nova .folha-conteudo`);
-    if (!elPainel || !elArea) return;
+    const conteudo = elPainel?.querySelector('.painel-conteudo');
+    if (!conteudo || !elArea) return;
 
     const folha = document.querySelector('#pagina-ficha-nova .folha');
     if (!folha) return;
@@ -155,41 +167,30 @@ export function iniciarResizePainel(e, painel, lado) {
     const orig = { x: painel.x, y: painel.y, largura: painel.largura, altura: painel.altura };
     const minLargura = 180;
     const minAltura = 120;
+    const proporcional = estado.redimensionarEmConjunto;
+    const atualizarBlocos = estado.redimensionarBlocosDoCampo ? capturarBlocos(painel, conteudo) : null;
 
     const onMove = (ev) => {
+        if (ev.pointerId !== e.pointerId) return;
         const dx = (ev.clientX - startX) / zoomAtual, dy = (ev.clientY - startY) / zoomAtual;
-        let { x, y, largura, altura } = orig;
-        
-        if (lado === 'dir') largura = orig.largura + dx;
-        if (lado === 'esq') { largura = orig.largura - dx; x = orig.x + dx; }
-        if (lado === 'base') altura = orig.altura + dy;
-        if (lado === 'topo') { altura = orig.altura - dy; y = orig.y + dy; }
-
-        if (largura < minLargura) { if (lado === 'esq') x = orig.x + (orig.largura - minLargura); largura = minLargura; }
-        if (altura < minAltura) { if (lado === 'topo') y = orig.y + (orig.altura - minAltura); altura = minAltura; }
-
-        if (x < 10) { largura += x - 10; x = 10; }
-        if (y < 10) { altura += y - 10; y = 10; }
-        if (x + largura > elArea.clientWidth - 10) largura = elArea.clientWidth - 10 - x;
-        if (y + altura > elArea.clientHeight - 10) altura = elArea.clientHeight - 10 - y;
-
-        painel.x = Math.round(x); painel.y = Math.round(y);
-        painel.largura = Math.round(largura); painel.altura = Math.round(altura);
-        
-        elPainel.style.left = painel.x + 'px'; 
-        elPainel.style.top = painel.y + 'px'; 
-        elPainel.style.width = painel.largura + 'px'; 
-        elPainel.style.height = painel.altura + 'px';
+        const dimensoes = redimensionar(orig, lado, dx, dy, {
+            minLargura, minAltura, proporcional, limiteX: elArea.clientWidth, limiteY: elArea.clientHeight
+        });
+        aplicarMedidas(painel, elPainel, dimensoes);
+        atualizarBlocos?.();
     };
     
-    const onUp = () => {
+    const onUp = (ev) => {
+        if (ev.pointerId !== e.pointerId) return;
         document.removeEventListener('pointermove', onMove);
         document.removeEventListener('pointerup', onUp);
+        document.removeEventListener('pointercancel', onUp);
         salvarEstado();
     };
     
     document.addEventListener('pointermove', onMove);
     document.addEventListener('pointerup', onUp);
+    document.addEventListener('pointercancel', onUp);
 }
 
 /* ============================================================
@@ -205,6 +206,19 @@ export function configurarSheetCampo(renderizarCallback) {
     const inputNome = document.querySelector('#campo-sheet-nome');
 
     if (!sheet) return;
+    if (sheet.dataset.configurado === 'true') return;
+    sheet.dataset.configurado = 'true';
+
+    let campoEditadoId;
+    const carregarDescricao = configurarDescricao(sheet, descricao => {
+        if (!estaEmModoEdicao()) return;
+        const campo = getPaginaAtiva()?.paineis.find(p => p.id === campoEditadoId);
+        if (!campo) return;
+        if (descricao === undefined) delete campo.descricao;
+        else campo.descricao = descricao;
+        salvarEstado({ descricaoEditada: { tipo: 'campo', id: campo.id, descricao: descricao ?? null } });
+        campoRenderizarCallback?.();
+    });
 
     let isDragging = false, startX = 0, startY = 0, initialX = 0, initialY = 0;
     if (dragHandle) {
@@ -234,6 +248,7 @@ export function configurarSheetCampo(renderizarCallback) {
 
     if (inputNome) {
         inputNome.addEventListener('input', (e) => {
+            if (!estaEmModoEdicao()) return;
             const sel = document.querySelector('.painel.selecionado');
             if (!sel) return;
             const pag = getPaginaAtiva();
@@ -249,11 +264,14 @@ export function configurarSheetCampo(renderizarCallback) {
     }
 
     window.abrirBottomSheetCampo = (painelId) => {
+        if (!estaEmModoEdicao()) return;
         const pag = getPaginaAtiva();
         if (!pag) return;
         const p = pag.paineis.find(p => p.id === painelId);
         if (!p) return;
 
+        campoEditadoId = p.id;
+        carregarDescricao(p.descricao);
         if (inputNome) inputNome.value = p.titulo || '';
         sheet.classList.add('active');
     };

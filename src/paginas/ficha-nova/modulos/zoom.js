@@ -1,100 +1,142 @@
-/* ============================================================
-   MÓDULO: ZOOM (Ficha Nova) - Focado no Mouse
-   ============================================================ */
-
-const ZOOM_MIN = 0.24;
-const ZOOM_MAX = 1.5; // 150% Máximo
-const ZOOM_PADRAO = 0.5; // Padrão inicial
+﻿const ZOOM_MIN = 0.24;
+const ZOOM_MAX = 1.5;
+const ZOOM_PADRAO = 0.5;
+const LIMIAR_ARRASTE = 5;
 
 export function iniciarZoom(pagina, wrapper) {
     const indicador = pagina.querySelector('#indicador-zoom');
     const area = pagina.querySelector('.ficha-nova-area');
     const folha = pagina.querySelector('.folha');
     let estadoZoom = Math.max(ZOOM_MIN, Math.min(ZOOM_PADRAO, area.clientWidth / (folha.offsetWidth + 32)));
+    const zoomInicial = estadoZoom;
+    const espaco = document.createElement('div');
+    espaco.className = 'folha-espaco';
+    wrapper.before(espaco);
+    espaco.appendChild(wrapper);
 
-    const aplicarZoom = (novoZoom, mouseX, mouseY) => {
-        if (novoZoom < ZOOM_MIN) novoZoom = ZOOM_MIN;
-        if (novoZoom > ZOOM_MAX) novoZoom = ZOOM_MAX;
-        
-        if (novoZoom === estadoZoom) return;
-
-        // 1. Descobre a posição do mouse relativa à área de scroll
-        const areaRect = area.getBoundingClientRect();
-        const posX = mouseX - areaRect.left;
-        const posY = mouseY - areaRect.top;
-
-        // 2. Descobre a posição do mouse no "mundo real" (dentro do wrapper)
-        const pontoX = (area.scrollLeft + posX) / estadoZoom;
-        const pontoY = (area.scrollTop + posY) / estadoZoom;
-
-        // 3. Aplica o novo zoom
-        estadoZoom = novoZoom;
+    function atualizarZoom() {
         wrapper.style.zoom = estadoZoom;
-        
-        if (indicador) {
-            indicador.textContent = `${Math.round(estadoZoom * 100)}%`;
-        }
+        espaco.classList.toggle('zoom-ampliado', estadoZoom > zoomInicial + 0.001);
+        if (indicador) indicador.textContent = `${Math.round(estadoZoom * 100)}%`;
+    }
 
-        // 4. Recalcula o scroll para manter o ponto embaixo do mouse
-        // Usamos requestAnimationFrame para esperar o navegador renderizar o novo tamanho
-        requestAnimationFrame(() => {
-            area.scrollLeft = (pontoX * estadoZoom) - posX;
-            area.scrollTop = (pontoY * estadoZoom) - posY;
-        });
-    };
+    function aplicarZoom(novoZoom, x, y, origemX = x, origemY = y) {
+        const anterior = wrapper.getBoundingClientRect();
+        const pontoX = (origemX - anterior.left) / estadoZoom;
+        const pontoY = (origemY - anterior.top) / estadoZoom;
+        estadoZoom = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, novoZoom));
+        atualizarZoom();
 
-    // Aplica o zoom padrão inicial
-    wrapper.style.zoom = estadoZoom;
-    if (indicador) indicador.textContent = `${Math.round(estadoZoom * 100)}%`;
+        const atual = wrapper.getBoundingClientRect();
+        area.scrollLeft += atual.left + pontoX * estadoZoom - x;
+        area.scrollTop += atual.top + pontoY * estadoZoom - y;
+    }
 
-    // --- ZOOM DESKTOP (Shift + Scroll) ---
-    area.addEventListener('wheel', (e) => {
-        if (!e.shiftKey) return;
-        e.preventDefault();
+    function podeMover() {
+        return area.scrollWidth > area.clientWidth || area.scrollHeight > area.clientHeight;
+    }
 
-        const delta = e.deltaY > 0 ? -0.05 : 0.05;
-        let novoZoom = estadoZoom + delta;
+    atualizarZoom();
 
-        // Pega a posição do mouse na tela
-        aplicarZoom(novoZoom, e.clientX, e.clientY);
+    area.addEventListener('wheel', evento => {
+        if (!evento.shiftKey || !evento.deltaY) return;
+        evento.preventDefault();
+        const delta = evento.deltaY > 0 ? -0.05 : 0.05;
+        aplicarZoom(estadoZoom + delta, evento.clientX, evento.clientY);
     }, { passive: false });
 
-    // --- ZOOM MOBILE (Pinch) ---
-    let distanciaInicial = 0;
-    let zoomInicial = 1.0;
-    let pinching = false;
-    let centroPinch = { x: 0, y: 0 };
+    function fundoDaFolha(alvo) {
+        return espaco.contains(alvo) && !alvo.closest('.painel, .bloco, .folha-regua-borda, input, textarea, button, select, a, [contenteditable]');
+    }
 
-    const distanciaEntre = (t1, t2) => {
-        const dx = t1.clientX - t2.clientX;
-        const dy = t1.clientY - t2.clientY;
-        return Math.sqrt(dx * dx + dy * dy);
-    };
+    let mouse;
+    espaco.addEventListener('pointerdown', evento => {
+        if (evento.pointerType !== 'mouse' || (evento.button !== 0 && evento.button !== 2)) return;
+        if (mouse || !podeMover() || !fundoDaFolha(evento.target)) return;
+        evento.preventDefault();
+        mouse = { id: evento.pointerId, x: evento.clientX, y: evento.clientY };
+        espaco.setPointerCapture(evento.pointerId);
+        espaco.classList.add('arrastando-folha');
+    });
 
-    area.addEventListener('touchstart', (e) => {
-        if (e.touches.length !== 2) return;
-        pinching = true;
-        distanciaInicial = distanciaEntre(e.touches[0], e.touches[1]);
-        zoomInicial = estadoZoom;
-        
-        // Pega o centro entre os dois dedos
-        centroPinch.x = (e.touches[0].clientX + e.touches[1].clientX) / 2;
-        centroPinch.y = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+    espaco.addEventListener('pointermove', evento => {
+        if (mouse?.id !== evento.pointerId) return;
+        area.scrollLeft += mouse.x - evento.clientX;
+        area.scrollTop += mouse.y - evento.clientY;
+        mouse.x = evento.clientX;
+        mouse.y = evento.clientY;
+    });
+
+    espaco.addEventListener('lostpointercapture', evento => {
+        if (mouse?.id !== evento.pointerId) return;
+        mouse = null;
+        espaco.classList.remove('arrastando-folha');
+    });
+
+    espaco.addEventListener('contextmenu', evento => {
+        if (mouse || (podeMover() && fundoDaFolha(evento.target))) evento.preventDefault();
+    });
+
+    let toque;
+    let pinca;
+    const medidaPinca = ([a, b]) => ({
+        x: (a.clientX + b.clientX) / 2,
+        y: (a.clientY + b.clientY) / 2,
+        distancia: Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY)
+    });
+
+    function iniciarToque(dedo) {
+        toque = { id: dedo.identifier, x: dedo.clientX, y: dedo.clientY, arrastando: false };
+    }
+
+    espaco.addEventListener('touchstart', evento => {
+        if (evento.touches.length === 2) {
+            toque = null;
+            pinca = medidaPinca(evento.touches);
+        } else if (evento.touches.length === 1 && !evento.target.closest('.folha-borda, .folha-regua, .painel-borda, .bloco-borda, .painel-alca-arrasto, .bloco-alca-arrasto, .bloco-titulo-alca')) {
+            iniciarToque(evento.touches[0]);
+        }
     }, { passive: true });
 
-    area.addEventListener('touchmove', (e) => {
-        if (!pinching || e.touches.length !== 2) return;
+    espaco.addEventListener('touchmove', evento => {
+        if (pinca && evento.touches.length === 2) {
+            const atual = medidaPinca(evento.touches);
+            if (pinca.distancia > 0 && atual.distancia > 0) {
+                aplicarZoom(estadoZoom * atual.distancia / pinca.distancia, atual.x, atual.y, pinca.x, pinca.y);
+            }
+            pinca = atual;
+            if (evento.cancelable) evento.preventDefault();
+            return;
+        }
 
-        const dist = distanciaEntre(e.touches[0], e.touches[1]);
-        const fator = dist / distanciaInicial;
-        let novoZoom = zoomInicial * fator;
-
-        aplicarZoom(novoZoom, centroPinch.x, centroPinch.y);
-
-        e.preventDefault();
+        const dedo = evento.touches[0];
+        if (evento.touches.length !== 1 || toque?.id !== dedo.identifier || !podeMover()) return;
+        const dx = toque.x - dedo.clientX;
+        const dy = toque.y - dedo.clientY;
+        if (!toque.arrastando && Math.hypot(dx, dy) < LIMIAR_ARRASTE) return;
+        if (evento.cancelable) evento.preventDefault();
+        toque.arrastando = true;
+        area.scrollLeft += dx;
+        area.scrollTop += dy;
+        toque.x = dedo.clientX;
+        toque.y = dedo.clientY;
     }, { passive: false });
 
-    area.addEventListener('touchend', () => { pinching = false; }, { passive: true });
+    espaco.addEventListener('touchend', evento => {
+        if (pinca && evento.touches.length === 2) {
+            pinca = medidaPinca(evento.touches);
+            return;
+        }
+        const continuarArraste = pinca && evento.touches.length === 1;
+        pinca = null;
+        toque = null;
+        if (continuarArraste) iniciarToque(evento.touches[0]);
+    });
+
+    espaco.addEventListener('touchcancel', () => {
+        pinca = null;
+        toque = null;
+    });
 
     return function ajustarZoomDoAssistente() {
         const zoom = Math.min(0.9, area.clientWidth / (folha.offsetWidth + 32));

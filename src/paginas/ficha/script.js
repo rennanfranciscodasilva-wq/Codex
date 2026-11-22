@@ -1,6 +1,7 @@
 /* ============================================================
    CODEX — Página: Ficha (seleção de sistema)
    ============================================================ */
+import { confirmarAcao } from '../../componentes/dialogos/dialogos.js';
 import {
     armazenamentoBiblioteca, copiarBibliotecaLocal, excluirModeloComFichas, prepararBiblioteca,
     temBibliotecaLocalParaCopiar
@@ -54,8 +55,8 @@ function renderizarSistemas() {
         copiar.type = 'button';
         copiar.className = 'btn-secondary';
         copiar.textContent = 'Copiar fichas e modelos deste navegador para minha conta';
-        copiar.onclick = () => {
-            if (!window.confirm('Copiar os dados locais para a conta conectada?')) return;
+        copiar.onclick = async () => {
+            if (!(await confirmarAcao('Copiar os dados locais para a conta conectada?'))) return;
             copiarBibliotecaLocal();
             renderizarSistemas();
         };
@@ -86,6 +87,9 @@ function renderizarSistemas() {
             : '<i class="fas fa-desktop" style="color: #888; margin-left: 5px;" title="Salvo no Computador"></i>';
 
         card.innerHTML = `
+            <button type="button" class="btn-editar-sistema" title="Editar modelo" aria-label="Editar modelo">
+                <i class="fas fa-pen" aria-hidden="true"></i>
+            </button>
             <button class="btn-deletar-sistema" title="Excluir Sistema" style="position: absolute; top: 10px; right: 10px; background: transparent; border: none; color: #ff5252; font-size: 1.2rem; cursor: pointer; z-index: 10;">
                 <i class="fas fa-times"></i>
             </button>
@@ -98,6 +102,11 @@ function renderizarSistemas() {
             <p class="ficha-card-desc"></p>
         `;
         card.querySelector('.ficha-card-title').prepend(document.createTextNode(sist.nome));
+        card.querySelector('.btn-editar-sistema').addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            window.location.hash = '#/ficha/modelo?' + new URLSearchParams({ id: sist.id });
+        });
         card.querySelector('.ficha-card-desc').textContent = sist.descricao || 'Sistema customizado.';
         if (sist.imagemCapa) {
             const icone = card.querySelector('.ficha-card-icon');
@@ -124,10 +133,10 @@ function renderizarSistemas() {
         });
 
         const btnDel = card.querySelector('.btn-deletar-sistema');
-        btnDel.addEventListener('click', (e) => {
+        btnDel.addEventListener('click', async (e) => {
             e.preventDefault();
             e.stopPropagation();
-            if (confirm(`Excluir o modelo "${sist.nome}" e todos os personagens criados a partir dele?`)) {
+            if ((await confirmarAcao(`Excluir o modelo "${sist.nome}" e todos os personagens criados a partir dele?`))) {
                 excluirModeloComFichas(sist.id);
                 renderizarSistemas();
             }

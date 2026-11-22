@@ -12,7 +12,9 @@ export function observarRascunho(obter) {
 }
 
 export function salvarRascunho() {
-    if (capturar) armazenamentoBiblioteca.setItem(chave, JSON.stringify([{ id: 'modelo', ...capturar() }]));
+    if (!capturar) return false;
+    armazenamentoBiblioteca.setItem(chave, JSON.stringify([{ id: 'modelo', ...capturar() }]));
+    return true;
 }
 
 export function excluirRascunho() {

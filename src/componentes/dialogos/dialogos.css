@@ -1,0 +1,40 @@
+.codex-dialogo {
+    width: min(30rem, calc(100% - 2rem));
+    max-height: calc(100dvh - 2rem);
+    margin: auto;
+    padding: clamp(1rem, 4vw, 1.6rem);
+    border: 1px solid var(--cor-marrom-borda);
+    border-radius: 0.8rem;
+    background: linear-gradient(145deg, var(--cor-marrom-fundo-1), var(--cor-marrom-fundo-3));
+    color: var(--cor-texto);
+    box-shadow: 0 1rem 3rem #0009;
+    overflow: auto;
+}
+
+.codex-dialogo::backdrop { background: #080604bd; }
+.codex-dialogo form { display: grid; gap: 1rem; }
+.codex-dialogo h2 { color: var(--cor-texto-titulo); font: 600 1.35rem var(--fonte-titulo); margin: 0; }
+.codex-dialogo-mensagem { margin: 0; white-space: pre-line; }
+.codex-dialogo-conteudo:empty { display: none; }
+.codex-dialogo-conteudo, .codex-dialogo-campos { display: grid; gap: 0.7rem; }
+.codex-dialogo-campos label { display: grid; gap: 0.35rem; color: var(--cor-texto-titulo); }
+.codex-dialogo-campos :is(input:not([type="range"]), textarea) {
+    width: 100%;
+    padding: 0.55rem 0.65rem;
+    background: var(--cor-marrom-fundo-3);
+    color: var(--cor-texto);
+    border: 1px solid var(--cor-marrom-borda);
+    border-radius: 0.35rem;
+    font: inherit;
+}
+.codex-dialogo-acoes { display: flex; flex-wrap: wrap; gap: 0.65rem; justify-content: flex-end; }
+.codex-dialogo-acoes [hidden] { display: none; }
+.codex-dialogo-erro { font-size: 0.8rem; color: #ff9e91; }
+.codex-dialogo-pausar {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    color: var(--cor-texto-suave);
+    font-size: 0.85rem;
+    cursor: pointer;
+}

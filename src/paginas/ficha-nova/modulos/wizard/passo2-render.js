@@ -2,9 +2,12 @@
    CODEX — Wizard: Passo 2 (Renderização)
    ============================================================ */
 
+import { ajustarTituloAoRedimensionar, redimensionar } from '../redimensionamento.js';
+import { mostrarAviso, confirmarAcao } from '../../../../componentes/dialogos/dialogos.js';
 import { estado, gerarId, salvarEstado, GRID } from '../paginas/estado.js';
 import { adicionarBlocoNoPainel } from '../paineis.js';
 import { renderizarBloco } from '../blocos/renderizar.js';
+import { adicionarIndicadorDescricao } from '../descricao.js';
 import { configurarSeletorDestinoWizard } from './passo2-paginas.js';
 import { copiarElemento } from '../paginas/copiar-colar.js'; // Importando a nova função
 
@@ -84,7 +87,7 @@ function configurarBotoesAcaoWizard(refs) {
                     window.abrirBottomSheetBloco(refs._campoAtual.id, bloco.id, false);
                 }
             } else {
-                alert("Clique em um bloco primeiro para configurá-lo.");
+                mostrarAviso("Clique em um bloco primeiro para configurá-lo.");
             }
         };
     }
@@ -100,7 +103,7 @@ function configurarBotoesAcaoWizard(refs) {
                 // Usa a nova função que mostra o Toast
                 copiarElemento('bloco', bloco);
             } else {
-                alert("Clique em um bloco primeiro para copiá-lo.");
+                mostrarAviso("Clique em um bloco primeiro para copiá-lo.");
             }
         };
     }
@@ -108,20 +111,20 @@ function configurarBotoesAcaoWizard(refs) {
     if (btnExcluir) {
         const novoBtnExcluir = btnExcluir.cloneNode(true);
         btnExcluir.parentNode.replaceChild(novoBtnExcluir, btnExcluir);
-        novoBtnExcluir.onclick = (e) => {
+        novoBtnExcluir.onclick = async (e) => {
             e.preventDefault();
             e.stopPropagation();
             const bloco = obterBlocoSelecionado(refs);
             if (bloco) {
                 const label = (bloco.tituloBloco || bloco.texto || '(sem título)').slice(0, 30);
-                if (confirm(`Excluir o bloco "${label}"?`)) {
+                if ((await confirmarAcao(`Excluir o bloco "${label}"?`))) {
                     refs._campoAtual.blocos = refs._campoAtual.blocos.filter(b => b.id !== bloco.id);
                     salvarEstado();
                     desenharTelaWizard(refs, refs._campoAtual);
                     configurarSeletorDestinoWizard(refs);
                 }
             } else {
-                alert("Selecione um bloco primeiro.");
+                mostrarAviso("Selecione um bloco primeiro.");
             }
         };
     }
@@ -158,6 +161,7 @@ export function desenharTelaWizard(refs, campoAtual) {
     inputTitulo.value = painel.titulo;
     inputTitulo.addEventListener('input', (e) => { painel.titulo = e.target.value; });
     header.appendChild(inputTitulo);
+    adicionarIndicadorDescricao(header, painel.descricao);
     elPainel.appendChild(header);
 
     const conteudo = document.createElement('div');
@@ -244,23 +248,11 @@ export function desenharTelaWizard(refs, campoAtual) {
                 const onMove = (ev) => {
                     const dx = (ev.clientX - startX) / zoomAtual;
                     const dy = (ev.clientY - startY) / zoomAtual;
-                    let { x, y, largura, altura } = orig;
-
-                    if (lado === 'dir') largura = orig.largura + dx;
-                    if (lado === 'esq') { largura = orig.largura - dx; x = orig.x + dx; }
-                    if (lado === 'base') altura = orig.altura + dy;
-                    if (lado === 'topo') { altura = orig.altura - dy; y = orig.y + dy; }
-
-                    if (largura < minLargura) { if (lado === 'esq') x = orig.x + (orig.largura - minLargura); largura = minLargura; }
-                    if (altura < minAltura) { if (lado === 'topo') y = orig.y + (orig.altura - minAltura); altura = minAltura; }
-
-                    if (x < 10) { largura += x - 10; x = 10; }
-                    if (y < 10) { altura += y - 10; y = 10; }
-
-                    bloco.x = Math.round(x);
-                    bloco.y = Math.round(y);
-                    bloco.largura = Math.round(largura);
-                    bloco.altura = Math.round(altura);
+                    const dimensoes = redimensionar(orig, lado, dx, dy, {
+                        minLargura, minAltura
+                    });
+                    ajustarTituloAoRedimensionar(bloco, elBloco, dimensoes);
+                    Object.assign(bloco, dimensoes);
 
                     elBloco.style.left = bloco.x + 'px';
                     elBloco.style.top = bloco.y + 'px';

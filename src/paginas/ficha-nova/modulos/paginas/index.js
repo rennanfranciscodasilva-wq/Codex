@@ -4,8 +4,9 @@
 
 export * from './estado.js';
 
+import { mostrarAviso, confirmarAcao } from '../../../../componentes/dialogos/dialogos.js';
 import { 
-    estado, salvarEstado, gerarId, getPaginaAtiva, estaEmModoEdicao, gerarNomeUnico
+    estado, salvarEstado, gerarId, getPaginaAtiva, estaEmModoEdicao, gerarNomeUnico, iniciarHistorico, desfazerAlteracao
 } from './estado.js';
 import { 
     configurarMenu, renderizarMenu, trocarPagina, adicionarPagina, duplicarPaginaAtual, excluirPagina
@@ -13,8 +14,9 @@ import {
 import { 
     configurarBottomSheetPagina, abrirBottomSheetPagina
 } from './configuracoes.js';
-import { configurarCopiarColar, copiarPagina, copiarElemento } from './copiar-colar.js';
+import { atualizarBotaoColar, configurarCopiarColar, copiarPagina, copiarElemento } from './copiar-colar.js';
 import { configurarJSON } from './json.js';
+import { aplicarTamanhoDaFolha, configurarTamanhoDaFolha } from '../tamanho-folha.js';
 
 import { renderizarPainel, configurarSheetCampo, encontrarPrimeiroSlotLivre, adicionarBlocoNoPainel } from '../paineis.js';
 import { renderizarBloco, configurarSheetBloco } from '../blocos/index.js';
@@ -22,12 +24,21 @@ import { renderizarBloco, configurarSheetBloco } from '../blocos/index.js';
 export { renderizarMenu, trocarPagina, adicionarPagina, duplicarPaginaAtual, excluirPagina };
 
 let refs = null;
+let atalhosEdicao;
+
+export function desmontarAtalhosEdicao() {
+    atalhosEdicao?.abort();
+}
 
 // --- VARIÁVEL DE ESTADO DE SELEÇÃO ---
 export let elementoSelecionado = null; // { tipo: 'campo' | 'bloco', painelId, blocoId? }
 
 export function setElementoSelecionado(tipo, painelId, blocoId = null) {
     elementoSelecionado = tipo ? { tipo, painelId, blocoId } : null;
+    for (const botao of document.querySelectorAll('#pagina-ficha-nova .btn-acao-selecao')) {
+        botao.disabled = !elementoSelecionado;
+    }
+    atualizarBotaoColar();
     
     // Atualiza as bordas visuais na tela
     document.querySelectorAll('.painel.selecionado').forEach(el => el.classList.remove('selecionado'));
@@ -62,7 +73,7 @@ export function iniciarPaginas(elementos) {
     });
     configurarCopiarColar({
         botao: document.querySelector('#btn-acao-colar'),
-        obterCampo: () => elementoSelecionado?.painelId,
+        obterCampo: () => elementoSelecionado?.tipo === 'campo' ? elementoSelecionado.painelId : null,
         renderizar: renderizarPaineis
     });
     configurarJSON();
@@ -79,6 +90,8 @@ export function iniciarPaginas(elementos) {
 
     configurarBotaoAnimacao();
     configurarBotaoLayout();
+    configurarBotaoRedimensionamento('#btn-redimensionar-conjunto', 'redimensionarEmConjunto');
+    configurarBotaoRedimensionamento('#btn-redimensionar-blocos-campo', 'redimensionarBlocosDoCampo');
     configurarBotoesAcao(); 
     configurarBotaoAdicionarBloco();
     configurarBotaoLimpar();
@@ -93,6 +106,33 @@ export function iniciarPaginas(elementos) {
 
     renderizarMenu();
     carregarConteudoPaginaAtiva();
+    const tela = refs.conteudo.closest('#pagina-ficha-nova');
+    configurarTamanhoDaFolha(tela, refs.conteudo);
+    iniciarHistorico();
+    configurarAtalhosEdicao(tela);
+}
+
+function configurarAtalhosEdicao(tela) {
+    desmontarAtalhosEdicao();
+    atalhosEdicao = new AbortController();
+    document.addEventListener('keydown', evento => {
+        if (!estaEmModoEdicao() || !tela.isConnected || tela.classList.contains('wizard-ativo') ||
+            evento.defaultPrevented || evento.repeat || document.querySelector('dialog[open]') ||
+            evento.target.closest?.('input:not([readonly]), textarea:not([readonly]), select, [contenteditable="true"]')) return;
+
+        if (evento.key === 'Delete' && !evento.ctrlKey && !evento.metaKey && elementoSelecionado) {
+            evento.preventDefault();
+            tela.querySelector('#btn-acao-excluir')?.click();
+        } else if ((evento.ctrlKey || evento.metaKey) && !evento.shiftKey && !evento.altKey && evento.key.toLowerCase() === 'z') {
+            if (!desfazerAlteracao()) return;
+            evento.preventDefault();
+            document.querySelectorAll('.page-settings-sheet.active').forEach(sheet => sheet.classList.remove('active'));
+            configurarBotaoLayout();
+            configurarBotaoAnimacao();
+            renderizarMenu();
+            carregarConteudoPaginaAtiva();
+        }
+    }, { signal: atalhosEdicao.signal });
 }
 
 export function atualizarModoEdicao() {
@@ -130,6 +170,7 @@ function carregarConteudoPaginaAtiva() {
     if (!refs.conteudo) return;
     const pag = getPaginaAtiva();
     if (!pag) return;
+    aplicarTamanhoDaFolha(refs.conteudo.closest('.folha'), pag);
     refs.inputTitulo.value = pag.nome;
 
     const elSistemaNome = document.querySelector('#folha-sistema-nome');
@@ -145,6 +186,7 @@ function carregarConteudoPaginaAtiva() {
     }
     setElementoSelecionado(null);
     renderizarPaineis();
+    refs.conteudo.closest('#pagina-ficha-nova')?.dispatchEvent(new Event('codex:pagina-ficha-atualizada'));
 }
 
 function configurarBotoesAcao() {
@@ -154,7 +196,7 @@ function configurarBotoesAcao() {
 
     if (btnConfig) {
         btnConfig.addEventListener('click', () => {
-            if (!elementoSelecionado) return alert("Selecione um campo ou bloco primeiro.");
+            if (!elementoSelecionado) return mostrarAviso("Selecione um campo ou bloco primeiro.");
             const { tipo, painelId, blocoId } = elementoSelecionado;
             
             if (tipo === 'campo') {
@@ -167,7 +209,7 @@ function configurarBotoesAcao() {
 
     if (btnCopiar) {
         btnCopiar.addEventListener('click', () => {
-            if (!elementoSelecionado) return alert("Selecione um campo ou bloco primeiro.");
+            if (!elementoSelecionado) return mostrarAviso("Selecione um campo ou bloco primeiro.");
             const { tipo, painelId, blocoId } = elementoSelecionado;
             const pag = getPaginaAtiva();
 
@@ -189,26 +231,26 @@ function configurarBotoesAcao() {
     }
 
     if (btnExcluir) {
-        btnExcluir.addEventListener('click', () => {
-            if (!elementoSelecionado) return alert("Selecione um campo ou bloco primeiro.");
+        btnExcluir.addEventListener('click', async () => {
+            if (!elementoSelecionado) return mostrarAviso("Selecione um campo ou bloco primeiro.");
             const { tipo, painelId, blocoId } = elementoSelecionado;
             const pag = getPaginaAtiva();
 
             if (tipo === 'campo') {
                 const p = pag.paineis.find(p => p.id === painelId);
-                if (p && confirm(`Excluir o campo "${p.titulo}"?`)) {
+                if (p && (await confirmarAcao(`Excluir o campo "${p.titulo}"?`, { pausavel: true }))) {
                     pag.paineis = pag.paineis.filter(p => p.id !== painelId);
                     setElementoSelecionado(null);
-                    salvarEstado();
+                    salvarEstado({ elementoExcluido: { paginaId: pag.id, painelId } });
                     renderizarPaineis();
                 }
             } else if (tipo === 'bloco') {
                 const p = pag.paineis.find(p => p.id === painelId);
                 const b = p ? p.blocos.find(b => b.id === blocoId) : null;
-                if (b && confirm(`Excluir o bloco "${b.tituloBloco || 'Sem título'}"?`)) {
+                if (b && (await confirmarAcao(`Excluir o bloco "${b.tituloBloco || 'Sem título'}"?`, { pausavel: true }))) {
                     p.blocos = p.blocos.filter(b => b.id !== blocoId);
                     setElementoSelecionado(null);
-                    salvarEstado();
+                    salvarEstado({ elementoExcluido: { paginaId: pag.id, painelId, blocoId } });
                     renderizarPaineis();
                 }
             }
@@ -226,7 +268,7 @@ function configurarBotaoAdicionarBloco() {
     novoBtn.addEventListener('click', () => {
         if (!estaEmModoEdicao()) return;
         if (!elementoSelecionado || elementoSelecionado.tipo !== 'campo') {
-            return alert("Selecione um CAMPO primeiro para adicionar um bloco dentro dele.");
+            return mostrarAviso("Selecione um CAMPO primeiro para adicionar um bloco dentro dele.", { pausavel: true });
         }
 
         const pag = getPaginaAtiva();
@@ -243,7 +285,7 @@ function configurarBotaoAdicionarBloco() {
 function configurarBotaoAnimacao() {
     const btn = document.querySelector('#btn-toggle-animacao');
     if (!btn) return;
-    if (estado.animacaoAtiva) btn.classList.add('ativo');
+    btn.classList.toggle('ativo', estado.animacaoAtiva);
     const novoBtn = btn.cloneNode(true);
     btn.parentNode.replaceChild(novoBtn, btn);
     novoBtn.addEventListener('click', () => {
@@ -256,16 +298,44 @@ function configurarBotaoAnimacao() {
 function configurarBotaoLayout() {
     const btn = document.querySelector('#btn-modo-layout');
     if (!btn) return;
-    if (estado.modoLayout === 'grid') btn.classList.add('ativo');
     const novoBtn = btn.cloneNode(true);
     btn.parentNode.replaceChild(novoBtn, btn);
+    const folha = novoBtn.closest('#pagina-ficha-nova')?.querySelector('.folha');
+
+    function atualizarModoLayout() {
+        const gradeAtiva = estado.modoLayout === 'grid';
+        const nomeModo = gradeAtiva ? 'Modo grid' : 'Modo livre';
+        novoBtn.classList.toggle('ativo', gradeAtiva);
+        novoBtn.title = nomeModo;
+        novoBtn.dataset.tooltip = nomeModo;
+        novoBtn.setAttribute('aria-label', nomeModo);
+        novoBtn.setAttribute('aria-pressed', String(gradeAtiva));
+        folha?.classList.toggle('layout-grid', gradeAtiva);
+    }
+
+    atualizarModoLayout();
     novoBtn.addEventListener('click', () => {
         estado.modoLayout = estado.modoLayout === 'livre' ? 'grid' : 'livre';
-        novoBtn.classList.toggle('ativo', estado.modoLayout === 'grid');
-        const folha = document.querySelector('#pagina-ficha-nova .folha');
-        if (folha) folha.classList.toggle('layout-grid', estado.modoLayout === 'grid');
+        atualizarModoLayout();
         salvarEstado();
     });
+}
+
+function configurarBotaoRedimensionamento(seletor, opcao) {
+    const botao = document.querySelector(seletor);
+    if (!botao) return;
+
+    function atualizar() {
+        const ativo = estado[opcao];
+        botao.setAttribute('aria-pressed', String(ativo));
+        botao.classList.toggle('ativo', ativo);
+    }
+
+    botao.onclick = () => {
+        estado[opcao] = !estado[opcao];
+        atualizar();
+    };
+    atualizar();
 }
 
 function configurarBotaoLimpar() {
@@ -273,9 +343,9 @@ function configurarBotaoLimpar() {
     if (!btnLimpar) return;
     const novoBtn = btnLimpar.cloneNode(true);
     btnLimpar.parentNode.replaceChild(novoBtn, btnLimpar);
-    novoBtn.addEventListener('click', () => {
+    novoBtn.addEventListener('click', async () => {
         if (document.querySelector('#pagina-ficha-nova.wizard-ativo')) return;
-        if (!confirm('Apagar todas as páginas, campos e blocos desta ficha e deixar uma página em branco?')) return;
+        if (!(await confirmarAcao('Apagar todas as páginas, campos e blocos desta ficha e deixar uma página em branco?'))) return;
 
         const pagina = { id: gerarId('pag_'), nome: 'Página 1', icone: 'fa-book', descricao: '', paineis: [] };
         estado.paginas = [pagina];

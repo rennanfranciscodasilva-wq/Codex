@@ -2,11 +2,13 @@
    CODEX — Wizard: Orquestrador
    ============================================================ */
 
+import { mostrarAviso } from '../../../../componentes/dialogos/dialogos.js';
 import { estado, salvarEstado, gerarId } from '../paginas/estado.js';
 import { configurarPreviewImagem } from './passo1-preview.js';
 import { criarAmbienteDeCampo } from './passo2-render.js';
 import { capturarCampoAtual, executarFinalizar } from './finalizar.js';
 import { configurarCarregamentoModelo } from '../paginas/json.js';
+import { validarNomeNaConta } from '../../../../servicos/armazenamento/biblioteca.js';
 import { excluirRascunho, lerRascunho, observarRascunho, salvarRascunho } from './rascunho.js';
 
 let refs = null;
@@ -28,47 +30,44 @@ function injetarHTMLWizard(pagina) {
     const wizardHTML = `
         <div id="wizard-overlay" class="hidden">
             <div id="wizard-step-1">
-                <h2 class="wizard-title">Criar Novo Sistema</h2>
-                <p class="wizard-desc">Dê um nome e uma descrição para o seu sistema de RPG.</p>
-                
-                <div class="wizard-field">
-                    <label>Nome do Sistema</label>
-                    <input type="text" id="wizard-input-nome-sistema" placeholder="Ex: D&D 5e, Ordem Paranormal...">
+                <div class="wizard-step-1-cabecalho">
+                    <h2 class="wizard-title">Criar Novo Sistema</h2>
+                    <button id="btn-wizard-fechar" type="button" aria-label="Voltar à seleção de sistemas" title="Voltar à seleção de sistemas">
+                        <i class="fas fa-times" aria-hidden="true"></i>
+                    </button>
                 </div>
-                
-                <div class="wizard-field">
-                    <label>Descrição Breve</label>
-                    <textarea id="wizard-input-desc-sistema" placeholder="Uma breve descrição..." rows="2"></textarea>
-                </div>
+                <div class="wizard-step-1-conteudo">
+                    <p class="wizard-desc">Dê um nome e uma descrição para o seu sistema de RPG.</p>
 
-                <div class="wizard-field" style="flex-direction: row; align-items: flex-start; gap: 15px; flex-wrap: wrap;">
-                    <div style="flex: 1; min-width: 200px; display: flex; flex-direction: column; gap: 0.5rem;">
-                        <label>URL da Imagem de Capa (Opcional)</label>
-                        <input type="text" id="wizard-input-imagem-sistema" placeholder="https://exemplo.com/imagem.png">
-                        
-                        <div class="wizard-preview-controles" style="display: none; flex-direction: column; gap: 8px; margin-top: 10px;">
-                            <div class="wizard-slider-group">
-                                <label style="font-size: 0.8rem; color: #aaa;">Zoom</label>
-                                <input type="range" id="wizard-img-zoom" min="0.1" max="2" step="0.1" value="0.5">
-                            </div>
-                            <div class="wizard-slider-group">
-                                <label style="font-size: 0.8rem; color: #aaa;">Mover Horizontal</label>
-                                <input type="range" id="wizard-img-x" min="-100" max="100" step="1" value="0">
-                            </div>
-                            <div class="wizard-slider-group">
-                                <label style="font-size: 0.8rem; color: #aaa;">Mover Vertical</label>
-                                <input type="range" id="wizard-img-y" min="-100" max="100" step="1" value="0">
-                            </div>
+                    <div class="wizard-field">
+                        <label>Nome do Sistema</label>
+                        <input type="text" id="wizard-input-nome-sistema" placeholder="Ex: D&D 5e, Ordem Paranormal...">
+                    </div>
+
+                    <div class="wizard-field">
+                        <label>Descrição Breve</label>
+                        <textarea id="wizard-input-desc-sistema" placeholder="Uma breve descrição..." rows="2"></textarea>
+                    </div>
+
+                    <div class="wizard-field" style="flex-direction: row; align-items: flex-start; gap: 15px; flex-wrap: wrap;">
+                        <div style="flex: 1; min-width: 200px; display: flex; flex-direction: column; gap: 0.5rem;">
+                            <label>URL da Imagem de Capa (Opcional)</label>
+                            <input type="text" id="wizard-input-imagem-sistema" placeholder="https://exemplo.com/imagem.png">
+
+                            <div class="wizard-preview-controles ajustes-imagem" hidden></div>
+                            <p class="previa-imagem-status" role="status"></p>
+                        </div>
+
+                        <div id="wizard-img-preview-wrapper" class="previa-imagem" hidden>
+                            <img id="wizard-img-preview" alt="Prévia da capa" hidden>
                         </div>
                     </div>
-                    
-                    <div id="wizard-img-preview-wrapper">
-                        <img id="wizard-img-preview" src="" alt="Preview">
-                    </div>
-                </div>
 
-                <button id="btn-wizard-carregar-modelo" type="button" class="btn-secondary">Carregar modelo</button>
-                <button id="btn-wizard-proximo" type="button" style="margin-top: 1rem;">Próximo Passo</button>
+                </div>
+                <div class="wizard-step-1-acoes">
+                    <button id="btn-wizard-carregar-modelo" type="button" class="btn-secondary">Carregar modelo</button>
+                    <button id="btn-wizard-proximo" type="button">Próximo Passo</button>
+                </div>
             </div>
 
             <div id="wizard-step-2">
@@ -111,10 +110,8 @@ export function configurarWizard(pagina, callbacks) {
         inputImagem: pagina.querySelector('#wizard-input-imagem-sistema'),
         previewWrapper: pagina.querySelector('#wizard-img-preview-wrapper'),
         previewImg: pagina.querySelector('#wizard-img-preview'),
+        previewStatus: pagina.querySelector('#wizard-step-1 .previa-imagem-status'),
         controls: pagina.querySelector('.wizard-preview-controles'),
-        sliderZoom: pagina.querySelector('#wizard-img-zoom'),
-        sliderX: pagina.querySelector('#wizard-img-x'),
-        sliderY: pagina.querySelector('#wizard-img-y'),
         btnProximo: pagina.querySelector('#btn-wizard-proximo'),
         btnCancelar: pagina.querySelector('#btn-wizard-cancelar'),
         btnProximoCampo: pagina.querySelector('#btn-wizard-proximo-campo'),
@@ -127,12 +124,25 @@ export function configurarWizard(pagina, callbacks) {
     if (!refs.overlay || refs.overlay.dataset.eventosAtivos === 'true') return;
     refs.overlay.dataset.eventosAtivos = 'true';
 
-    configurarPreviewImagem(refs, sistemaEmCriacao);
+    refs.atualizarPreview = configurarPreviewImagem(refs, sistemaEmCriacao);
     configurarCarregamentoModelo(pagina.querySelector('#btn-wizard-carregar-modelo'));
+    pagina.querySelector('#btn-wizard-fechar').addEventListener('click', () => {
+        window.location.hash = '#/ficha';
+    });
 
-    refs.btnProximo.addEventListener('click', () => {
+    refs.btnProximo.addEventListener('click', async () => {
         const nome = refs.inputNome.value.trim();
-        if (!nome) return alert('Digite o nome do sistema.');
+        if (!nome) return mostrarAviso('Digite o nome do sistema.');
+        const formulario = refs;
+        formulario.btnProximo.disabled = true;
+        try {
+            await validarNomeNaConta('codex_sistemas', { nome });
+        } catch (erro) {
+            return mostrarAviso(erro.code === 'backup/nome-ocupado' ? erro.message : 'Não foi possível conferir o nome do sistema.');
+        } finally {
+            formulario.btnProximo.disabled = false;
+        }
+        if (refs !== formulario || !formulario.pagina.isConnected) return;
         sistemaEmCriacao.nome = nome;
         sistemaEmCriacao.descricao = refs.inputDesc.value.trim();
         sistemaEmCriacao.campos = [];
@@ -174,18 +184,14 @@ export function abrirWizard() {
         estado.paginaAtivaId = rascunho.paginaAtivaId;
         refs.inputNome.value = sistemaEmCriacao.nome;
         refs.inputDesc.value = sistemaEmCriacao.descricao;
-        refs.inputImagem.value = sistemaEmCriacao.imagemCapa;
+        refs.atualizarPreview();
         entrarNoModoEditor(true);
         return;
     }
     
     if (refs.inputNome) refs.inputNome.value = '';
     if (refs.inputDesc) refs.inputDesc.value = '';
-    if (refs.inputImagem) refs.inputImagem.value = '';
-    
-    if (refs.previewWrapper) refs.previewWrapper.style.display = 'none';
-    if (refs.controls) refs.controls.style.display = 'none';
-    if (refs.previewImg) refs.previewImg.src = '';
+    refs.atualizarPreview();
     
     const elSistemaNome = document.querySelector('#folha-sistema-nome');
     if (elSistemaNome) {
@@ -195,21 +201,8 @@ export function abrirWizard() {
 }
 
 export function desmontarWizard() {
+    // A folha e o assistente saem juntos com a transição da página.
     observarRascunho(null);
-    if (refs && refs.overlay) {
-        refs.overlay.classList.add('hidden');
-        refs.overlay.classList.remove('wizard-modo-editor');
-    }
-    if (refs && refs.pagina) {
-        refs.pagina.classList.remove('wizard-ativo', 'modo-edicao');
-        
-        const btnAddCampo = refs.pagina.querySelector('#btn-add-campo');
-        const btnAnimacao = refs.pagina.querySelector('#btn-toggle-animacao');
-        const btnModoEdicao = refs.pagina.querySelector('#btn-modo-edicao');
-        if (btnAddCampo) btnAddCampo.style.display = '';
-        if (btnAnimacao) btnAnimacao.style.display = '';
-        if (btnModoEdicao) btnModoEdicao.style.display = '';
-    }
 }
 
 function limparEditor() {

@@ -2,8 +2,10 @@
    MÓDULO: CONFIGURAÇÕES DO BLOCO (Ficha Nova)
    ============================================================ */
 
-import { estado, salvarEstado, getPaginaAtiva } from '../paginas/index.js';
+import { confirmarAcao } from '../../../../componentes/dialogos/dialogos.js';
+import { estado, salvarEstado, getPaginaAtiva, estaEmModoEdicao } from '../paginas/index.js';
 import { configurarEditorFormula, formulaEventBus } from '../automacao.js';
+import { configurarDescricao } from '../descricao.js';
 
 let blocoSendoEditadoId = null;
 let painelPaiIdTemp = null;
@@ -84,7 +86,18 @@ export function configurarSheetBloco(renderizarCallback) {
         return null;
     };
 
+    const carregarDescricao = configurarDescricao(sheet, descricao => {
+        if (!estaEmModoEdicao()) return;
+        const bloco = obterBlocoAtual();
+        if (!bloco) return;
+        if (descricao === undefined) delete bloco.descricao;
+        else bloco.descricao = descricao;
+        salvarEstado({ descricaoEditada: { tipo: 'bloco', id: bloco.id, descricao: descricao ?? null } });
+        atualizarBlocoNaFolha();
+    });
+
     configurarEditorFormula(() => {
+        salvarEstado();
         atualizarBlocoNaFolha();
         atualizarResumoFormula(); 
     });
@@ -186,9 +199,9 @@ export function configurarSheetBloco(renderizarCallback) {
     }
 
     if (btnRemoveFormula) {
-        btnRemoveFormula.addEventListener('click', (e) => {
+        btnRemoveFormula.addEventListener('click', async (e) => {
             e.preventDefault();
-            if(confirm("Deseja remover a automatização deste bloco?")) {
+            if((await confirmarAcao("Deseja remover a automatização deste bloco?", { pausavel: true }))) {
                 const b = obterBlocoAtual();
                 if (!b) return;
                 b.formula = [];
@@ -258,7 +271,8 @@ export function configurarSheetBloco(renderizarCallback) {
         atualizarInterface();
         atualizarResumoFormula();
 
-        const todosControles = sheet.querySelectorAll('select, input, button, a');
+        carregarDescricao(b?.descricao, !modoJogador);
+        const todosControles = sheet.querySelectorAll('select, input, textarea, button, a');
         if (modoJogador) {
             todosControles.forEach(el => {
                 if (el === inputUrl || el === sliderImgZoom || el === sliderImgX || el === sliderImgY || el === btnClose) {
@@ -321,7 +335,9 @@ export function configurarSheetBloco(renderizarCallback) {
             b.formula = [];
         }
         
-        salvarEstado();
+        salvarEstado(b.tipo === 'imagem'
+            ? (estaEmModoEdicao() ? { imagemModelo: b.id } : { preenchimento: true })
+            : {});
 
         atualizarBlocoNaFolha();
     }

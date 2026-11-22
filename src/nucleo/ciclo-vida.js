@@ -125,7 +125,6 @@ function esconderPaginaAtual() {
         const finalizar = () => {
             if (finalizado) return;
             finalizado = true;
-            elemento.style.display = 'none';
             elemento.remove();
             elemento.classList.remove('pagina-saindo');
             resolve();

@@ -5,6 +5,16 @@ service cloud.firestore {
       return request.auth != null && request.auth.uid == uid;
     }
 
+    function diaBrasilia() {
+      let local = request.time - duration.value(3, 'h');
+      return local.date();
+    }
+
+    function backupAtual(uid) {
+      let caminho = /databases/$(database)/documents/usuarios/$(uid)/controle/sincronizacao;
+      return getAfter(caminho).data.atualizadoEm == request.time;
+    }
+
     match /usuarios/{uid} {
       allow read, write: if titular(uid);
 
@@ -14,10 +24,46 @@ service cloud.firestore {
         }
 
         allow read: if titular(uid) && biblioteca();
+        allow create, update: if titular(uid) && biblioteca()
+          && (request.resource.data.keys().hasOnly(['conteudo'])
+            || ((colecao == 'sistemas' || colecao == 'fichas')
+              && request.resource.data.keys().hasOnly(['conteudo', 'nome', 'criadoEm', 'reserva'])
+              && request.resource.data.nome is string
+              && request.resource.data.get('reserva', '') is string
+              && request.resource.data.get('criadoEm', request.time) is timestamp))
+          && request.resource.data.conteudo is string
+          && backupAtual(uid);
+        allow delete: if titular(uid) && biblioteca() && backupAtual(uid);
+      }
+
+      match /nomes/{nome} {
+        allow read: if titular(uid);
+        allow create: if titular(uid) && backupAtual(uid)
+          && request.resource.data.keys().hasOnly(['registro'])
+          && request.resource.data.registro is string;
+        allow delete: if titular(uid) && backupAtual(uid);
       }
 
       match /controle/sincronizacao {
+        function controleValido(anterior) {
+          let dados = request.resource.data;
+          let hoje = diaBrasilia();
+          let usados = anterior.get('dia', null) == hoje ? anterior.get('usados', 0) : 0;
+          let ultima = anterior.get('ultimaAutomatica', null);
+          return dados.keys().hasOnly(['dia', 'usados', 'ultimaAutomatica', 'atualizadoEm', 'modo'])
+            && dados.dia == hoje
+            && dados.atualizadoEm == request.time
+            && dados.usados is int
+            && dados.usados >= 0 && dados.usados <= 5
+            && ((dados.modo == 'manual' && dados.usados == usados + 1 && dados.ultimaAutomatica == ultima)
+              || (dados.modo == 'automatico' && dados.usados == usados
+                && dados.ultimaAutomatica == request.time
+                && (ultima == null || request.time >= ultima + duration.value(1, 'h'))));
+        }
+
         allow read: if titular(uid);
+        allow create: if titular(uid) && controleValido({});
+        allow update: if titular(uid) && controleValido(resource.data);
       }
     }
 

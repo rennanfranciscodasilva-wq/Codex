@@ -2,6 +2,7 @@
    CODEX — Wizard: Passo 2 (Gerenciamento de Páginas)
    ============================================================ */
 
+import { mostrarAviso, confirmarAcao } from '../../../../componentes/dialogos/dialogos.js';
 import { estado, salvarEstado, gerarId } from '../paginas/estado.js';
 
 export function configurarSeletorDestinoWizard(refs) {
@@ -28,13 +29,13 @@ export function configurarSeletorDestinoWizard(refs) {
             btnX.title = 'Excluir esta página';
             
             // Evento para excluir página
-            btnX.onclick = (ev) => {
+            btnX.onclick = async (ev) => {
                 ev.preventDefault();
                 ev.stopPropagation();
                 ev.stopImmediatePropagation();
                 
                 if (estado.paginas.length <= 1) {
-                    alert("Você precisa ter pelo menos uma página no sistema.");
+                    mostrarAviso("Você precisa ter pelo menos uma página no sistema.");
                     return;
                 }
 
@@ -45,7 +46,7 @@ export function configurarSeletorDestinoWizard(refs) {
                     if (nomesCampos) mensagem = `Tem certeza que deseja excluir esta página? Ela contém: ${nomesCampos}`;
                 }
 
-                if (confirm(mensagem)) {
+                if ((await confirmarAcao(mensagem))) {
                     estado.paginas = estado.paginas.filter(p => p.id !== pag.id);
                     if (estado.paginaAtivaId === pag.id) {
                         estado.paginaAtivaId = estado.paginas[0].id;
@@ -90,7 +91,7 @@ export function configurarSeletorDestinoWizard(refs) {
         e.stopImmediatePropagation();
 
         if (estado.paginas.length >= 10) {
-            alert("Limite de 10 páginas.");
+            mostrarAviso("Limite de 10 páginas.");
             return;
         }
 

@@ -12,8 +12,10 @@ const paginasJs = import.meta.glob('../paginas/*/script.js');
 const rotas = {
     '/inicio':              { pasta: 'inicio' },
     '/login':               { pasta: 'login' },
+    '/confirmar-email':     { pasta: 'confirmar-email' },
     '/ficha':               { pasta: 'ficha' },
     '/ficha/nova':          { pasta: 'ficha-nova' },
+    '/ficha/modelo':        { pasta: 'ficha-nova' },
     '/ficha/personagens':   { pasta: 'personagens' },
     '/ficha/ficha-nova':    { pasta: 'ficha-nova' },
     '/ficha/old-dragon':    { pasta: 'placeholder' },

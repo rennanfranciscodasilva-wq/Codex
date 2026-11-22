@@ -97,6 +97,7 @@ export function configurarBottomSheetPagina(callbacks) {
             pag.nome = e.target.value; 
             const inputTitulo = document.querySelector('#folha-titulo-pagina');
             if (inputTitulo) inputTitulo.value = pag.nome;
+            renderizarMenuCallback?.();
             salvarEstado(); 
         }
     });

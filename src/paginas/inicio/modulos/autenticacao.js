@@ -2,6 +2,7 @@
    MÓDULO: Autenticação (Login e Registro)
    ============================================================ */
 
+import { mostrarAviso } from '../../../componentes/dialogos/dialogos.js';
 import { registrar, entrar } from '../../../servicos/autenticacao/autenticacao.js';
 
 export function iniciarAutenticacao(refs, callbacks) {
@@ -40,10 +41,10 @@ export function iniciarAutenticacao(refs, callbacks) {
             aoLogarComSucesso(nome || email.split('@')[0]); 
         } catch (erro) {
             console.error("Erro no registro:", erro);
-            if (erro.code === 'auth/email-already-in-use') alert("Este e-mail já está cadastrado.");
-            else if (erro.code === 'auth/weak-password') alert("A senha deve ter no mínimo 6 caracteres.");
-            else if (erro.code === 'auth/invalid-email') alert("Formato de e-mail inválido.");
-            else alert("Erro ao criar conta: " + erro.message);
+            if (erro.code === 'auth/email-already-in-use') mostrarAviso("Este e-mail já está cadastrado.");
+            else if (erro.code === 'auth/weak-password') mostrarAviso("A senha deve ter no mínimo 6 caracteres.");
+            else if (erro.code === 'auth/invalid-email') mostrarAviso("Formato de e-mail inválido.");
+            else mostrarAviso("Erro ao criar conta: " + erro.message);
         }
     });
 
@@ -62,9 +63,9 @@ export function iniciarAutenticacao(refs, callbacks) {
         } catch (erro) {
             console.error("Erro no login:", erro);
             if (erro.code === 'auth/invalid-credential' || erro.code === 'auth/wrong-password' || erro.code === 'auth/user-not-found') {
-                alert("E-mail ou senha incorretos.");
+                mostrarAviso("E-mail ou senha incorretos.");
             } else {
-                alert("Erro ao entrar: " + erro.message);
+                mostrarAviso("Erro ao entrar: " + erro.message);
             }
         }
     });

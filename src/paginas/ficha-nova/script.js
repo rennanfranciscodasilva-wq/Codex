@@ -2,12 +2,15 @@
    CODEX — Página: Ficha Nova (Maestro)
    ============================================================ */
 
+import { mostrarAviso } from '../../componentes/dialogos/dialogos.js';
 import { armazenamentoBiblioteca, prepararBiblioteca } from '../../servicos/armazenamento/biblioteca.js';
 import { iniciarZoom } from './modulos/zoom.js';
+import { aplicarTamanhoDaFolha } from './modulos/tamanho-folha.js';
 import { configurarMenuFicha } from './modulos/menu-ficha.js';
 import { desmontarCopiarColar } from './modulos/paginas/copiar-colar.js';
 import {
     iniciarPaginas,
+    desmontarAtalhosEdicao,
     atualizarModoEdicao,
     acionarAdicionarCampo,
     estado,
@@ -22,23 +25,44 @@ export async function montarPagina(container) {
     await prepararBiblioteca();
     if (window.location.hash !== rota || !container.isConnected) return;
     const [rotaFicha, query] = rota.slice(1).split('?');
-    const fichaId = new URLSearchParams(query).get('id');
-    return iniciarFichaNova(container, fichaId, rotaFicha === '/ficha/nova');
+    const id = new URLSearchParams(query).get('id');
+    return iniciarFichaNova(container, id, rotaFicha);
 }
 
-function iniciarFichaNova(container, fichaId, criarModelo) {
-    if (fichaId) {
+async function iniciarFichaNova(container, id, rota) {
+    estado.redimensionarEmConjunto = false;
+    estado.redimensionarBlocosDoCampo = true;
+    const criarModelo = rota === '/ficha/nova';
+    const editarModelo = rota === '/ficha/modelo';
+    estado.editandoModelo = editarModelo;
+    if (editarModelo) {
+        const sistemas = JSON.parse(armazenamentoBiblioteca.getItem('codex_sistemas') || '[]');
+        const modelo = sistemas.find(sistema => sistema.id === id);
+        if (!modelo?.layout) {
+            await mostrarAviso('Modelo não encontrado.');
+            window.location.hash = '#/ficha';
+            return;
+        }
+        const layout = structuredClone(modelo.layout);
+        estado.paginas = layout.paginas;
+        estado.paginaAtivaId = layout.paginaAtivaId || layout.paginas[0]?.id;
+        estado.animacaoAtiva = layout.animacaoAtiva ?? true;
+        estado.modoLayout = layout.modoLayout || 'livre';
+        estado.nomeSistema = modelo.nome;
+        estado.idSistemaAtual = modelo.id;
+        estado.idFichaAtual = null;
+    } else if (id) {
         const fichasJogador = JSON.parse(armazenamentoBiblioteca.getItem('codex_fichas_jogador') || '[]');
-        const ficha = fichasJogador.find(f => f.id === fichaId);
+        const ficha = fichasJogador.find(f => f.id === id);
         
         if (ficha) {
             const sistemas = JSON.parse(armazenamentoBiblioteca.getItem('codex_sistemas') || '[]');
             const modelo = sistemas.find(sistema => sistema.id === ficha.sistemaId);
             const dados = Array.isArray(ficha.valores) && modelo
-                ? preencherModelo(modelo.layout, ficha.valores)
+                ? preencherModelo(modelo.layout, ficha.valores, ficha.descricoes, ficha.camposColados, ficha.guiasPorPagina, ficha)
                 : ficha.dados;
             if (!dados) {
-                alert('Modelo da ficha não encontrado.');
+                await mostrarAviso('Modelo da ficha não encontrado.');
                 window.location.hash = '#/ficha';
                 return;
             }
@@ -50,7 +74,7 @@ function iniciarFichaNova(container, fichaId, criarModelo) {
             estado.idSistemaAtual = ficha.sistemaId;
             estado.idFichaAtual = ficha.id;
         } else {
-            alert("Ficha não encontrada.");
+            await mostrarAviso("Ficha não encontrada.");
             window.location.hash = '#/ficha';
             return;
         }
@@ -90,6 +114,7 @@ function iniciarFichaNova(container, fichaId, criarModelo) {
                             <div class="folha-cabecalho">
                                 <div class="folha-titulos-wrapper">
                                     <h1 class="folha-sistema-nome" id="folha-sistema-nome"></h1>
+                                    ${editarModelo ? '<small class="folha-aviso-modelo">Modelo · preenchimentos de teste não são salvos</small>' : ''}
                                     <input type="text" class="folha-titulo-pagina" id="folha-titulo-pagina" value="Página 1" spellcheck="false">
                                     <div class="folha-descricao-pagina" id="folha-descricao-pagina"></div>
                                 </div>
@@ -107,11 +132,13 @@ function iniciarFichaNova(container, fichaId, criarModelo) {
                             <button class="folha-btn-ferramenta principal" id="btn-modo-edicao" data-tooltip="Modo Edição"><i class="fas fa-pen"></i></button>
                             <div class="folha-ferramentas-extras" id="folha-ferramentas-extras">
                                 <button class="folha-btn-ferramenta" id="btn-modo-layout" data-tooltip="Modo Livre"><i class="fas fa-arrows-up-down-left-right"></i></button>
+                                <button type="button" class="folha-btn-ferramenta" id="btn-redimensionar-conjunto" data-tooltip="Redimensionar em conjunto" aria-label="Redimensionar em conjunto" aria-pressed="false"><i class="fas fa-expand" aria-hidden="true"></i></button>
+                                <button type="button" class="folha-btn-ferramenta ativo" id="btn-redimensionar-blocos-campo" data-tooltip="Redimensionar blocos e campos" aria-label="Redimensionar blocos e campos" aria-pressed="true"><i class="fas fa-object-group" aria-hidden="true"></i></button>
                                 <button class="folha-btn-ferramenta" id="btn-add-campo" data-tooltip="Adicionar Campo"><i class="fas fa-plus-square"></i></button>
                                 <button class="folha-btn-ferramenta" id="btn-add-bloco" data-tooltip="Adicionar Bloco"><i class="fas fa-cube"></i></button>
                                 <button class="folha-btn-ferramenta btn-acao-selecao" id="btn-acao-config" data-tooltip="Configurar"><i class="fas fa-cog"></i></button>
                                 <button class="folha-btn-ferramenta btn-acao-selecao" id="btn-acao-copiar" data-tooltip="Copiar"><i class="fas fa-copy"></i></button>
-                                <button class="folha-btn-ferramenta" id="btn-acao-colar" data-tooltip="Colar bloco" disabled><i class="fas fa-paste"></i></button>
+                                <button class="folha-btn-ferramenta" id="btn-acao-colar" data-tooltip="Colar" disabled><i class="fas fa-paste"></i></button>
                                 <button class="folha-btn-ferramenta btn-acao-selecao" id="btn-acao-excluir" data-tooltip="Excluir"><i class="fas fa-trash-alt"></i></button>
                             </div>
                         </div>
@@ -132,6 +159,7 @@ function iniciarFichaNova(container, fichaId, criarModelo) {
     const abrirFerramentasEdicao = configurarMenuFicha(pagina, atualizarModoEdicao);
 
     const wrapper = pagina.querySelector('#folha-wrapper');
+    aplicarTamanhoDaFolha(pagina.querySelector('.folha'), estado.paginas.find(item => item.id === estado.paginaAtivaId));
     const ajustarZoomDoAssistente = iniciarZoom(pagina, wrapper);
 
     iniciarPaginas({
@@ -154,6 +182,7 @@ function iniciarFichaNova(container, fichaId, criarModelo) {
     });
 
     if (criarModelo && pagina.isConnected) abrirWizard();
+    if (editarModelo) abrirFerramentasEdicao();
 }
 
 function configurarBotaoAdicionarCampo() {
@@ -171,6 +200,7 @@ function configurarBotaoAdicionarCampo() {
 }
 
 export function desmontarPagina() {
+    desmontarAtalhosEdicao();
     desmontarCopiarColar();
     const pagina = document.querySelector('#pagina-ficha-nova');
     if (!pagina) return;

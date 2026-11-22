@@ -1,143 +1,223 @@
-/* ============================================================
-   CODEX — Página: Personagens (Lista por Sistema)
-   ============================================================ */
-import { armazenamentoBiblioteca, prepararBiblioteca } from '../../servicos/armazenamento/biblioteca.js';
+import { abrirDialogo, confirmarAcao, mostrarAviso } from '../../componentes/dialogos/dialogos.js';
+import { aplicarAjustes, configurarPreviaImagem, criarAjustesImagem, urlDeImagem } from '../../componentes/imagem/ajustes.js';
+import { armazenamentoBiblioteca, prepararBiblioteca, validarNomeNaConta } from '../../servicos/armazenamento/biblioteca.js';
+
+const chaveSistemas = 'codex_sistemas';
+const chaveFichas = 'codex_fichas_jogador';
+
+function lerLista(chave) {
+    return JSON.parse(armazenamentoBiblioteca.getItem(chave) || '[]');
+}
+
+function salvarLista(chave, lista) {
+    armazenamentoBiblioteca.setItem(chave, JSON.stringify(lista));
+}
 
 export async function montarPagina(container) {
     const rota = window.location.hash;
     await prepararBiblioteca();
     if (window.location.hash !== rota || !container.isConnected) return;
-    console.log("🐛 [PERSONAGENS] montarPagina chamada");
-    
-    // LÊ O ID DIRETAMENTE DA URL
-    const hashCompleto = window.location.hash.replace(/^#/, '');
-    const queryString = hashCompleto.split('?')[1] || '';
-    const params = new URLSearchParams(queryString);
-    const idSistema = params.get('id'); 
-
-    console.log("🐛 [PERSONAGENS] idSistema recebido da URL:", idSistema);
-
-    if (!idSistema) {
-        console.warn("🐛 [PERSONAGENS] Nenhum idSistema encontrado na URL.");
-        alert("Nenhum sistema selecionado.");
-        window.location.hash = '#/ficha'; 
-        return;
-    }
-
-    const sistemas = JSON.parse(armazenamentoBiblioteca.getItem('codex_sistemas') || '[]');
-    const sistema = sistemas.find(s => s.id === idSistema);
-
+    const idSistema = new URLSearchParams(rota.split('?')[1]).get('id');
+    const sistema = lerLista(chaveSistemas).find(item => item.id === idSistema);
     if (!sistema) {
-        console.warn("🐛 [PERSONAGENS] Sistema não encontrado no localStorage:", idSistema);
-        alert("Sistema não encontrado no armazenamento local.");
-        window.location.hash = '#/ficha';
+        await mostrarAviso(idSistema ? 'Sistema não encontrado.' : 'Nenhum sistema selecionado.');
+        if (window.location.hash === rota) window.location.hash = '#/ficha';
         return;
     }
 
-    console.log("🐛 [PERSONAGENS] Sistema encontrado:", sistema.nome);
+    const pagina = container.querySelector('#pagina-personagens');
+    configurarDetalhe(pagina, idSistema, 'nome', '#titulo-sistema-personagens', '#btn-editar-titulo-sistema');
+    configurarDetalhe(pagina, idSistema, 'descricao', '#descricao-sistema-personagens', '#btn-editar-descricao-sistema');
+    renderizarListaPersonagens(pagina, idSistema);
 
-    const paginaEl = container.querySelector('#pagina-personagens') || container;
-
-    const tituloEl = paginaEl.querySelector('#titulo-sistema-personagens');
-    const descEl = paginaEl.querySelector('#descricao-sistema-personagens');
-    if (tituloEl) tituloEl.textContent = `Personagens: ${sistema.nome}`;
-    if (descEl) descEl.textContent = sistema.descricao || '';
-
-    renderizarListaPersonagens(paginaEl, idSistema, sistema);
-
-    // Botão Voltar (Recarrega a página para limpar o cache)
-    const btnVoltar = paginaEl.querySelector('#btn-voltar-sistemas');
-    if (btnVoltar) {
-        btnVoltar.onclick = () => {
-            window.location.href = `${window.location.origin}${window.location.pathname}#/ficha`;
-            window.location.reload();
+    pagina.querySelector('#btn-voltar-sistemas').onclick = () => { window.location.hash = '#/ficha'; };
+    pagina.querySelector('#btn-novo-personagem').onclick = async () => {
+        const dados = await editarPersonagem();
+        if (!dados || window.location.hash !== rota) return;
+        if (!(await conferirNome(chaveFichas, { ...dados, sistemaId: idSistema })) ||
+            window.location.hash !== rota) return;
+        const modelo = lerLista(chaveSistemas).find(item => item.id === idSistema);
+        if (!modelo?.layout) return mostrarAviso('Sistema não encontrado.');
+        const novaFicha = {
+            id: 'ficha_' + Date.now() + Math.random().toString(36).slice(2, 6),
+            sistemaId: idSistema,
+            criadoEm: Date.now(),
+            dados: structuredClone(modelo.layout),
+            ...dados
         };
-    }
+        salvarLista(chaveFichas, [...lerLista(chaveFichas), novaFicha]);
+        abrirFicha(novaFicha.id);
+    };
+}
 
-    // Botão Novo Personagem
-    const btnNovo = paginaEl.querySelector('#btn-novo-personagem');
-    if (btnNovo) {
-        btnNovo.onclick = () => {
-            criarNovoPersonagem(idSistema, sistema);
-        };
+function configurarDetalhe(pagina, idSistema, campo, seletorTexto, seletorBotao) {
+    const alvo = pagina.querySelector(seletorTexto);
+    const descricao = campo === 'descricao';
+    const obterValor = () => lerLista(chaveSistemas).find(item => item.id === idSistema)?.[campo] || '';
+    alvo.textContent = obterValor() || (descricao ? 'Sem descrição' : '');
+    pagina.querySelector(seletorBotao).onclick = async () => {
+        const rota = window.location.hash;
+        const conteudo = document.createElement('div');
+        conteudo.className = 'codex-dialogo-campos';
+        const label = document.createElement('label');
+        label.textContent = descricao ? 'Descrição do sistema' : 'Título do sistema';
+        const input = document.createElement(descricao ? 'textarea' : 'input');
+        input.value = obterValor();
+        input.required = !descricao;
+        input.autofocus = true;
+        input.maxLength = descricao ? 2000 : 120;
+        label.append(input);
+        conteudo.append(label);
+
+        const valor = await abrirDialogo({
+            titulo: descricao ? 'Editar descrição' : 'Editar título',
+            conteudo, confirmar: 'Salvar',
+            ler: () => lerCampo(input)
+        });
+        if (valor === null || window.location.hash !== rota) return;
+        if (!descricao && (!(await conferirNome(chaveSistemas, { id: idSistema, nome: valor })) ||
+            window.location.hash !== rota)) return;
+        const sistemas = lerLista(chaveSistemas);
+        const atual = sistemas.find(item => item.id === idSistema);
+        if (!atual) return;
+        atual[campo] = valor;
+        salvarLista(chaveSistemas, sistemas);
+        alvo.textContent = obterValor() || 'Sem descrição';
+    };
+}
+
+async function conferirNome(chave, registro) {
+    try {
+        await validarNomeNaConta(chave, registro);
+        return true;
+    } catch (erro) {
+        await mostrarAviso(erro.code === 'backup/nome-ocupado' ? erro.message : 'Não foi possível conferir o nome.');
+        return false;
     }
 }
 
-function renderizarListaPersonagens(paginaEl, idSistema, sistema) {
-    const listaContainer = paginaEl.querySelector('#lista-personagens-container');
-    if (!listaContainer) {
-        console.error("🐛 [PERSONAGENS] ERRO: #lista-personagens-container não encontrado no HTML!");
+function lerCampo(input) {
+    const valor = input.value.trim();
+    if (input.required && !valor) {
+        sinalizarErro(input, 'Preencha este campo.');
+        return null;
+    }
+    return valor;
+}
+
+function sinalizarErro(input, mensagem) {
+    input.parentElement.querySelector('.codex-dialogo-erro')?.remove();
+    const erro = document.createElement('span');
+    erro.className = 'codex-dialogo-erro';
+    erro.setAttribute('role', 'alert');
+    erro.textContent = mensagem;
+    input.setAttribute('aria-invalid', 'true');
+    input.after(erro);
+    input.focus();
+    input.addEventListener('input', () => {
+        erro.remove();
+        input.removeAttribute('aria-invalid');
+    }, { once: true });
+}
+
+function abrirFicha(id) {
+    window.location.hash = '#/ficha/ficha-nova?' + new URLSearchParams({ id });
+}
+
+function renderizarListaPersonagens(pagina, idSistema) {
+    const lista = pagina.querySelector('#lista-personagens-container');
+    const fichas = lerLista(chaveFichas).filter(item => item.sistemaId === idSistema);
+    lista.replaceChildren();
+    if (!fichas.length) {
+        lista.innerHTML = '<div class="msg-sem-personagens">Nenhum personagem criado para este sistema ainda.</div>';
         return;
     }
 
-    const todasFichas = JSON.parse(armazenamentoBiblioteca.getItem('codex_fichas_jogador') || '[]');
-    const fichasDoSistema = todasFichas.filter(f => f.sistemaId === idSistema);
-
-    console.log(`🐛 [PERSONAGENS] Encontradas ${fichasDoSistema.length} fichas para este sistema.`);
-
-    listaContainer.innerHTML = '';
-
-    if (fichasDoSistema.length === 0) {
-        listaContainer.innerHTML = `
-            <div class="msg-sem-personagens">
-                Nenhum personagem criado para este sistema ainda.<br>
-                Clique em "Criar Novo Personagem" para começar.
-            </div>
-        `;
-        return;
-    }
-
-    fichasDoSistema.forEach(ficha => {
-        const card = document.createElement('div');
+    for (const ficha of fichas) {
+        const card = document.createElement('article');
         card.className = 'card-personagem';
         card.innerHTML = `
-            <div class="avatar-personagem"><i class="fas fa-user"></i></div>
-            <h2 class="nome-personagem"></h2>
-            <div class="info-personagem">Criado em: ${new Date(ficha.criadoEm || Date.now()).toLocaleDateString()}</div>
-            <button class="btn-excluir-personagem" title="Excluir Personagem"><i class="fas fa-trash"></i></button>
-        `;
+            <button type="button" class="btn-editar-personagem btn-editar-detalhe" title="Editar personagem" aria-label="Editar personagem"><i class="fas fa-pen" aria-hidden="true"></i></button>
+            <a class="personagem-link">
+                <div class="avatar-personagem"><i class="fas fa-user" aria-hidden="true"></i><img alt="" hidden></div>
+                <h2 class="nome-personagem"></h2>
+                <div class="info-personagem"></div>
+            </a>
+            <button type="button" class="btn-excluir-personagem" title="Excluir personagem" aria-label="Excluir personagem"><i class="fas fa-trash" aria-hidden="true"></i></button>`;
+        card.querySelector('.personagem-link').href = '#/ficha/ficha-nova?' + new URLSearchParams({ id: ficha.id });
         card.querySelector('.nome-personagem').textContent = ficha.nomePersonagem || 'Sem Nome';
-
-        card.onclick = (e) => {
-            if (e.target.closest('.btn-excluir-personagem')) return; 
-            window.location.hash = `#/ficha/ficha-nova?id=${ficha.id}`;
+        const data = ficha.criadoEm ? new Date(ficha.criadoEm) : null;
+        if (data && Number.isFinite(data.getTime())) {
+            card.querySelector('.info-personagem').textContent = 'Criado em: ' + data.toLocaleDateString('pt-BR');
+        }
+        const img = card.querySelector('img');
+        const icone = card.querySelector('.avatar-personagem i');
+        const foto = urlDeImagem(ficha.imagemUrl || '');
+        if (foto) {
+            img.hidden = false;
+            icone.hidden = true;
+            aplicarAjustes(img, ficha.imagemAjustes);
+            img.onerror = () => { img.hidden = true; icone.hidden = false; };
+            img.src = foto;
+        }
+        card.querySelector('.btn-editar-personagem').onclick = async () => {
+            const rota = window.location.hash;
+            const dados = await editarPersonagem(ficha);
+            if (!dados || window.location.hash !== rota) return;
+            if (!(await conferirNome(chaveFichas, { ...ficha, ...dados })) || window.location.hash !== rota) return;
+            const atuais = lerLista(chaveFichas);
+            const atual = atuais.find(item => item.id === ficha.id);
+            if (!atual) return;
+            Object.assign(atual, dados);
+            salvarLista(chaveFichas, atuais);
+            renderizarListaPersonagens(pagina, idSistema);
         };
-
-        const btnExcluir = card.querySelector('.btn-excluir-personagem');
-        btnExcluir.onclick = (e) => {
-            e.stopPropagation();
-            if (confirm(`Tem certeza que deseja excluir o personagem "${ficha.nomePersonagem}"?`)) {
-                const fichasAtualizadas = todasFichas.filter(f => f.id !== ficha.id);
-                armazenamentoBiblioteca.setItem('codex_fichas_jogador', JSON.stringify(fichasAtualizadas));
-                
-                const cache = JSON.parse(localStorage.getItem('codex_ficha_dados') || '{}');
-                if (cache.idFichaAtual === ficha.id) {
-                    localStorage.removeItem('codex_ficha_dados');
-                }
-                
-                renderizarListaPersonagens(paginaEl, idSistema, sistema);
-            }
+        card.querySelector('.btn-excluir-personagem').onclick = async () => {
+            const rota = window.location.hash;
+            if (!(await confirmarAcao('Excluir o personagem "' + (ficha.nomePersonagem || 'Sem Nome') + '"?')) ||
+                window.location.hash !== rota) return;
+            salvarLista(chaveFichas, lerLista(chaveFichas).filter(item => item.id !== ficha.id));
+            renderizarListaPersonagens(pagina, idSistema);
         };
-
-        listaContainer.appendChild(card);
-    });
+        lista.append(card);
+    }
 }
 
-function criarNovoPersonagem(idSistema, sistema) {
-    const nome = prompt("Digite o nome do novo personagem:");
-    if (!nome || !nome.trim()) return;
-
-    const novaFicha = {
-        id: 'ficha_' + Date.now().toString() + Math.random().toString(36).substring(2, 6),
-        sistemaId: idSistema,
-        nomePersonagem: nome.trim(),
-        criadoEm: Date.now(),
-        dados: JSON.parse(JSON.stringify(sistema.layout)) 
-    };
-
-    const fichas = JSON.parse(armazenamentoBiblioteca.getItem('codex_fichas_jogador') || '[]');
-    fichas.push(novaFicha);
-    armazenamentoBiblioteca.setItem('codex_fichas_jogador', JSON.stringify(fichas));
-
-    window.location.hash = `#/ficha/ficha-nova?id=${novaFicha.id}`;
+function editarPersonagem(ficha) {
+    const conteudo = document.createElement('div');
+    conteudo.className = 'codex-dialogo-campos';
+    conteudo.innerHTML = `
+        <label>Nome do personagem<input name="nome" required autofocus maxlength="120"></label>
+        <label>URL da imagem (opcional)<input name="imagem" type="url" placeholder="https://exemplo.com/personagem.png"></label>
+        <div class="avatar-personagem personagem-previa previa-imagem" hidden><img alt="Prévia do personagem" hidden></div>
+        <p class="previa-imagem-status" role="status"></p>
+        <div class="ajustes-imagem" hidden></div>`;
+    const nome = conteudo.querySelector('[name="nome"]');
+    const url = conteudo.querySelector('[name="imagem"]');
+    const previa = conteudo.querySelector('.personagem-previa');
+    const img = previa.querySelector('img');
+    const painel = conteudo.querySelector('.ajustes-imagem');
+    const ajustes = criarAjustesImagem(painel, valores => aplicarAjustes(img, valores));
+    nome.value = ficha?.nomePersonagem || '';
+    url.value = ficha?.imagemUrl || '';
+    aplicarAjustes(img, ajustes.definir(ficha?.imagemAjustes));
+    const atualizarImagem = configurarPreviaImagem(url, previa, img, painel,
+        conteudo.querySelector('.previa-imagem-status'));
+    url.addEventListener('input', atualizarImagem);
+    url.addEventListener('change', atualizarImagem);
+    atualizarImagem();
+    return abrirDialogo({
+        titulo: ficha ? 'Editar personagem' : 'Criar personagem',
+        conteudo, confirmar: ficha ? 'Salvar' : 'Criar personagem',
+        ler: () => {
+            const nomePersonagem = lerCampo(nome);
+            if (nomePersonagem === null) return null;
+            const imagemUrl = urlDeImagem(url.value);
+            if (url.value.trim() && !imagemUrl) {
+                sinalizarErro(url, 'Use um endereço de imagem com http ou https.');
+                return null;
+            }
+            return { nomePersonagem, imagemUrl, imagemAjustes: ajustes.obter() };
+        }
+    });
 }

@@ -2,6 +2,7 @@
    MÓDULO: AUTOMAÇÃO (Editor de Fórmulas)
    ============================================================ */
 
+import { mostrarAviso, confirmarAcao } from '../../../componentes/dialogos/dialogos.js';
 import { estado, getPaginaAtiva } from './paginas/index.js';
 
 // CRIAÇÃO DO BARRAMENTO DE EVENTOS (Para atualizar a tela em tempo real)
@@ -71,7 +72,7 @@ export function configurarEditorFormula(onSalvar) {
             
             // Prevenção de ciclos indiretos
             if (detectarCiclo(blocoAlvoId, formulaAtual, blocoAlvoId)) {
-                alert("Erro: a fórmula cria uma dependência circular (o bloco depende, direta ou indiretamente, de si mesmo).");
+                mostrarAviso("Erro: a fórmula cria uma dependência circular (o bloco depende, direta ou indiretamente, de si mesmo).");
                 return;
             }
 
@@ -171,9 +172,9 @@ export function configurarEditorFormula(onSalvar) {
             el.className = item.tipo === 'campo' ? 'formula-item campo' : 'formula-item operador';
             el.textContent = item.tipo === 'campo' ? item.nome : item.valor;
             
-            el.oncontextmenu = (e) => {
+            el.oncontextmenu = async (e) => {
                 e.preventDefault();
-                if (confirm("Deseja realmente remover este elemento?")) {
+                if ((await confirmarAcao("Deseja realmente remover este elemento?", { pausavel: true }))) {
                     formulaAtual.splice(index, 1);
                     renderizarFormula();
                 }
@@ -185,16 +186,16 @@ export function configurarEditorFormula(onSalvar) {
 
     function validarFormula() {
         if (formulaAtual.length < 3) {
-            alert("A fórmula está incompleta. Adicione pelo menos dois campos e um operador.");
+            mostrarAviso("A fórmula está incompleta. Adicione pelo menos dois campos e um operador.");
             return false;
         }
         if (formulaAtual[0].tipo !== 'campo' || formulaAtual[formulaAtual.length - 1].tipo !== 'campo') {
-            alert("A fórmula deve começar e terminar com um campo.");
+            mostrarAviso("A fórmula deve começar e terminar com um campo.");
             return false;
         }
         for (let i = 0; i < formulaAtual.length - 1; i++) {
             if (formulaAtual[i].tipo === 'operador' && formulaAtual[i+1].tipo === 'operador') {
-                alert("Não é permitido ter dois operadores seguidos.");
+                mostrarAviso("Não é permitido ter dois operadores seguidos.");
                 return false;
             }
         }

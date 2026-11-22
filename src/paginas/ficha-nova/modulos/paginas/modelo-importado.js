@@ -26,13 +26,87 @@ export function extrairValores(layout) {
     return listarBlocos(layout).map(bloco => [bloco.id, camposPreenchidos(bloco)]);
 }
 
-export function preencherModelo(layout, valores) {
+export function preencherModelo(layout, valores, descricoes = [], camposColados = [], guiasPorPagina = [],
+    { tamanhosPorPagina = [], elementosExcluidos = [] } = {}) {
     const preenchido = structuredClone(layout);
+    const paginas = new Map(preenchido.paginas.map(pagina => [pagina.id, pagina]));
+    for (const [id, guias] of guiasPorPagina) {
+        const pagina = paginas.get(id);
+        if (pagina) pagina.guias = structuredClone(guias);
+    }
+    for (const { paginaId, campo } of camposColados) {
+        paginas.get(paginaId)?.paineis.push(structuredClone(campo));
+    }
+    for (const { paginaId, painelId, blocoId } of elementosExcluidos) {
+        const pagina = paginas.get(paginaId);
+        if (!pagina) continue;
+        if (blocoId == null) pagina.paineis = pagina.paineis.filter(campo => campo.id !== painelId);
+        else {
+            const campo = pagina.paineis.find(item => item.id === painelId);
+            if (campo) campo.blocos = campo.blocos.filter(bloco => bloco.id !== blocoId);
+        }
+    }
+    for (const [id, tamanho] of tamanhosPorPagina) {
+        const pagina = paginas.get(id);
+        if (!pagina) continue;
+        pagina.larguraFolha = tamanho.larguraFolha;
+        pagina.alturaFolha = tamanho.alturaFolha;
+        const campos = new Map((tamanho.campos ?? []).map(campo => [campo.id, campo]));
+        for (const campo of pagina.paineis) {
+            const medida = campos.get(campo.id);
+            if (!medida) continue;
+            const { blocos, ...geometria } = medida;
+            Object.assign(campo, geometria);
+            const porId = new Map(blocos.map(bloco => [bloco.id, bloco]));
+            for (const bloco of campo.blocos) {
+                const dimensoes = porId.get(bloco.id);
+                if (dimensoes) Object.assign(bloco, dimensoes);
+            }
+        }
+    }
     const porBloco = new Map(valores);
     for (const bloco of listarBlocos(preenchido)) {
         Object.assign(bloco, camposPreenchidos({ ...bloco, ...porBloco.get(bloco.id) }));
     }
+    const porCampo = new Map();
+    const porDescricaoBloco = new Map();
+    for (const { tipo, id, descricao } of descricoes) {
+        (tipo === 'campo' ? porCampo : porDescricaoBloco).set(id, descricao);
+    }
+    function aplicarDescricao(item, alteracoes) {
+        if (!alteracoes.has(item.id)) return;
+        const descricao = alteracoes.get(item.id);
+        if (typeof descricao === 'string') item.descricao = descricao;
+        else delete item.descricao;
+    }
+    for (const pagina of preenchido.paginas) {
+        for (const painel of pagina.paineis) {
+            aplicarDescricao(painel, porCampo);
+            for (const bloco of painel.blocos) aplicarDescricao(bloco, porDescricaoBloco);
+        }
+    }
     return preenchido;
+}
+
+export function preservarValoresDoModelo(layout, anterior, tituloEditado, imagemEditada) {
+    const resultado = JSON.parse(JSON.stringify(layout));
+    const originais = new Map(listarBlocos(anterior).map(bloco => [bloco.id, bloco]));
+    for (const bloco of listarBlocos(resultado)) {
+        const original = originais.get(bloco.id);
+        const mesmosTipos = (original?.tipo || 'textual') === (bloco.tipo || 'textual');
+        for (const chave of ['texto', 'valorNumerico', 'urlImagem', 'imgZoom', 'imgX', 'imgY']) {
+            if (bloco.tipo === 'imagem' && chave !== 'texto' && chave !== 'valorNumerico' &&
+                bloco.id === imagemEditada) continue;
+            if (mesmosTipos && original && Object.hasOwn(original, chave)) bloco[chave] = original[chave];
+            else delete bloco[chave];
+        }
+        if (bloco.formula?.length) delete bloco.valorNumerico;
+        if (bloco.id !== tituloEditado && (bloco.modelo?.includes('editavel') || original?.modelo?.includes('editavel'))) {
+            if (original?.tituloBloco === undefined) delete bloco.tituloBloco;
+            else bloco.tituloBloco = original.tituloBloco;
+        }
+    }
+    return resultado;
 }
 
 function identificarEstrutura(modelo) {
@@ -107,6 +181,7 @@ function lerModelo(arquivo) {
     const imagem = arquivo.imagemAjustes;
     return {
         id: gerarId('sist_'),
+        criadoEm: Date.now(),
         nome: arquivo.nomeSistema.trim() || 'Modelo importado',
         descricao: typeof arquivo.descricaoSistema === 'string' ? arquivo.descricaoSistema : '',
         imagemCapa: typeof arquivo.imagemCapa === 'string' ? arquivo.imagemCapa : '',

@@ -15,6 +15,11 @@
 }
 #wizard-overlay.hidden { display: none !important; }
 
+#wizard-overlay:not(.wizard-modo-editor) {
+    position: absolute !important;
+    padding: clamp(0.4rem, 2vh, 1rem);
+}
+
 /* Garante que o passo 1 sempre bloqueie a ficha por trás */
 #wizard-overlay #wizard-step-1 {
     pointer-events: auto;
@@ -36,30 +41,53 @@
    ============================================================ */
 #wizard-step-1 {
     width: 100%;
-    max-width: min(520px, calc(100% - 24px));
-    max-height: calc(100dvh - 24px);
-    overflow-y: auto;
+    max-width: 480px;
+    max-height: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
     background: rgba(20, 15, 8, 0.95);
     border: 1px solid rgba(212, 175, 55, 0.35);
     border-radius: 12px;
-    padding: 2rem;
+    padding: clamp(0.65rem, 2.5vh, 1.15rem);
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
 }
 #wizard-step-1.hidden { display: none !important; }
 
-.wizard-title { font-family: var(--fonte-titulo, inherit); color: #f0c44a; font-size: 1.8rem; margin: 0 0 0.5rem 0; }
-.wizard-desc { color: #aaa; margin: 0 0 1.5rem 0; font-size: 0.95rem; }
-.wizard-field { display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1.25rem; }
+.wizard-step-1-cabecalho, .wizard-step-1-acoes { display: flex; align-items: center; gap: 0.65rem; flex-shrink: 0; }
+.wizard-step-1-cabecalho { justify-content: space-between; }
+.wizard-step-1-acoes { flex-wrap: wrap; }
+.wizard-step-1-acoes > button { flex: 1 1 min(9rem, 100%); }
+.wizard-step-1-conteudo {
+    min-height: 0;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--cor-marrom-borda) transparent;
+}
+#btn-wizard-fechar {
+    width: 2rem;
+    height: 2rem;
+    flex-shrink: 0;
+    border: 1px solid var(--cor-marrom-borda);
+    border-radius: 0.4rem;
+    background: var(--cor-marrom-fundo-3);
+    color: var(--cor-dourado);
+    cursor: pointer;
+}
+#btn-wizard-fechar:is(:hover, :focus-visible) { border-color: var(--cor-dourado); color: var(--cor-dourado-claro); }
+.wizard-title { font-family: var(--fonte-titulo, inherit); color: #f0c44a; font-size: clamp(1.1rem, 4vw, 1.5rem); margin: 0; }
+.wizard-desc { color: #aaa; margin: 0 0 0.75rem; font-size: 0.875rem; }
+.wizard-field { display: flex; flex-direction: column; gap: 0.3rem; margin-bottom: 0.65rem; }
 .wizard-field label { color: #ccc; font-size: 0.9rem; }
-.wizard-field input, .wizard-field textarea {
+.wizard-field input:not([type="range"]), .wizard-field textarea {
     width: 100%; box-sizing: border-box; background: rgba(0, 0, 0, 0.45);
     border: 1px solid rgba(138, 109, 59, 0.5); border-radius: 6px;
-    color: #fff; padding: 0.8rem; font-family: inherit; font-size: 1rem; outline: none; resize: vertical;
+    color: #fff; padding: 0.5rem 0.6rem; font-family: inherit; font-size: 0.9rem; outline: none; resize: vertical;
 }
-.wizard-field input:focus, .wizard-field textarea:focus { border-color: var(--cor-dourado, #d4af37); box-shadow: 0 0 0 2px rgba(212, 175, 55, 0.2); }
+.wizard-field input:not([type="range"]):focus, .wizard-field textarea:focus { border-color: var(--cor-dourado, #d4af37); box-shadow: 0 0 0 2px rgba(212, 175, 55, 0.2); }
 
 #btn-wizard-proximo {
-    width: 100%; padding: 0.85rem; background: linear-gradient(180deg, #d4af37, #a9821f);
+    padding: 0.55rem; background: linear-gradient(180deg, #d4af37, #a9821f);
     border: 1px solid #f0c44a; border-radius: 8px; color: #1a140b;
     font-family: var(--fonte-titulo, inherit); font-size: 1rem; font-weight: 700; cursor: pointer; transition: filter 0.2s;
 }
@@ -67,31 +95,11 @@
 /* ============================================================
    PASSO 1: PREVIEW DA IMAGEM
    ============================================================ */
-.wizard-field input[type="range"] {
-    -webkit-appearance: none;
-    width: 100%;
-    height: 6px;
-    background: rgba(212, 175, 55, 0.2);
-    border-radius: 3px;
-    outline: none;
-}
-
-.wizard-field input[type="range"]::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    width: 16px;
-    height: 16px;
-    border-radius: 50%;
-    background: var(--cor-dourado, #d4af37);
-    cursor: pointer;
-    box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
-}
-
 .wizard-preview-controles {
     width: 100%;
 }
 
 #wizard-img-preview-wrapper {
-    display: none; 
     width: 88px; 
     height: 88px; 
     border-radius: 50%; 

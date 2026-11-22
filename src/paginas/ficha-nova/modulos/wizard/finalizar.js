@@ -2,9 +2,10 @@
    CODEX — Wizard: Finalizar - SINGLE SLOT
    ============================================================ */
 
-import { armazenamentoBiblioteca } from '../../../../servicos/armazenamento/biblioteca.js';
+import { abrirDialogo, mostrarAviso } from '../../../../componentes/dialogos/dialogos.js';
+import { armazenamentoBiblioteca, validarNomeNaConta } from '../../../../servicos/armazenamento/biblioteca.js';
 import { estado, gerarId } from '../paginas/estado.js';
-import { excluirRascunho } from './rascunho.js';
+import { excluirRascunho, salvarRascunho } from './rascunho.js';
 
 export function capturarCampoAtual(sistemaEmCriacao) {
     const campo = sistemaEmCriacao.campoAtual;
@@ -20,11 +21,37 @@ export function capturarCampoAtual(sistemaEmCriacao) {
     });
 }
 
-export function executarFinalizar(sistemaEmCriacao, refs) {
+export async function executarFinalizar(sistemaEmCriacao, refs) {
+    const rota = window.location.hash;
+    if (refs.finalizando) return;
+    refs.finalizando = true;
+    try {
+        await validarNomeNaConta('codex_sistemas', { nome: sistemaEmCriacao.nome });
+    } catch (erro) {
+        if (erro.code !== 'backup/nome-ocupado') return mostrarAviso('Não foi possível conferir o nome do sistema.');
+        const label = document.createElement('label');
+        label.className = 'codex-dialogo-campos';
+        label.textContent = 'Novo nome do sistema';
+        const input = document.createElement('input');
+        input.value = sistemaEmCriacao.nome;
+        input.autofocus = true;
+        label.append(input);
+        const nome = await abrirDialogo({ titulo: 'Nome já utilizado', mensagem: erro.message,
+            conteudo: label, confirmar: 'Usar este nome', ler: () => input.value.trim() || null });
+        if (nome && window.location.hash === rota) {
+            sistemaEmCriacao.nome = nome;
+            refs.inputNome.value = nome;
+            salvarRascunho();
+        }
+        return;
+    } finally {
+        refs.finalizando = false;
+    }
+    if (window.location.hash !== rota || !refs.pagina.isConnected) return;
     capturarCampoAtual(sistemaEmCriacao);
     
     if (sistemaEmCriacao.campos.length === 0) {
-        return alert('Adicione pelo menos um campo com blocos antes de finalizar.');
+        return mostrarAviso('Adicione pelo menos um campo com blocos antes de finalizar.');
     }
 
     const paginasUsadas = new Set();
@@ -74,6 +101,7 @@ export function executarFinalizar(sistemaEmCriacao, refs) {
     const sistemasSalvos = JSON.parse(armazenamentoBiblioteca.getItem('codex_sistemas') || '[]');
     sistemasSalvos.push({
         id: idSistema,
+        criadoEm: Date.now(),
         nome: sistemaEmCriacao.nome,
         descricao: sistemaEmCriacao.descricao,
         imagemCapa: sistemaEmCriacao.imagemCapa,

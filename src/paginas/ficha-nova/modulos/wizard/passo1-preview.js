@@ -1,53 +1,29 @@
-/* ============================================================
-   CODEX — Wizard: Passo 1 (Preview da Imagem)
-   ============================================================ */
+import { aplicarAjustes, configurarPreviaImagem, criarAjustesImagem } from '../../../../componentes/imagem/ajustes.js';
 
 export function configurarPreviewImagem(refs, sistemaEmCriacao) {
-    // Inicializa os valores padrão
-    sistemaEmCriacao.imagemAjustes = { zoom: 0.5, posX: 0, posY: 0 };
+    const painel = criarAjustesImagem(refs.controls, ajustes => {
+        sistemaEmCriacao.imagemAjustes = ajustes;
+        aplicarAjustes(refs.previewImg, ajustes);
+    }, 0.5);
 
-    const atualizarPreview = () => {
-        if (refs.previewImg.src) {
-            // Aplica o zoom e a movimentação
-            refs.previewImg.style.transform = `translate(-50%, -50%) translate(${sistemaEmCriacao.imagemAjustes.posX}%, ${sistemaEmCriacao.imagemAjustes.posY}%) scale(${sistemaEmCriacao.imagemAjustes.zoom})`;
+    const atualizar = configurarPreviaImagem(
+        refs.inputImagem, refs.previewWrapper, refs.previewImg, refs.controls, refs.previewStatus
+    );
+
+    function alterarEndereco() {
+        const anterior = sistemaEmCriacao.imagemCapa;
+        sistemaEmCriacao.imagemCapa = atualizar();
+        if (anterior !== sistemaEmCriacao.imagemCapa) {
+            sistemaEmCriacao.imagemAjustes = painel.definir();
+            aplicarAjustes(refs.previewImg, sistemaEmCriacao.imagemAjustes);
         }
+    }
+    refs.inputImagem.addEventListener('input', alterarEndereco);
+    refs.inputImagem.addEventListener('change', alterarEndereco);
+
+    return () => {
+        refs.inputImagem.value = sistemaEmCriacao.imagemCapa;
+        atualizar();
+        aplicarAjustes(refs.previewImg, painel.definir(sistemaEmCriacao.imagemAjustes));
     };
-
-    refs.inputImagem.addEventListener('input', (e) => {
-        const url = e.target.value.trim();
-        sistemaEmCriacao.imagemCapa = url;
-        
-        if (url) {
-            refs.previewWrapper.style.display = 'block';
-            refs.controls.style.display = 'flex';
-            refs.previewImg.src = url;
-            
-            // Reseta o zoom e a posição quando uma nova imagem é adicionada
-            sistemaEmCriacao.imagemAjustes = { zoom: 0.5, posX: 0, posY: 0 };
-            if (refs.sliderZoom) refs.sliderZoom.value = 0.5;
-            if (refs.sliderX) refs.sliderX.value = 0;
-            if (refs.sliderY) refs.sliderY.value = 0;
-
-            atualizarPreview();
-        } else {
-            refs.previewWrapper.style.display = 'none';
-            refs.controls.style.display = 'none';
-            refs.previewImg.src = '';
-        }
-    });
-
-    refs.sliderZoom.addEventListener('input', (e) => {
-        sistemaEmCriacao.imagemAjustes.zoom = parseFloat(e.target.value);
-        atualizarPreview();
-    });
-    
-    refs.sliderX.addEventListener('input', (e) => {
-        sistemaEmCriacao.imagemAjustes.posX = parseFloat(e.target.value);
-        atualizarPreview();
-    });
-    
-    refs.sliderY.addEventListener('input', (e) => {
-        sistemaEmCriacao.imagemAjustes.posY = parseFloat(e.target.value);
-        atualizarPreview();
-    });
 }
