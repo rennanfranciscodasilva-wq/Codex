@@ -5,19 +5,19 @@
 import { montarPagina } from './ciclo-vida.js';
 import { definirEstado } from './estado.js';
 
-const paginasHtml = import.meta.glob('../paginas/*/*.html', { query: '?raw', import: 'default' });
-const paginasCss = import.meta.glob('../paginas/*/{estilo,placeholder}.css', { query: '?inline', import: 'default' });
-const paginasJs = import.meta.glob('../paginas/*/script.js');
+const paginasHtml = import.meta.glob(['../paginas/*/*.html', '!../paginas/ficha-nova/**'], { query: '?raw', import: 'default' });
+const paginasCss = import.meta.glob(['../paginas/*/{estilo,placeholder}.css', '!../paginas/ficha-nova/**'], { query: '?inline', import: 'default' });
+const paginasJs = import.meta.glob(['../paginas/*/script.js', '!../paginas/ficha-nova/**']);
 
 const rotas = {
     '/inicio':              { pasta: 'inicio' },
     '/login':               { pasta: 'login' },
     '/confirmar-email':     { pasta: 'confirmar-email' },
     '/ficha':               { pasta: 'ficha' },
-    '/ficha/nova':          { pasta: 'ficha-nova' },
-    '/ficha/modelo':        { pasta: 'ficha-nova' },
+    '/ficha/nova':          { pasta: 'ficha-responsiva' },
+    '/ficha/modelo':        { pasta: 'ficha-responsiva' },
     '/ficha/personagens':   { pasta: 'personagens' },
-    '/ficha/ficha-nova':    { pasta: 'ficha-nova' },
+    '/ficha/ficha-nova':    { pasta: 'ficha-responsiva' },
     '/ficha/old-dragon':    { pasta: 'placeholder' },
     '/ficha/vastura':       { pasta: 'placeholder' },
     '/materiais':           { pasta: 'placeholder' },

@@ -3,7 +3,7 @@ import { auth } from '../firebase/config.js';
 import { enviarPendencias, temAlteracoes } from '../armazenamento/biblioteca.js';
 import { lerSaldoManual, limiteManual } from './firestore.js';
 import { adiarTentativa, avancarTempo, formatarTempo, lerTempo, reiniciarTempo } from './relogio.js';
-import { abrirDialogo, mostrarAviso } from '../../componentes/dialogos/dialogos.js';
+import { abrirDialogo } from '../../componentes/dialogos/dialogos.js';
 import { mostrarNotificacao } from '../../componentes/notificacoes/notificacoes.js';
 
 const ouvintes = new Set();
@@ -42,7 +42,10 @@ async function sincronizar(manual) {
         const relogio = lerTempo(conta);
         if (!manual && (relogio.restante > 0 || relogio.tentarApos > Date.now())) return;
         const pendente = temAlteracoes(conta);
-        if (manual && !pendente) return;
+        if (manual && !pendente) {
+            mostrarNotificacao('Dados em dia', 'Não há alterações locais para enviar.', 'sucesso');
+            return;
+        }
         ocupada = true;
         if (pendente) mostrarNotificacao('Sincronização em nuvem está acontecendo agora', '', 'aviso');
         atualizar();
@@ -54,6 +57,8 @@ async function sincronizar(manual) {
             if (conta !== uid || !resultado) return;
             if (resultado.total > 0 && temAlteracoes(conta)) {
                 mostrarNotificacao('Backup parcial concluído', 'Há mais alterações salvas neste navegador.', 'aviso');
+            } else if (manual && resultado.total > 0) {
+                mostrarNotificacao('Sincronização concluída', '', 'sucesso');
             }
             if (!manual) reiniciarTempo(conta);
         } catch (erro) {
@@ -97,19 +102,16 @@ export async function sincronizarAgora() {
     try {
         const disponiveis = await consultarSaldo(conta);
         if (conta !== uid) return;
-        if (disponiveis == null) {
-            await mostrarAviso('Não foi possível consultar seu saldo de sincronizações. As alterações continuam salvas neste navegador. Confira a conexão e se as regras do Firestore foram publicadas.');
-            return;
-        }
-        const resumo = `Sincronizações manuais hoje: ${limiteManual - disponiveis} feitas, ${disponiveis} restantes.`;
-        if (!disponiveis || !temAlteracoes(conta)) {
-            await mostrarAviso(resumo);
-            return;
-        }
+        const resumo = disponiveis == null
+            ? 'Não foi possível consultar o saldo. As alterações continuam salvas neste navegador.'
+            : `Sincronizações manuais hoje: ${limiteManual - disponiveis} de ${limiteManual} usadas.`;
+        const estado = disponiveis === 0 ? '\nO limite diário foi atingido.' :
+            !temAlteracoes(conta) && disponiveis != null ? '\nNão há alterações locais para enviar.' : '';
         const confirmado = await abrirDialogo({
             titulo: 'Sincronizar com a nuvem',
-            mensagem: `Sincronizar as alterações com a nuvem?\n${resumo}`,
-            confirmar: 'Sincronizar'
+            mensagem: resumo + estado,
+            confirmar: 'Sincronizar agora',
+            confirmarDisponivel: disponiveis > 0
         });
         if (confirmado && conta === uid) await sincronizar(true);
     } finally {

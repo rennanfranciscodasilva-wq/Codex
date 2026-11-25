@@ -1,11 +1,6 @@
-/* ============================================================
-   CODEX — Página: Ficha (seleção de sistema)
-   ============================================================ */
 import { confirmarAcao } from '../../componentes/dialogos/dialogos.js';
-import {
-    armazenamentoBiblioteca, copiarBibliotecaLocal, excluirModeloComFichas, prepararBiblioteca,
-    temBibliotecaLocalParaCopiar
-} from '../../servicos/armazenamento/biblioteca.js';
+import { aplicarAjustes } from '../../componentes/imagem/ajustes.js';
+import { armazenamentoBiblioteca, excluirModeloComFichas, prepararBiblioteca } from '../../servicos/armazenamento/biblioteca.js';
 
 let refs = null;
 
@@ -17,10 +12,10 @@ export async function montarPagina(container) {
     if (!pagina) return;
 
     refs = {
-        pagina,
-        containerCards: pagina.querySelector('#ficha-cards-container')
+        lista: pagina.querySelector('#ficha-cards-container'),
+        modelo: pagina.querySelector('.ficha-modelo-template'),
+        criar: pagina.querySelector('.ficha-criar-modelo')
     };
-
     renderizarSistemas();
 }
 
@@ -29,119 +24,77 @@ export function desmontarPagina() {
 }
 
 function renderizarSistemas() {
-    refs.containerCards.innerHTML = `
-        <a href="#" class="ficha-card" id="card-nova-ficha">
-            <div class="ficha-card-icon" style="border-style: dashed;">
-                <i class="fas fa-plus"></i>
-            </div>
-            <h3 class="ficha-card-title">Criar modelo</h3>
-            <p class="ficha-card-desc">
-                Crie um sistema do zero, personalizando cada atributo.
-            </p>
-        </a>
-    `;
-
-    const cardNova = refs.containerCards.querySelector('#card-nova-ficha');
-    if (cardNova) {
-        cardNova.addEventListener('click', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            window.location.hash = '#/ficha/nova';
-        });
-    }
-
-    if (temBibliotecaLocalParaCopiar()) {
-        const copiar = document.createElement('button');
-        copiar.type = 'button';
-        copiar.className = 'btn-secondary';
-        copiar.textContent = 'Copiar fichas e modelos deste navegador para minha conta';
-        copiar.onclick = async () => {
-            if (!(await confirmarAcao('Copiar os dados locais para a conta conectada?'))) return;
-            copiarBibliotecaLocal();
-            renderizarSistemas();
-        };
-        refs.containerCards.appendChild(copiar);
-    }
-
+    const tela = refs;
     let sistemas;
     try {
         sistemas = JSON.parse(armazenamentoBiblioteca.getItem('codex_sistemas') || '[]');
         if (!Array.isArray(sistemas)) throw new TypeError('Lista de sistemas inválida');
     } catch (erro) {
         console.error('[ficha] falha ao ler os sistemas salvos:', erro);
-        const aviso = document.createElement('p');
-        aviso.setAttribute('role', 'status');
-        aviso.textContent = 'Não foi possível carregar os sistemas salvos neste navegador.';
-        refs.containerCards.prepend(aviso);
+        mostrarEstado(tela.lista, 'Não foi possível carregar os modelos salvos.');
         return;
     }
 
-    sistemas.filter(sist => sist && typeof sist === 'object' && sist.id != null).forEach(sist => {
-        const card = document.createElement('a');
-        card.href = '#'; // O href evita que o navegador recarregue, mas o clique será tratado abaixo
-        card.className = 'ficha-card';
-        card.style.position = 'relative';
-        
-        const iconeStatus = sist.naNuvem 
-            ? '<i class="fas fa-cloud" style="color: #4CAF50; margin-left: 5px;" title="Salvo na Nuvem"></i>'
-            : '<i class="fas fa-desktop" style="color: #888; margin-left: 5px;" title="Salvo no Computador"></i>';
+    const modelos = sistemas.filter(sistema => sistema && typeof sistema === 'object' && sistema.id != null);
+    if (!modelos.length) {
+        mostrarEstado(tela.lista, 'Você ainda não tem modelos salvos.');
+        return;
+    }
 
-        card.innerHTML = `
-            <button type="button" class="btn-editar-sistema" title="Editar modelo" aria-label="Editar modelo">
-                <i class="fas fa-pen" aria-hidden="true"></i>
-            </button>
-            <button class="btn-deletar-sistema" title="Excluir Sistema" style="position: absolute; top: 10px; right: 10px; background: transparent; border: none; color: #ff5252; font-size: 1.2rem; cursor: pointer; z-index: 10;">
-                <i class="fas fa-times"></i>
-            </button>
-            <div class="ficha-card-icon" style="overflow: hidden; padding: 0;">
-                <i class="fas fa-book-sparkles"></i>
-            </div>
-            <h3 class="ficha-card-title" style="display: flex; align-items: center; justify-content: center; font-size: 1.1rem;">
-                ${iconeStatus}
-            </h3>
-            <p class="ficha-card-desc"></p>
-        `;
-        card.querySelector('.ficha-card-title').prepend(document.createTextNode(sist.nome));
-        card.querySelector('.btn-editar-sistema').addEventListener('click', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            window.location.hash = '#/ficha/modelo?' + new URLSearchParams({ id: sist.id });
-        });
-        card.querySelector('.ficha-card-desc').textContent = sist.descricao || 'Sistema customizado.';
-        if (sist.imagemCapa) {
-            const icone = card.querySelector('.ficha-card-icon');
-            const img = document.createElement('img');
-            const { zoom = 0.5, posX = 0, posY = 0 } = sist.imagemAjustes || {};
-            icone.style.position = 'relative';
-            img.src = sist.imagemCapa;
-            img.alt = '';
-            img.style.cssText = 'position:absolute;top:50%;left:50%;width:100%;height:100%;object-fit:contain;transition:transform 0.3s ease';
-            img.style.transform = `translate(-50%, -50%) translate(${posX}%, ${posY}%) scale(${zoom})`;
-            icone.replaceChildren(img);
+    const cards = modelos.map(sistema => {
+        const card = tela.modelo.content.firstElementChild.cloneNode(true);
+        const nome = String(sistema.nome ?? '').trim() || 'Modelo sem nome';
+        const parametros = new URLSearchParams({ id: sistema.id });
+        card.querySelector('.ficha-modelo-link').href = '#/ficha/personagens?' + parametros;
+        card.querySelector('.ficha-card-title').textContent = nome;
+
+        const descricao = card.querySelector('.ficha-card-desc');
+        descricao.textContent = sistema.descricao || '';
+        descricao.hidden = !descricao.textContent;
+
+        const status = card.querySelector('.ficha-modelo-status');
+        const armazenamento = sistema.naNuvem ? 'Salvo na nuvem' : 'Salvo neste navegador';
+        status.classList.add('fas', sistema.naNuvem ? 'fa-cloud' : 'fa-mobile-alt');
+        status.setAttribute('aria-label', armazenamento);
+        status.title = armazenamento;
+
+        if (sistema.imagemCapa) {
+            const imagem = card.querySelector('img');
+            const icone = card.querySelector('.ficha-card-icon i');
+            aplicarAjustes(imagem, sistema.imagemAjustes ?? sistema.layout?.imagemAjustes);
+            imagem.onload = () => {
+                icone.hidden = true;
+            };
+            imagem.onerror = () => { imagem.hidden = true; };
+            imagem.hidden = false;
+            imagem.src = sistema.imagemCapa;
         }
 
-        // --- A CORREÇÃO ESTÁ AQUI: Redirecionamento manual com o ID ---
-        card.addEventListener('click', (e) => {
-            // Se o clique foi no botão de excluir, não redireciona
-            if (e.target.closest('.btn-deletar-sistema')) return;
-            
-            e.preventDefault();
-            e.stopPropagation();
-            
-            // Redireciona para a tela de personagens passando o ID do sistema
-            window.location.hash = `#/ficha/personagens?id=${sist.id}`;
-        });
+        const editar = card.querySelector('.btn-editar-sistema');
+        editar.href = '#/ficha/modelo?' + parametros;
+        editar.setAttribute('aria-label', 'Editar modelo ' + nome);
 
-        const btnDel = card.querySelector('.btn-deletar-sistema');
-        btnDel.addEventListener('click', async (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            if ((await confirmarAcao(`Excluir o modelo "${sist.nome}" e todos os personagens criados a partir dele?`))) {
-                excluirModeloComFichas(sist.id);
-                renderizarSistemas();
-            }
-        });
-
-        refs.containerCards.appendChild(card);
+        const excluir = card.querySelector('.btn-deletar-sistema');
+        excluir.setAttribute('aria-label', 'Excluir modelo ' + nome);
+        excluir.onclick = async () => {
+            if (!(await confirmarAcao('Excluir o modelo "' + nome + '" e todos os personagens criados a partir dele?',
+                { confirmar: 'Excluir', perigo: true }))) return;
+            excluirModeloComFichas(sistema.id);
+            if (refs !== tela) return;
+            const indice = Array.from(tela.lista.children).indexOf(card);
+            renderizarSistemas();
+            const vizinho = tela.lista.children[Math.min(indice, tela.lista.children.length - 1)];
+            (vizinho?.querySelector('.ficha-modelo-link') ?? tela.criar).focus();
+        };
+        return card;
     });
+    tela.lista.replaceChildren(...cards);
+}
+
+function mostrarEstado(lista, mensagem) {
+    const aviso = document.createElement('p');
+    aviso.className = 'ficha-modelos-estado';
+    aviso.setAttribute('role', 'status');
+    aviso.textContent = mensagem;
+    lista.replaceChildren(aviso);
 }

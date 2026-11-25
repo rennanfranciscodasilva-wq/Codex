@@ -1,0 +1,166 @@
+<main id="pagina-ficha-responsiva" class="screen">
+    <nav class="ficha-responsiva-orbs" aria-label="Ferramentas da ficha">
+        <a class="ficha-responsiva-orb ficha-responsiva-voltar" href="#/ficha" aria-label="Voltar aos sistemas" title="Voltar aos sistemas"><i class="fas fa-arrow-left" aria-hidden="true"></i></a>
+        <div class="ficha-responsiva-orbs-grupo" hidden>
+            <button class="ficha-responsiva-orb ficha-responsiva-edicao" type="button" aria-label="Modo edição" title="Modo edição" aria-pressed="false"><i class="fas fa-pen" aria-hidden="true"></i></button>
+            <button class="ficha-responsiva-orb ficha-responsiva-abrir-mapa" type="button" aria-label="Mapa de Campos" title="Mapa de Campos" aria-pressed="false"><i class="fas fa-th" aria-hidden="true"></i></button>
+            <button class="ficha-responsiva-orb ficha-responsiva-joystick" type="button" aria-label="Navegar para um campo vizinho" title="Arraste na direção desejada ou use as setas do teclado" aria-expanded="false"><i class="fas fa-arrows-alt" aria-hidden="true"></i></button>
+            <div class="ficha-responsiva-direcoes" aria-label="Direções" hidden></div>
+        </div>
+    </nav>
+    <div class="ficha-responsiva-rolagem">
+    <div class="ficha-responsiva-conteudo">
+        <form class="ficha-responsiva-formulario">
+            <h1 class="section-title-text">Criar modelo</h1>
+            <label>Nome do sistema <input name="nome" required maxlength="120"></label>
+            <label>Descrição <textarea name="descricao" maxlength="500"></textarea></label>
+            <div class="ficha-responsiva-imagem-modelo"></div>
+            <button class="btn-primary" type="submit">Abrir mapa de campos</button>
+        </form>
+        <section class="ficha-responsiva-mapa" hidden>
+            <div class="ficha-responsiva-barra">
+                <h2>Mapa de Campos</h2>
+                <span class="ficha-responsiva-total"></span>
+            </div>
+            <div class="ficha-responsiva-mapa-rolagem">
+                <div class="ficha-responsiva-grade" role="group" aria-label="Células do mapa"></div>
+            </div>
+            <ul class="ficha-responsiva-legenda" aria-label="Legenda do mapa">
+                <li data-estado="atual">Atual</li>
+                <li data-estado="disponivel">Disponível</li>
+                <li data-estado="bloqueado">Bloqueado</li>
+                <li data-estado="existente">Existente</li>
+            </ul>
+            <p class="ficha-responsiva-mapa-instrucao"></p>
+        </section>
+        <section class="ficha-responsiva-editor" hidden>
+            <div class="ficha-responsiva-cabecalho-campo">
+                <h1 class="ficha-responsiva-campo" tabindex="-1"></h1>
+                <button class="ficha-responsiva-orb ficha-responsiva-configurar" type="button" aria-label="Configurações do campo" title="Configurações do campo" aria-expanded="false" aria-controls="ficha-responsiva-config"><i class="fas fa-cog" aria-hidden="true"></i></button>
+                <div class="ficha-responsiva-config" id="ficha-responsiva-config" hidden>
+                    <span>Alinhamento e edição do título</span>
+                    <div class="ficha-responsiva-titulo-opcoes">
+                        <div class="ficha-responsiva-alinhamento" role="group" aria-label="Alinhamento do título">
+                            <button type="button" data-alinhar="left" aria-label="Alinhar à esquerda" title="Esquerda" aria-pressed="false"><i class="fas fa-align-left" aria-hidden="true"></i></button>
+                            <button type="button" data-alinhar="center" aria-label="Centralizar" title="Centro" aria-pressed="false"><i class="fas fa-align-center" aria-hidden="true"></i></button>
+                            <button type="button" data-alinhar="right" aria-label="Alinhar à direita" title="Direita" aria-pressed="false"><i class="fas fa-align-right" aria-hidden="true"></i></button>
+                        </div>
+                        <button class="ficha-responsiva-orb ficha-responsiva-editar-titulo" type="button" aria-label="Renomear campo" title="Renomear campo"><i class="fas fa-pen" aria-hidden="true"></i></button>
+                    </div>
+                    <div class="ficha-responsiva-linhas-titulo" role="group" aria-label="Linhas do título">
+                        <button type="button" data-linhas="1" aria-label="Uma linha" title="Uma linha" aria-pressed="true"><span aria-hidden="true"></span></button>
+                        <button type="button" data-linhas="2" aria-label="Duas linhas" title="Duas linhas" aria-pressed="false"><span aria-hidden="true"></span></button>
+                        <button type="button" data-linhas="3" aria-label="Três linhas" title="Três linhas" aria-pressed="false"><span aria-hidden="true"></span></button>
+                    </div>
+                    <textarea class="ficha-responsiva-nome-campo" aria-label="Nome do campo" maxlength="120" rows="1" wrap="off" hidden></textarea>
+                </div>
+            </div>
+            <div class="ficha-responsiva-blocos"></div>
+        </section>
+    </div>
+    </div>
+    <div class="ficha-responsiva-rodape">
+        <div class="ficha-responsiva-acoes" hidden>
+            <button class="ficha-responsiva-orb ficha-responsiva-novo-bloco" type="button" aria-label="Adicionar bloco" title="Adicionar bloco"><i class="fas fa-plus" aria-hidden="true"></i></button>
+            <button class="ficha-responsiva-orb ficha-responsiva-copiar-bloco" type="button" aria-label="Copiar bloco" title="Copiar bloco" disabled hidden><i class="fas fa-copy" aria-hidden="true"></i></button>
+            <button class="ficha-responsiva-orb ficha-responsiva-colar-bloco" type="button" aria-label="Colar bloco" title="Colar bloco" disabled hidden><i class="fas fa-paste" aria-hidden="true"></i></button>
+            <button class="ficha-responsiva-orb ficha-responsiva-excluir-bloco" type="button" aria-label="Excluir bloco selecionado" title="Excluir bloco" disabled hidden><i class="fas fa-trash" aria-hidden="true"></i></button>
+            <div class="ficha-responsiva-arquivos">
+                <button class="ficha-responsiva-orb ficha-responsiva-salvar" type="button" aria-label="Opções de salvamento" title="Opções de salvamento" aria-expanded="false" aria-controls="ficha-responsiva-menu-salvar"><i class="fas fa-save" aria-hidden="true"></i></button>
+                <div class="ficha-responsiva-menu-salvar" id="ficha-responsiva-menu-salvar" hidden>
+                    <button type="button" class="ficha-responsiva-orb ficha-responsiva-exportar-json" aria-label="Exportar" title="Exportar"><i class="fas fa-download" aria-hidden="true"></i></button>
+                    <button type="button" class="ficha-responsiva-orb ficha-responsiva-importar-json" aria-label="Importar" title="Importar"><i class="fas fa-upload" aria-hidden="true"></i></button>
+                    <button type="button" class="ficha-responsiva-orb ficha-responsiva-gravar" aria-label="Salvar" title="Salvar"><i class="fas fa-save" aria-hidden="true"></i></button>
+                </div>
+                <input type="file" class="ficha-responsiva-arquivo-json" accept=".json,application/json" hidden>
+            </div>
+            <button class="ficha-responsiva-orb ficha-responsiva-finalizar" type="button" aria-label="Finalizar" title="Finalizar"><i class="fas fa-check" aria-hidden="true"></i></button>
+        </div>
+        <form class="ficha-responsiva-adicionar" novalidate hidden>
+                <h2 tabindex="-1">Configuração do bloco</h2>
+                <div class="ficha-responsiva-bloco-basico">
+                <label>Tipo
+                    <select name="tipo">
+                        <option value="textual">Texto</option>
+                        <option value="numerico">Número</option>
+                        <option value="imagem">Imagem</option>
+                    </select>
+                </label>
+                <label>Modelo
+                    <select name="modelo">
+                        <option value="padrao">Padrão, sem título</option>
+                        <option value="titulo">Com título</option>
+                        <option value="titulo_editavel">Com título editável pelo jogador</option>
+                    </select>
+                </label>
+                <div class="ficha-responsiva-bloco-titulo-opcoes" hidden>
+                    <label data-config="titulo" hidden>Título <input name="titulo" maxlength="120" placeholder="Título do bloco"></label>
+                    <div data-config="alinhamento-titulo" hidden>
+                        <span>Alinhamento do título</span>
+                        <div class="ficha-responsiva-alinhamento" role="group" aria-label="Alinhamento do título do bloco" data-alinhamento-bloco="alignTitulo"></div>
+                    </div>
+                </div>
+                <div data-config="alinhamento-conteudo" hidden>
+                    <span>Alinhamento do conteúdo</span>
+                    <div class="ficha-responsiva-alinhamento" role="group" aria-label="Alinhamento do conteúdo do bloco" data-alinhamento-bloco="alignConteudo"></div>
+                </div>
+                <div class="ficha-responsiva-tamanho-bloco">
+                    <span>Tamanho do bloco</span>
+                    <div class="ficha-responsiva-grade-tamanho" role="group" aria-label="Selecionar colunas e linhas"></div>
+                    <output class="ficha-responsiva-resumo-tamanho" aria-live="polite"></output>
+                </div>
+                <div>
+                    <span>Alinhamento do bloco</span>
+                    <div class="ficha-responsiva-alinhamento" role="group" aria-label="Alinhamento do bloco" data-alinhamento-bloco="alignBloco"></div>
+                </div>
+                <div class="ficha-responsiva-switch">
+                    <button type="button" aria-expanded="false" aria-controls="config-descricao">Adicionar descrição</button>
+                    <input type="checkbox" name="temDescricao" role="switch" aria-label="Ativar descrição">
+                </div>
+                <label id="config-descricao" data-config="descricao" hidden>Descrição <textarea name="descricao"></textarea></label>
+                <div class="ficha-responsiva-switch" data-config="numerico" hidden>
+                    <button type="button" aria-expanded="false" aria-controls="config-modificador">Adicionar modificador</button>
+                    <input type="checkbox" name="temModificador" role="switch" aria-label="Ativar modificador">
+                </div>
+                <fieldset id="config-modificador" data-config="modificador" hidden>
+                    <legend>Modificador</legend>
+                    <label>Valor médio <input name="modMedio" type="number" step="any" value="10" required></label>
+                    <label>Bônus a cada quantos pontos <input name="modCada" type="number" min="1" step="1" value="2" required></label>
+                    <label>Bônus <input name="modBonus" type="number" min="0" step="any" value="1" required></label>
+                    <label>Forma do modificador
+                        <select name="modForma">
+                            <option value="quadrado">Quadrado</option>
+                            <option value="circulo">Círculo</option>
+                        </select>
+                    </label>
+                    <label>Posição do modificador
+                        <select name="modPosicao">
+                            <option value="right">Direita</option><option value="left">Esquerda</option>
+                            <option value="top">Em cima</option><option value="bottom">Embaixo</option>
+                        </select>
+                    </label>
+                </fieldset>
+                <div class="ficha-responsiva-switch" data-config="automatizacao" hidden>
+                    <button type="button" aria-expanded="false" aria-controls="config-formula">Adicionar automatização</button>
+                    <input type="checkbox" name="temFormula" role="switch" aria-label="Ativar automatização">
+                </div>
+                <div id="config-formula" class="ficha-responsiva-formula" data-config="formula" hidden>
+                    <div class="ficha-responsiva-equacao" role="group" aria-label="Fórmula"></div>
+                    <div class="ficha-responsiva-formula-edicao" hidden>
+                        <input class="ficha-responsiva-buscar-bloco" type="search" aria-label="Buscar bloco numérico" placeholder="Buscar bloco numérico" autocomplete="off">
+                        <div class="ficha-responsiva-sugestoes" aria-label="Blocos numéricos"></div>
+                        <div class="ficha-responsiva-operadores ficha-responsiva-alinhamento" role="group" aria-label="Operações"></div>
+                        <button type="button" class="btn-secondary ficha-responsiva-remover-termo" hidden>Remover da fórmula</button>
+                    </div>
+                </div>
+                <div class="ficha-responsiva-imagem-bloco" data-config="imagem" hidden></div>
+                <p class="ficha-responsiva-erro-bloco" role="alert" hidden></p>
+                </div>
+                <div class="ficha-responsiva-bloco-acoes">
+                    <button class="btn-secondary ficha-responsiva-cancelar-bloco" type="button">Cancelar</button>
+                    <button class="btn-primary ficha-responsiva-aplicar-bloco" type="submit">Aplicar configuração</button>
+                </div>
+        </form>
+        <p class="ficha-responsiva-status" role="status"></p>
+    </div>
+</main>

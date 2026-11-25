@@ -29,5 +29,41 @@
 }
 .ajustes-imagem-linha button:is(:hover, :focus-visible) { border-color: var(--cor-dourado); }
 
+.editor-imagem .ajustes-imagem-linha {
+    grid-template-columns: 44px minmax(0, 1fr) 44px;
+}
+
+.editor-imagem .ajustes-imagem-linha button {
+    min-block-size: 44px;
+}
+
 .previa-imagem-status { margin: 0; color: var(--cor-texto-suave); font-size: 0.8rem; }
 .previa-imagem-status:empty, .previa-imagem [hidden], .previa-imagem[hidden] { display: none; }
+
+.editor-imagem {
+    display: grid;
+    gap: 0.65rem;
+    min-inline-size: 0;
+}
+
+.imagem-enquadrada {
+    position: relative;
+    aspect-ratio: 1;
+    overflow: hidden;
+    border: 1px solid var(--cor-marrom-borda);
+    border-radius: var(--raio-md);
+    background: var(--cor-marrom-fundo-2);
+}
+
+.imagem-enquadrada img {
+    position: absolute;
+    inset: 50% auto auto 50%;
+    inline-size: 100%;
+    block-size: 100%;
+    object-fit: contain;
+}
+
+.editor-imagem .previa-imagem {
+    inline-size: min(100%, 10rem);
+    margin-inline: auto;
+}

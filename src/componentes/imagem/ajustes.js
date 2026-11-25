@@ -36,8 +36,36 @@ export function configurarPreviaImagem(input, quadro, img, controles, status) {
     };
 }
 
-export function aplicarAjustes(img, { zoom = 1, posX = 0, posY = 0 } = {}) {
+export function aplicarAjustes(img, ajustes) {
+    const { zoom = 1, posX = 0, posY = 0 } = ajustes ?? {};
     img.style.transform = `translate(-50%, -50%) translate(${posX}%, ${posY}%) scale(${zoom})`;
+}
+
+export function criarEditorImagem({ rotulo, descricaoPrevia, endereco = '', enquadramento, aoAlterar } = {}) {
+    const elemento = document.createElement('div');
+    elemento.className = 'editor-imagem';
+    elemento.innerHTML = `
+        <label><span></span><input name="imagem" inputmode="url" autocomplete="off" spellcheck="false" placeholder="https://"></label>
+        <div class="imagem-enquadrada previa-imagem" hidden><img hidden></div>
+        <p class="previa-imagem-status" role="status"></p>
+        <div class="ajustes-imagem" hidden></div>`;
+    const input = elemento.querySelector('input');
+    const quadro = elemento.querySelector('.previa-imagem');
+    const img = quadro.querySelector('img');
+    elemento.querySelector('label span').textContent = rotulo;
+    img.alt = descricaoPrevia;
+    input.value = endereco;
+    const ajustes = criarAjustesImagem(elemento.querySelector('.ajustes-imagem'), valores => {
+        aplicarAjustes(img, valores);
+        aoAlterar?.();
+    });
+    aplicarAjustes(img, ajustes.definir(enquadramento ?? undefined));
+    const atualizar = configurarPreviaImagem(input, quadro, img, elemento.querySelector('.ajustes-imagem'),
+        elemento.querySelector('.previa-imagem-status'));
+    input.oninput = atualizar;
+    input.onchange = atualizar;
+    atualizar();
+    return { elemento, input, obterAjustes: ajustes.obter };
 }
 
 export function criarAjustesImagem(conteudo, aoAlterar, zoomInicial = 1) {

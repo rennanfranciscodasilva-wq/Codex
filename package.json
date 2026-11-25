@@ -1,6 +1,6 @@
 {
   "name": "codex",
-  "version": "0.0.1",
+  "version": "0.0.3",
   "description": "Codex — plataforma digital para o sistema de RPG Vastura",
   "type": "module",
   "scripts": {

@@ -1,142 +1,91 @@
-<main id="pagina-perfil" class="screen">
+<main id="pagina-perfil" class="screen" aria-labelledby="profile-name">
     <div class="perfil-conteudo-wrapper">
-        <aside class="perfil-sidebar">
-            <div class="perfil-user-header">
-                <!-- Avatar clicável -->
-                <div class="perfil-avatar-container" id="btn-editar-avatar">
-                    <div class="perfil-avatar" id="avatar-preview">
-                        <i class="fas fa-hat-wizard" id="avatar-icon-padrao"></i>
-                        <img id="avatar-imagem" src="" alt="Foto de Perfil" style="display: none; width: 100%; height: 100%; object-fit: cover;">
-                    </div>
-                    <div class="perfil-avatar-edit-icon"><i class="fas fa-cog"></i></div>
-                </div>
-
-                <!-- Nome e E-mail -->
-                <h2 class="perfil-nome" id="profile-name">Carregando...</h2>
-                
-                <div class="perfil-email-wrapper">
-                    <p class="perfil-email" id="profile-email">...</p>
-                    <button class="btn-toggle-visibilidade" id="btn-toggle-email" title="Mostrar/Ocultar E-mail">
-                        <i class="fas fa-eye"></i>
+        <header class="perfil-user-header">
+            <button type="button" class="perfil-avatar-container" id="btn-editar-avatar" aria-label="Editar foto de perfil">
+                <span class="perfil-avatar">
+                    <i class="fas fa-hat-wizard" id="avatar-icon-padrao" aria-hidden="true"></i>
+                    <img id="avatar-imagem" alt="" hidden>
+                </span>
+                <span class="perfil-avatar-edit-icon" aria-hidden="true"><i class="fas fa-pen"></i></span>
+            </button>
+            <div class="perfil-identidade">
+                <div class="perfil-nome-wrapper">
+                    <h1 class="perfil-nome" id="profile-name">Perfil</h1>
+                    <button type="button" class="btn-editar-perfil" id="btn-editar-perfil" aria-label="Editar nome" title="Editar nome">
+                        <i class="fas fa-pen" aria-hidden="true"></i>
                     </button>
                 </div>
-                
-                <button class="btn-editar-perfil" id="btn-editar-perfil">
-                    <i class="fas fa-pen"></i> Editar Perfil
-                </button>
+                <div class="perfil-email-wrapper">
+                    <p class="perfil-email" id="profile-email"></p>
+                    <button type="button" class="btn-toggle-visibilidade" id="btn-toggle-email" aria-label="Ocultar e-mail">
+                        <i class="fas fa-eye" aria-hidden="true"></i>
+                    </button>
+                </div>
             </div>
-            
-            <ul class="perfil-nav">
-                <li class="perfil-nav-item active" data-tab="fichas"><i class="fas fa-scroll"></i> Minhas Fichas</li>
-                <li class="perfil-nav-item" data-tab="biblioteca"><i class="fas fa-book-open"></i> Minha Biblioteca</li>
-                <li class="perfil-nav-item" data-tab="config"><i class="fas fa-cog"></i> Configurações</li>
-            </ul>
+        </header>
 
-            <div class="perfil-sidebar-footer">
-                <button class="perfil-btn-logout" id="btn-logout">
-                    <i class="fas fa-door-open"></i> Sair da Conta
-                </button>
-            </div>
-        </aside>
+        <nav class="perfil-nav" aria-label="Seções do perfil">
+            <button type="button" class="perfil-nav-item" data-tab="fichas" aria-controls="tab-content-fichas" aria-pressed="true"><i class="fas fa-scroll" aria-hidden="true"></i> Fichas</button>
+            <button type="button" class="perfil-nav-item" data-tab="biblioteca" aria-controls="tab-content-biblioteca" aria-pressed="false"><i class="fas fa-book-open" aria-hidden="true"></i> Biblioteca</button>
+            <button type="button" class="perfil-nav-item" data-tab="config" aria-controls="tab-content-config" aria-pressed="false"><i class="fas fa-cog" aria-hidden="true"></i> Conta</button>
+        </nav>
 
         <div class="perfil-content">
-            <!-- Aba: Fichas (Agora Vazia por Padrão) -->
-            <div class="perfil-tab-content active" id="tab-content-fichas">
-                <div class="perfil-header-aba">
-                    <h1 class="perfil-page-title">Minhas Fichas</h1>
-                </div>
-                
-                <div class="perfil-fichas-categorias" id="perfil-fichas-categorias">
-                    <!-- O JavaScript vai preencher isso. Se estiver vazio, mostra a mensagem abaixo. -->
-                    <div class="empty-state" id="empty-state-fichas" style="text-align: center; color: #888; margin-top: 2rem;">
-                        <i class="fas fa-scroll" style="font-size: 3rem; margin-bottom: 1rem; color: rgba(212, 175, 55, 0.2);"></i>
-                        <p>Você ainda não criou nenhuma ficha.</p>
-                        <a href="#/ficha/nova" style="color: var(--cor-dourado); text-decoration: none; font-weight: bold;">Criar minha primeira ficha</a>
-                    </div>
-                </div>
-            </div>
+            <section class="perfil-tab-content" id="tab-content-fichas" aria-labelledby="perfil-titulo-fichas">
+                <h2 class="perfil-page-title" id="perfil-titulo-fichas">Minhas fichas</h2>
+                <div id="perfil-fichas-categorias"></div>
+            </section>
 
-            <!-- Aba: Biblioteca -->
-            <div class="perfil-tab-content" id="tab-content-biblioteca">
-                <h1 class="perfil-page-title">Minha Biblioteca</h1>
-                <p style="color: #888;">Seus itens, magias e bestiário salvos aparecerão aqui.</p>
-            </div>
+            <section class="perfil-tab-content" id="tab-content-biblioteca" aria-labelledby="perfil-titulo-biblioteca" hidden>
+                <h2 class="perfil-page-title" id="perfil-titulo-biblioteca">Minha biblioteca</h2>
+                <p class="perfil-estado">Seus itens, magias e bestiário salvos aparecerão aqui.</p>
+            </section>
 
-            <!-- Aba: Configurações -->
-            <div class="perfil-tab-content" id="tab-content-config">
-                <h1 class="perfil-page-title">Configurações da Conta</h1>
-                
+            <section class="perfil-tab-content" id="tab-content-config" aria-labelledby="perfil-titulo-conta" hidden>
+                <h2 class="perfil-page-title" id="perfil-titulo-conta">Configurações da conta</h2>
                 <div class="config-box">
-                    <h3>Informações Pessoais</h3>
-                    <div class="config-item">
-                        <label>Número de Telefone</label>
+                    <h3>Informações pessoais</h3>
+                    <label class="config-item">Número de telefone
                         <input type="tel" class="config-input" placeholder="(11) 99999-9999">
-                    </div>
-                    <div class="config-item">
-                        <label>Endereço de E-mail</label>
-                        <input type="email" class="config-input" id="config-email-input" value="seu-email@exemplo.com" disabled>
-                    </div>
+                    </label>
+                    <label class="config-item">Endereço de e-mail
+                        <input type="email" class="config-input" id="config-email-input" disabled>
+                    </label>
                 </div>
-
                 <div class="config-box danger-zone">
-                    <h3>Zona de Perigo</h3>
+                    <h3>Zona de perigo</h3>
                     <p>Uma vez excluída, sua conta não poderá ser recuperada. Todos os dados serão apagados permanentemente.</p>
-                    <button class="btn-danger" id="btn-excluir-conta">Excluir Conta</button>
+                    <button type="button" class="btn-danger" id="btn-excluir-conta">Excluir conta</button>
                 </div>
-            </div>
+            </section>
         </div>
+
+        <footer class="perfil-rodape">
+            <button type="button" class="btn-secondary perfil-btn-logout" id="btn-logout">
+                <i class="fas fa-door-open" aria-hidden="true"></i> Sair da conta
+            </button>
+        </footer>
     </div>
 
-    <!-- MODAL: EDITAR AVATAR -->
-    <div class="modal-overlay" id="modal-avatar">
-        <div class="modal-box">
-            <button class="modal-close" id="btn-fechar-modal-avatar"><i class="fas fa-times"></i></button>
-            <h2 class="modal-title">Editar Foto de Perfil</h2>
-            
-            <div class="modal-preview">
-                <div class="preview-circle" id="preview-circle">
-                    <img id="preview-img" src="" alt="Preview" style="display: none;">
-                    <i class="fas fa-hat-wizard" id="preview-icon" style="font-size: 3rem; color: var(--cor-dourado);"></i>
-                </div>
+    <template id="modal-avatar">
+        <div class="codex-dialogo-campos perfil-dialogo-avatar">
+            <label>URL da imagem
+                <input name="imagem" inputmode="url" placeholder="https://exemplo.com/imagem.png" autofocus>
+            </label>
+            <div class="preview-circle">
+                <img alt="Prévia da foto de perfil" hidden>
+                <i class="fas fa-hat-wizard" aria-hidden="true"></i>
             </div>
-
-            <div class="modal-field">
-                <label>URL da Imagem</label>
-                <input type="text" id="input-url-avatar" class="config-input" placeholder="https://exemplo.com/imagem.png">
-            </div>
-
-            <div class="modal-controls">
-                <div class="control-group">
-                    <label>Zoom</label>
-                    <input type="range" id="range-zoom" min="0.5" max="2" step="0.1" value="1">
-                </div>
-                <div class="control-group">
-                    <label>Posição X</label>
-                    <input type="range" id="range-x" min="-50" max="50" value="0">
-                </div>
-                <div class="control-group">
-                    <label>Posição Y</label>
-                    <input type="range" id="range-y" min="-50" max="50" value="0">
-                </div>
-            </div>
-
-            <button class="btn-primary" id="btn-salvar-avatar">Salvar Foto</button>
+            <label>Zoom <input name="zoom" type="range" min="0.5" max="2" step="0.1" value="1"></label>
+            <label>Posição horizontal <input name="x" type="range" min="-50" max="50" value="0"></label>
+            <label>Posição vertical <input name="y" type="range" min="-50" max="50" value="0"></label>
+            <p class="codex-dialogo-erro" role="alert" hidden></p>
         </div>
-    </div>
-
-    <!-- MODAL: EDITAR NOME -->
-    <div class="modal-overlay" id="modal-nome">
-        <div class="modal-box">
-            <button class="modal-close" id="btn-fechar-modal-nome"><i class="fas fa-times"></i></button>
-            <h2 class="modal-title">Editar Nome</h2>
-            <p style="color: #888; margin-bottom: 1.5rem; text-align: center;">Você pode alterar seu nome de aventureiro uma vez por semana.</p>
-            
-            <div class="modal-field">
-                <label>Novo Nome</label>
-                <input type="text" id="input-nome-usuario" class="config-input" placeholder="Seu novo nome...">
-            </div>
-
-            <button class="btn-primary" id="btn-salvar-nome">Salvar Nome</button>
+    </template>
+    <template id="modal-nome">
+        <div class="codex-dialogo-campos">
+            <label>Novo nome <input name="nome" autofocus></label>
+            <p class="codex-dialogo-erro" role="alert" hidden></p>
         </div>
-    </div>
+    </template>
 </main>

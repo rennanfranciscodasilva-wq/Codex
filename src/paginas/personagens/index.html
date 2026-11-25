@@ -1,28 +1,38 @@
 <main id="pagina-personagens" class="screen">
     <div class="personagens-container">
         <header class="cabecalho-personagens">
-            <button id="btn-voltar-sistemas" class="btn-voltar">
-                <i class="fas fa-arrow-left"></i> Voltar aos Sistemas
+            <button type="button" id="btn-voltar-sistemas" class="personagens-voltar" aria-label="Voltar">
+                <i class="fas fa-arrow-left" aria-hidden="true"></i>
             </button>
-            
+            <h1>Personagens</h1>
+            <div class="sistema-arquivos" aria-label="Arquivos JSON">
+                <button type="button" class="personagens-voltar sistema-exportar" aria-label="Exportar modelo em branco" title="Exportar modelo em branco"><i class="fas fa-download" aria-hidden="true"></i></button>
+                <button type="button" class="personagens-voltar sistema-importar" aria-label="Importar modelo ou personagem" title="Importar JSON"><i class="fas fa-upload" aria-hidden="true"></i></button>
+                <input type="file" class="sistema-arquivo-json" accept=".json,application/json" hidden>
+            </div>
             <div class="info-sistema-topo">
-                <h1>Personagens</h1>
-                <div class="sistema-personagens-linha">
-                    <h2 id="titulo-sistema-personagens"></h2>
-                    <button type="button" class="btn-editar-detalhe" id="btn-editar-titulo-sistema" title="Editar título do sistema" aria-label="Editar título do sistema">
-                        <i class="fas fa-pen" aria-hidden="true"></i>
-                    </button>
-                </div>
-                <div class="sistema-personagens-linha">
-                    <p id="descricao-sistema-personagens"></p>
-                    <button type="button" class="btn-editar-detalhe" id="btn-editar-descricao-sistema" title="Editar descrição do sistema" aria-label="Editar descrição do sistema">
-                        <i class="fas fa-pen" aria-hidden="true"></i>
-                    </button>
+                <button type="button" class="sistema-capa imagem-enquadrada" aria-label="Editar imagem de capa" title="Editar imagem de capa">
+                    <i class="fas fa-image" aria-hidden="true"></i>
+                    <img alt="" hidden>
+                </button>
+                <div class="sistema-personagens-texto">
+                    <div class="sistema-personagens-linha">
+                        <h2 id="titulo-sistema-personagens"></h2>
+                        <button type="button" class="btn-editar-detalhe" id="btn-editar-titulo-sistema" title="Editar título do sistema" aria-label="Editar título do sistema">
+                            <i class="fas fa-pen" aria-hidden="true"></i>
+                        </button>
+                    </div>
+                    <div class="sistema-personagens-linha">
+                        <p id="descricao-sistema-personagens"></p>
+                        <button type="button" class="btn-editar-detalhe" id="btn-editar-descricao-sistema" title="Editar descrição do sistema" aria-label="Editar descrição do sistema">
+                            <i class="fas fa-pen" aria-hidden="true"></i>
+                        </button>
+                    </div>
                 </div>
             </div>
 
-            <button id="btn-novo-personagem" class="btn-criar-personagem">
-                <i class="fas fa-plus"></i> Criar Novo Personagem
+            <button type="button" id="btn-novo-personagem" class="btn-criar-personagem btn-primary">
+                <i class="fas fa-plus" aria-hidden="true"></i> Criar personagem
             </button>
         </header>
 

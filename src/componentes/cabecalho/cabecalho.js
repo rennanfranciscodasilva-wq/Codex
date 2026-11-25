@@ -38,7 +38,8 @@ export function criarCabecalho({ rotaHome = '/inicio' } = {}) {
                     <i class="fas fa-bell" aria-hidden="true"></i>
                     <span class="header-notificacoes-contagem" aria-hidden="true"></span>
                 </button>
-                <ul class="header-notificacoes-lista" id="header-lista-notificacoes" aria-label="Notificações" hidden>
+                <ul class="header-notificacoes-lista" id="header-lista-notificacoes" aria-label="Notificações" popover="manual" hidden>
+                    <li class="header-notificacoes-titulo" aria-hidden="true">Notificações</li>
                     <li data-aviso="email" hidden><a href="#/confirmar-email" class="header-confirmar-email">E-mail pendente · Confirmar</a></li>
                     <li data-aviso="confirmacoes" hidden><button type="button" class="header-confirmacoes">Confirmações pausadas · Reativar</button></li>
                     <li data-aviso="sincronizacao" hidden><span>Os dados atuais não estão sincronizados.</span></li>
@@ -51,11 +52,11 @@ export function criarCabecalho({ rotaHome = '/inicio' } = {}) {
                     <i class="fas fa-user-circle" aria-hidden="true"></i>
                     <span id="nome-usuario-header">Entrar</span>
                 </button>
-                <div class="dropdown-personagens" id="header-menu-perfil" hidden>
-                    <a href="#/perfil" class="dropdown-item">Perfil</a>
-                    <button type="button" class="dropdown-item" aria-expanded="false" aria-controls="header-sistemas">Selecionar sistema</button>
+                <div class="dropdown-personagens" id="header-menu-perfil" popover="manual" hidden>
+                    <a href="#/perfil" class="dropdown-item"><i class="fas fa-user" aria-hidden="true"></i> Perfil</a>
+                    <button type="button" class="dropdown-item" aria-expanded="false" aria-controls="header-sistemas"><i class="fas fa-book" aria-hidden="true"></i> Selecionar sistema</button>
                     <div id="header-sistemas" hidden></div>
-                    <button type="button" class="dropdown-item" aria-expanded="false" aria-controls="header-personagens" hidden>Selecionar personagem</button>
+                    <button type="button" class="dropdown-item" aria-expanded="false" aria-controls="header-personagens" hidden><i class="fas fa-id-card" aria-hidden="true"></i> Selecionar personagem</button>
                     <div id="header-personagens" hidden></div>
                 </div>
             </div>
@@ -64,6 +65,22 @@ export function criarCabecalho({ rotaHome = '/inicio' } = {}) {
 
     setTimeout(() => inicializarLogica(container), 0);
     return container;
+}
+
+function mostrarMenuSobreposto(header, botao, painel, abrir, alinharNaBorda = false) {
+    const suportaPopover = typeof painel.showPopover === 'function';
+    if (!abrir && suportaPopover && painel.matches(':popover-open')) painel.hidePopover();
+    painel.hidden = !abrir;
+    botao.setAttribute('aria-expanded', String(abrir));
+    if (!abrir) return;
+    if (suportaPopover && !painel.matches(':popover-open')) painel.showPopover();
+    const topo = header.getBoundingClientRect().bottom + 6;
+    painel.style.setProperty('--topo-menu', topo + 'px');
+    if (alinharNaBorda) return;
+    const largura = document.documentElement.clientWidth;
+    const ancora = botao.getBoundingClientRect();
+    const lado = Math.max(8, Math.min(largura - painel.offsetWidth - 8, ancora.right - painel.offsetWidth));
+    painel.style.left = lado + 'px';
 }
 
 function inicializarLogica(header) {
@@ -103,14 +120,7 @@ function inicializarLogica(header) {
     }
 
     function mostrarNotificacoes(aberto) {
-        lista.hidden = !aberto;
-        sino.setAttribute('aria-expanded', String(aberto));
-        if (aberto) {
-            const ancora = sino.getBoundingClientRect();
-            const limite = document.documentElement.clientWidth - lista.offsetWidth - 8;
-            lista.style.left = Math.max(8, Math.min(limite, ancora.right - lista.offsetWidth)) + 'px';
-            lista.style.top = ancora.bottom + 7 + 'px';
-        }
+        mostrarMenuSobreposto(header, sino, lista, aberto, true);
     }
     function atualizarNotificacoes() {
         const ativos = [...avisos.values()].filter(({ item }) => !item.hidden);
@@ -210,10 +220,13 @@ function inicializarPerfil(header) {
     }
 
     function mostrarMenu(aberto) {
-        mostrarLista(botaoPerfil, menu, aberto);
+        mostrarMenuSobreposto(header, botaoPerfil, menu, aberto);
         mostrarLista(botaoSistemas, sistemas, false);
         mostrarLista(botaoPersonagens, personagens, false);
     }
+    window.addEventListener('resize', () => {
+        if (!menu.hidden) mostrarMenuSobreposto(header, botaoPerfil, menu, true);
+    });
 
     function preencherLista(lista, itens, mensagem, criarBotao) {
         lista.replaceChildren(...itens.map(criarBotao));

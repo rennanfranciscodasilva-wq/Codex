@@ -1,15 +1,41 @@
-<main id="pagina-ficha" class="screen">
-
+<main id="pagina-ficha" class="screen" aria-labelledby="titulo-sistemas">
     <div class="ficha-selecao-wrapper">
-        <h2 class="section-title-text">Escolha o Sistema</h2>
-        <p class="section-desc">
-            Selecione o modelo de ficha que deseja usar.
-            Você pode criar uma ficha em branco ou usar um sistema existente.
-        </p>
-
-        <div class="ficha-cards" id="ficha-cards-container">
-            <!-- Os cards serão injetados pelo script.js -->
-        </div>
+        <header class="ficha-sistemas-topo">
+            <h1 id="titulo-sistemas">Sistemas</h1>
+            <a href="#/ficha/nova" class="ficha-criar-modelo btn-primary">
+                <i class="fas fa-plus" aria-hidden="true"></i>
+                Criar modelo
+            </a>
+        </header>
+        <section aria-labelledby="titulo-modelos">
+            <h2 id="titulo-modelos">Modelos salvos</h2>
+            <div class="ficha-cards" id="ficha-cards-container"></div>
+        </section>
     </div>
-
+    <template class="ficha-modelo-template">
+        <article class="ficha-card">
+            <a class="ficha-modelo-link">
+                <span class="ficha-card-icon" aria-hidden="true">
+                    <i class="fas fa-book"></i>
+                    <img alt="" loading="lazy" hidden>
+                </span>
+                <div class="ficha-modelo-texto">
+                    <div class="ficha-modelo-titulo">
+                        <h3 class="ficha-card-title"></h3>
+                        <i class="ficha-modelo-status" role="img"></i>
+                    </div>
+                    <p class="ficha-card-desc" hidden></p>
+                </div>
+                <i class="fas fa-chevron-right ficha-modelo-seta" aria-hidden="true"></i>
+            </a>
+            <div class="ficha-modelo-acoes">
+                <a class="ficha-modelo-acao btn-editar-sistema" title="Editar modelo">
+                    <i class="fas fa-pen" aria-hidden="true"></i>
+                </a>
+                <button type="button" class="ficha-modelo-acao btn-deletar-sistema" title="Excluir modelo">
+                    <i class="fas fa-trash" aria-hidden="true"></i>
+                </button>
+            </div>
+        </article>
+    </template>
 </main>

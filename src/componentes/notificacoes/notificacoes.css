@@ -5,34 +5,40 @@
 #codex-notificacoes {
     position: fixed;
     top: 90px; /* Fica abaixo do cabeçalho global */
-    right: 20px;
+    inset-inline-end: max(0.75rem, env(safe-area-inset-right));
+    inline-size: min(22rem, calc(100% - max(0.75rem, env(safe-area-inset-right)) - max(0.75rem, env(safe-area-inset-left))));
     z-index: 99999;
     display: flex;
     flex-direction: column;
-    gap: 12px;
-    pointer-events: none; 
+    gap: 0.5rem;
+    max-block-size: calc(100dvh - 90px - max(0.5rem, env(safe-area-inset-bottom)));
+    overflow: auto;
+    overscroll-behavior: contain;
+    pointer-events: none;
 }
 
 .codex-toast {
     pointer-events: auto;
     display: flex;
     align-items: flex-start;
-    gap: 12px;
-    width: 350px;
-    padding: 16px;
+    gap: 0.625rem;
+    box-sizing: border-box;
+    inline-size: 100%;
+    flex: none;
+    padding: 0.75rem;
     background: rgba(20, 15, 8, 0.95);
     border: 1px solid rgba(212, 175, 55, 0.3);
     border-radius: 8px;
     box-shadow: 0 10px 30px rgba(0,0,0,0.8);
     backdrop-filter: blur(10px);
     
-    transform: translateX(120%);
+    transform: translateY(-0.5rem);
     opacity: 0;
     transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s ease;
 }
 
 .codex-toast.show {
-    transform: translateX(0);
+    transform: translateY(0);
     opacity: 1;
 }
 
@@ -44,31 +50,44 @@
 
 .toast-content {
     flex: 1;
+    min-inline-size: 0;
+    max-block-size: 33dvh;
+    overflow: auto;
+    overscroll-behavior: contain;
+    overflow-wrap: anywhere;
 }
 
 .toast-title {
     margin: 0 0 4px 0;
     font-family: var(--fonte-titulo, inherit);
-    font-size: 1.1rem;
+    font-size: 0.95rem;
     color: var(--cor-dourado-claro, #f0c44a);
 }
 
 .toast-msg {
     margin: 0;
     font-family: var(--fonte-texto, sans-serif);
-    font-size: 0.85rem;
+    font-size: 0.78rem;
     color: #aaa;
     line-height: 1.4;
 }
 
+.toast-msg:empty { display: none; }
+
 .toast-close {
     background: transparent;
     border: none;
-    color: #666;
+    color: var(--cor-texto-suave);
     cursor: pointer;
     padding: 0;
+    flex: 0 0 44px;
+    min-block-size: 44px;
     font-size: 0.9rem;
     transition: color 0.2s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .codex-toast { transition: none; }
 }
 
 .toast-close:hover {

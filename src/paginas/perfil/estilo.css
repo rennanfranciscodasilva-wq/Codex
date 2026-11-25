@@ -1,463 +1,227 @@
-/* ============================================================
-   CODEX — Página: Perfil
-   ============================================================ */
+@import url('./modais.css');
 
-   @import url('./modais.css');
-   
 #pagina-perfil {
-    display: flex;
-    flex-direction: column;
-    flex: 1;
-    width: 100%;
-    height: 100%;
-    background: var(--cor-fundo);
-    overflow: hidden;
-    position: relative;
-}
-
-#pagina-perfil .perfil-conteudo-wrapper {
-    display: flex;
-    flex-direction: row;
-    flex: 1;
-    overflow: hidden;
-    width: 100%;
-    max-width: 1400px;
-    margin: 0 auto;
-}
-
-/* ---------- SIDEBAR (ESQUERDA) ---------- */
-#pagina-perfil .perfil-sidebar {
-    width: 300px;
-    background: var(--cor-painel);
-    border-right: 1px solid var(--cor-dourado-escuro);
-    display: flex;
-    flex-direction: column;
-    flex-shrink: 0;
-    height: 100%;
-}
-
-#pagina-perfil .perfil-user-header {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
-    padding: 2.5rem 1.5rem 1.5rem;
-    border-bottom: 1px solid rgba(138, 109, 59, 0.3);
-    flex-shrink: 0;
-}
-
-/* Avatar Editável - CORREÇÃO FORÇADA PARA REDONDO */
-#pagina-perfil .perfil-avatar-container {
-    position: relative;
-    width: 90px !important;
-    height: 90px !important;
-    min-width: 90px !important;
-    min-height: 90px !important;
-    aspect-ratio: 1 / 1;
-    margin-bottom: 1rem;
-    cursor: pointer;
-    border-radius: 50% !important;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-
-#pagina-perfil .perfil-avatar {
-    width: 100% !important;
-    height: 100% !important;
-    border-radius: 50% !important;
-    border: 2px solid var(--cor-dourado);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-size: 2.5rem;
-    color: var(--cor-dourado);
-    background: radial-gradient(circle at 35% 30%, var(--cor-marrom-fundo-2), var(--cor-marrom-fundo-4));
-    box-shadow: 0 0 15px rgba(184, 134, 11, 0.3);
-    overflow: hidden;
-    transition: filter 0.3s ease;
-    box-sizing: border-box !important;
-}
-
-#pagina-perfil .perfil-avatar img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    border-radius: 50%;
-}
-
-#pagina-perfil .perfil-avatar-container:hover .perfil-avatar {
-    filter: brightness(0.6);
-}
-
-#pagina-perfil .perfil-avatar-edit-icon {
-    position: absolute;
-    top: 50%; left: 50%;
-    transform: translate(-50%, -50%);
-    color: white;
-    font-size: 1.5rem;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.3s ease;
-}
-
-#pagina-perfil .perfil-avatar-container:hover .perfil-avatar-edit-icon {
-    opacity: 1;
-}
-
-/* Nome e E-mail */
-#pagina-perfil .perfil-nome {
-    font-family: var(--fonte-titulo);
-    color: var(--cor-dourado);
-    margin: 0;
-    font-size: 1.3rem;
-}
-
-#pagina-perfil .perfil-email-wrapper {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    margin: 0.4rem 0 1.2rem;
-}
-
-#pagina-perfil .perfil-email {
-    font-size: 0.85rem;
-    color: #888;
-    margin: 0;
-    transition: opacity 0.3s;
-}
-
-#pagina-perfil .btn-toggle-visibilidade {
-    background: transparent;
-    border: none;
-    color: #888;
-    cursor: pointer;
-    padding: 0;
-    font-size: 0.9rem;
-    transition: color 0.2s;
-}
-#pagina-perfil .btn-toggle-visibilidade:hover {
-    color: var(--cor-dourado);
-}
-
-#pagina-perfil .btn-editar-perfil {
-    background: rgba(212, 175, 55, 0.1);
-    border: 1px solid rgba(212, 175, 55, 0.4);
-    color: var(--cor-dourado);
-    padding: 0.4rem 1rem;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 0.85rem;
-    transition: 0.3s;
-}
-#pagina-perfil .btn-editar-perfil:hover {
-    background: rgba(212, 175, 55, 0.25);
-    color: white;
-}
-
-/* Navegação */
-#pagina-perfil .perfil-nav {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-    flex: 1;
-    overflow-y: auto;
-}
-
-#pagina-perfil .perfil-nav-item {
-    padding: 1rem 1.5rem;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    color: #a09b8c;
-    transition: 0.3s;
-    font-family: var(--fonte-texto);
-    font-weight: 500;
-    user-select: none;
-    border-left: 3px solid transparent;
-}
-
-#pagina-perfil .perfil-nav-item:hover,
-#pagina-perfil .perfil-nav-item.active {
-    background: rgba(212, 175, 55, 0.1);
-    color: var(--cor-dourado);
-    border-left-color: var(--cor-dourado);
-}
-
-#pagina-perfil .perfil-nav-item i {
-    width: 20px;
-    text-align: center;
-    font-size: 1.1rem;
-}
-
-/* Footer da Sidebar (Botão Sair Menor e Centralizado) */
-#pagina-perfil .perfil-sidebar-footer {
-    padding: 1.5rem;
-    border-top: 1px solid rgba(138, 109, 59, 0.3);
-    flex-shrink: 0;
-    display: flex;
-    justify-content: center; /* Centraliza o botão */
-}
-
-#pagina-perfil .perfil-btn-logout {
-    width: auto; /* Em vez de 100% */
-    min-width: 180px;
-    background: transparent;
-    border: 1px solid #7a2e2e;
-    color: #ff9999;
-    padding: 0.6rem 1.5rem; /* Menos padding vertical */
-    border-radius: 8px;
-    cursor: pointer;
-    transition: 0.3s;
-    font-family: var(--fonte-titulo);
-    font-weight: 700;
-    font-size: 0.9rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-}
-
-#pagina-perfil .perfil-btn-logout:hover {
-    background: #7a2e2e;
-    color: white;
-}
-
-/* ---------- CONTEÚDO (DIREITA) ---------- */
-#pagina-perfil .perfil-content {
-    flex: 1;
-    padding: 3rem;
-    overflow-y: auto;
-    background-image: radial-gradient(circle at 50% 0%, rgba(212, 175, 55, 0.03) 0%, transparent 60%);
-    display: flex;
-    flex-direction: column;
-}
-
-#pagina-perfil .perfil-header-aba {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    border-bottom: 1px solid rgba(138, 109, 59, 0.4);
-    padding-bottom: 0.8rem;
-    margin-bottom: 2rem;
-}
-
-#pagina-perfil .perfil-page-title {
-    font-family: var(--fonte-titulo);
-    color: var(--cor-dourado);
-    font-size: 2rem;
-    margin: 0;
-}
-
-#pagina-perfil .btn-edit-mode {
-    background: transparent;
-    border: 1px solid rgba(212, 175, 55, 0.4);
-    color: var(--cor-dourado);
-    width: 40px; height: 40px;
-    border-radius: 50%;
-    cursor: pointer;
-    transition: 0.3s;
-    display: flex; justify-content: center; align-items: center;
-}
-#pagina-perfil .btn-edit-mode:hover,
-#pagina-perfil .btn-edit-mode.active {
-    background: var(--cor-dourado);
-    color: var(--cor-fundo);
-}
-
-#pagina-perfil .perfil-tab-content {
-    display: none;
-    width: 100%;
-}
-
-#pagina-perfil .perfil-tab-content.active {
+    flex: 1 1 0;
     display: block;
-    animation: fadeIn 0.4s ease;
+    block-size: auto;
+    min-block-size: 0;
+    padding: 0;
+    overflow: auto;
+    background:
+        radial-gradient(ellipse 22rem 16rem at 45% 0%, #b3832419, transparent),
+        var(--cor-fundo-base);
+    text-align: start;
 }
 
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
-}
+#pagina-perfil [hidden] { display: none; }
 
-/* Categorias e Cards de Ficha */
-#pagina-perfil .perfil-fichas-categorias {
-    display: flex;
-    flex-direction: column;
-    gap: 2rem;
-}
-
-#pagina-perfil .categoria-wrapper {
-    background: rgba(0,0,0,0.2);
-    border: 1px dashed rgba(212, 175, 55, 0.2);
-    border-radius: 8px;
-    padding: 1rem;
-}
-
-#pagina-perfil .categoria-titulo {
-    color: var(--cor-dourado-escuro);
-    font-family: var(--fonte-titulo);
-    font-size: 1.2rem;
-    margin-top: 0;
-    margin-bottom: 1rem;
-}
-
-#pagina-perfil .perfil-cards-grid {
+.perfil-conteudo-wrapper {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-    gap: 1.5rem;
-    width: 100%;
+    align-content: start;
+    gap: 0.9rem;
+    max-inline-size: 52rem;
+    margin-inline: auto;
+    padding: 1rem max(0.75rem, env(safe-area-inset-right))
+        max(1.2rem, env(safe-area-inset-bottom)) max(0.75rem, env(safe-area-inset-left));
 }
 
-#pagina-perfil .perfil-card {
-    background: var(--cor-painel);
-    border: 1px solid rgba(138, 109, 59, 0.3);
-    border-radius: 8px;
-    padding: 1.5rem;
-    transition: 0.3s;
+.perfil-user-header,
+.perfil-content {
+    min-inline-size: 0;
+    padding: 0.85rem;
+    border: 1px solid var(--cor-marrom-borda);
+    border-radius: var(--raio-md);
+    background: var(--cor-marrom-fundo-3);
+}
+
+.perfil-user-header {
+    display: grid;
+    grid-template-columns: 3.75rem minmax(0, 1fr);
+    align-items: center;
+    gap: 0.65rem;
+    background: linear-gradient(132deg, var(--cor-marrom-fundo-2), var(--cor-marrom-fundo-3) 70%);
+}
+
+.perfil-avatar-container {
+    display: grid;
+    place-items: center;
+    position: relative;
+    inline-size: 3.75rem;
+    aspect-ratio: 1;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--cor-dourado);
     cursor: pointer;
-    color: inherit;
 }
 
-#pagina-perfil .perfil-card:hover {
-    border-color: var(--cor-dourado);
-    transform: translateY(-5px);
-    box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+.perfil-avatar {
+    display: grid;
+    place-items: center;
+    inline-size: 100%;
+    block-size: 100%;
+    aspect-ratio: 1;
+    overflow: hidden;
+    border: 1px solid var(--cor-marrom-borda);
+    border-radius: inherit;
+    background: var(--cor-marrom-fundo-3);
+    font-size: 1.55rem;
 }
 
-#pagina-perfil .perfil-card i {
-    font-size: 2rem;
-    color: var(--cor-dourado-escuro);
-    margin-bottom: 1rem;
+.perfil-avatar img { inline-size: 100%; block-size: 100%; object-fit: cover; }
+
+.perfil-avatar-edit-icon {
+    position: absolute;
+    inset: auto -0.1rem -0.1rem auto;
+    display: grid;
+    place-items: center;
+    inline-size: 1.35rem;
+    aspect-ratio: 1;
+    border: 1px solid var(--cor-marrom-borda);
+    border-radius: 50%;
+    background: var(--cor-marrom-fundo-2);
+    font-size: 0.65rem;
 }
 
-#pagina-perfil .perfil-card h3 {
-    margin: 0 0 0.5rem 0;
-    font-family: var(--fonte-titulo);
-    color: var(--cor-texto);
-    font-size: 1.1rem;
-}
-
-#pagina-perfil .perfil-card p {
-    margin: 0;
-    font-size: 0.85rem;
-    color: #888;
-}
-
-#pagina-perfil .perfil-card-new {
+.perfil-identidade { min-inline-size: 0; }
+.perfil-nome-wrapper,
+.perfil-email-wrapper {
     display: flex;
-    flex-direction: column;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.perfil-nome,
+.perfil-page-title,
+.config-box h3 {
+    margin: 0;
+    color: var(--cor-dourado-claro);
+    font-family: var(--fonte-titulo);
+    overflow-wrap: anywhere;
+}
+.perfil-nome { font-size: clamp(1.1rem, 5vw, 1.65rem); line-height: 1.2; }
+.perfil-page-title { font-size: 1.2rem; }
+.config-box h3 { font-size: 1rem; }
+
+.perfil-email {
+    min-inline-size: 0;
+    margin: 0;
+    color: var(--cor-texto-suave);
+    font-size: 0.85rem;
+    overflow-wrap: anywhere;
+}
+
+.btn-toggle-visibilidade,
+.btn-editar-perfil {
+    flex: none;
+    inline-size: 44px;
+    block-size: 44px;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--cor-dourado);
+    cursor: pointer;
+}
+
+#pagina-perfil :is(.perfil-btn-logout, .btn-danger) {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.45rem;
+    min-block-size: 44px;
+    padding: 0.5rem 0.65rem;
+    font-size: 0.85rem;
+}
+
+.perfil-nav {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.35rem;
+}
+
+.perfil-nav-item {
+    display: flex;
     justify-content: center;
     align-items: center;
-    border-style: dashed;
-    text-align: center;
-    min-height: 150px;
-}
-
-/* Configurações */
-#pagina-perfil .config-box {
-    background: var(--cor-painel);
-    border: 1px solid rgba(138, 109, 59, 0.3);
-    border-radius: 8px;
-    padding: 1.5rem;
-    margin-bottom: 2rem;
-}
-
-#pagina-perfil .config-box h3 {
-    color: var(--cor-dourado);
-    font-family: var(--fonte-titulo);
-    margin-top: 0;
-    margin-bottom: 1.5rem;
-}
-
-#pagina-perfil .config-item {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-    margin-bottom: 1.2rem;
-}
-
-#pagina-perfil .config-item label {
+    gap: 0.35rem;
+    min-block-size: 48px;
+    padding: 0.45rem 0.2rem;
+    border: 1px solid var(--cor-marrom-borda);
+    border-radius: 0.55rem;
+    background: var(--cor-marrom-fundo-3);
     color: var(--cor-texto-suave);
-    font-size: 0.9rem;
+    font: inherit;
+    font-size: 0.8rem;
+    cursor: pointer;
 }
 
-#pagina-perfil .config-input {
-    background: rgba(0,0,0,0.3);
-    border: 1px solid rgba(138, 109, 59, 0.4);
-    color: var(--cor-texto-claro);
-    padding: 0.8rem;
-    border-radius: 6px;
+.perfil-nav-item[aria-pressed="true"] {
+    color: var(--cor-dourado-claro);
+    border-color: var(--cor-dourado);
+    background: var(--cor-marrom-fundo-2);
+}
+
+.perfil-tab-content { display: grid; gap: 0.8rem; }
+.perfil-estado { margin: 0; color: var(--cor-texto-suave); line-height: 1.5; }
+.perfil-estado p { margin: 0 0 0.4rem; }
+.perfil-estado a { display: inline-flex; align-items: center; min-block-size: 44px; }
+
+.perfil-lista-fichas {
+    display: grid;
+    gap: 0.45rem;
+    padding: 0;
+    margin: 0;
+    list-style: none;
+}
+
+.perfil-lista-fichas a {
+    display: grid;
+    gap: 0.2rem;
+    min-block-size: 44px;
+    padding: 0.55rem 0.65rem;
+    border: 1px solid var(--cor-marrom-borda);
+    border-radius: 0.45rem;
+    color: var(--cor-dourado-claro);
+    overflow-wrap: anywhere;
+    text-decoration: none;
+}
+
+.perfil-lista-fichas small { color: var(--cor-texto-suave); }
+
+.config-box {
+    display: grid;
+    gap: 0.65rem;
+    padding: 0.75rem;
+    border: 1px solid var(--cor-marrom-borda);
+    border-radius: 0.55rem;
+}
+
+.config-item { display: grid; gap: 0.3rem; color: var(--cor-texto-suave); font-size: 0.85rem; }
+.config-input {
+    inline-size: 100%;
+    min-inline-size: 0;
+    min-block-size: 44px;
+    padding: 0.55rem;
+    border: 1px solid var(--cor-marrom-borda);
+    border-radius: 0.35rem;
+    background: var(--cor-marrom-fundo-2);
+    color: var(--cor-texto);
+    font: inherit;
     font-size: 1rem;
 }
 
-#pagina-perfil .config-input:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
+.danger-zone { border-color: #87443f; }
+.danger-zone p { margin: 0; color: var(--cor-texto-suave); font-size: 0.85rem; line-height: 1.5; }
+.btn-danger, .perfil-btn-logout { border: 1px solid #87443f; color: #ffb1a4; background: transparent; border-radius: 0.45rem; cursor: pointer; }
+
+.perfil-rodape { display: grid; justify-content: start; }
+
+#pagina-perfil :is(button, a, input):focus-visible {
+    outline: 2px solid var(--cor-dourado-claro);
+    outline-offset: 2px;
 }
 
-#pagina-perfil .config-hint {
-    font-size: 0.8rem;
-    color: #666;
+@media (min-width: 40rem) {
+    .perfil-conteudo-wrapper { padding-inline: 1.5rem; }
 }
-
-#pagina-perfil .danger-zone {
-    border-color: rgba(180, 40, 40, 0.4);
-}
-
-#pagina-perfil .danger-zone h3 {
-    color: #ff5252;
-}
-
-#pagina-perfil .btn-danger {
-    background: rgba(180, 40, 40, 0.1);
-    border: 1px solid rgba(180, 40, 40, 0.4);
-    color: #ff5252;
-    padding: 0.8rem 1.5rem;
-    border-radius: 6px;
-    cursor: pointer;
-    font-weight: bold;
-    transition: 0.3s;
-}
-
-#pagina-perfil .btn-danger:hover {
-    background: #ff5252;
-    color: white;
-}
-
-/* Responsividade */
-@media (max-width: 768px) {
-    #pagina-perfil .perfil-conteudo-wrapper {
-        flex-direction: column;
-    }
-    #pagina-perfil .perfil-sidebar {
-        width: 100%;
-        height: auto;
-        border-right: none;
-        border-bottom: 1px solid var(--cor-dourado-escuro);
-    }
-    #pagina-perfil .perfil-content {
-        padding: 1.5rem;
-    }
-}
-.perfil-lista-fichas {
-    display: grid;
-    gap: 0.5rem;
-    width: 100%;
-    padding: 0;
-    margin: 0;
-    list-style: none;
-}
-
-.perfil-lista-fichas li {
-    display: grid;
-    gap: 0.2rem;
-    padding: 0.7rem 0.85rem;
-    border: 1px solid var(--cor-marrom-borda);
-    border-radius: 0.5rem;
-}
-
-.perfil-lista-fichas a { color: var(--cor-dourado-claro); }
-.perfil-lista-fichas small { color: var(--cor-texto-suave); }
