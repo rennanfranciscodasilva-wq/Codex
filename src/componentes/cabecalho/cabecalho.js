@@ -2,7 +2,7 @@
    CODEX — Componente: Cabeçalho Global
    ============================================================ */
 
-import { obterEstado, observarEstado, definirPersonagemAtivo } from '../../nucleo/estado.js';
+import { obterEstado, observarEstado, definirPersonagemAtivo, definirSistemaAtivo } from '../../nucleo/estado.js';
 import { version as versaoCodex } from '../../../package.json';
 import { observarSincronizacao, sincronizarAgora } from '../../servicos/sincronizacao/sincronizacao.js';
 import { consultarEmailConfirmado } from '../../servicos/autenticacao/autenticacao.js';
@@ -21,19 +21,8 @@ export function criarCabecalho({ rotaHome = '/inicio' } = {}) {
                 <div class="header-backup-controles" hidden>
                     <span class="header-backup-tempo"></span>
                     <span class="header-backup-carregando" hidden aria-hidden="true"></span>
-                    <button type="button" class="header-backup-enviar">Sincronizar agora</button>
                 </div>
-                <div class="header-notificacoes" hidden>
-                    <button type="button" class="header-notificacoes-sino" aria-label="Notificações" aria-expanded="false" aria-controls="header-lista-notificacoes">
-                        <i class="fas fa-bell" aria-hidden="true"></i>
-                        <span class="header-notificacoes-contagem" aria-hidden="true"></span>
-                    </button>
-                    <ul class="header-notificacoes-lista" id="header-lista-notificacoes" aria-label="Notificações" hidden>
-                        <li hidden><a href="#/confirmar-email" class="header-confirmar-email">E-mail pendente · Confirmar</a></li>
-                        <li hidden><button type="button" class="header-confirmacoes">Confirmações pausadas · Reativar</button></li>
-                    </ul>
-                </div>
-                <small class="header-backup-status" role="status"></small>
+                <button type="button" class="header-backup-enviar" hidden>Sincronizar</button>
             </div>
         </div>
         
@@ -44,19 +33,32 @@ export function criarCabecalho({ rotaHome = '/inicio' } = {}) {
         </div>
         
         <div class="header-right">
-            <div class="seletor-personagem" id="seletor-personagem">
-                <button class="btn-seletor" id="btn-seletor">
-                    <span id="nome-personagem-ativo">Nenhum selecionado</span>
-                    <i class="fas fa-chevron-down"></i>
+            <div class="header-notificacoes" hidden>
+                <button type="button" class="header-notificacoes-sino" aria-label="Notificações" aria-expanded="false" aria-controls="header-lista-notificacoes">
+                    <i class="fas fa-bell" aria-hidden="true"></i>
+                    <span class="header-notificacoes-contagem" aria-hidden="true"></span>
                 </button>
-                <div class="dropdown-personagens hidden" id="dropdown-personagens"></div>
+                <ul class="header-notificacoes-lista" id="header-lista-notificacoes" aria-label="Notificações" hidden>
+                    <li data-aviso="email" hidden><a href="#/confirmar-email" class="header-confirmar-email">E-mail pendente · Confirmar</a></li>
+                    <li data-aviso="confirmacoes" hidden><button type="button" class="header-confirmacoes">Confirmações pausadas · Reativar</button></li>
+                    <li data-aviso="sincronizacao" hidden><span>Os dados atuais não estão sincronizados.</span></li>
+                    <li class="header-notificacoes-vazia">Nenhuma notificação.</li>
+                </ul>
             </div>
-
-            <a href="#/login" class="btn-usuario" id="btn-usuario-header">
-                <img class="header-usuario-avatar" alt="" hidden>
-                <i class="fas fa-user-circle"></i>
-                <span id="nome-usuario-header">Entrar</span>
-            </a>
+            <div class="header-perfil">
+                <button type="button" class="btn-usuario" id="btn-usuario-header" aria-label="Entrar" aria-expanded="false" aria-controls="header-menu-perfil">
+                    <img class="header-usuario-avatar" alt="" hidden>
+                    <i class="fas fa-user-circle" aria-hidden="true"></i>
+                    <span id="nome-usuario-header">Entrar</span>
+                </button>
+                <div class="dropdown-personagens" id="header-menu-perfil" hidden>
+                    <a href="#/perfil" class="dropdown-item">Perfil</a>
+                    <button type="button" class="dropdown-item" aria-expanded="false" aria-controls="header-sistemas">Selecionar sistema</button>
+                    <div id="header-sistemas" hidden></div>
+                    <button type="button" class="dropdown-item" aria-expanded="false" aria-controls="header-personagens" hidden>Selecionar personagem</button>
+                    <div id="header-personagens" hidden></div>
+                </div>
+            </div>
         </div>
     `;
 
@@ -64,34 +66,62 @@ export function criarCabecalho({ rotaHome = '/inicio' } = {}) {
     return container;
 }
 
-let sistemaSelecionado = null;
-
 function inicializarLogica(header) {
     const backup = header.querySelector('.header-backup');
     const controles = backup.querySelector('.header-backup-controles');
-    const notificacoes = backup.querySelector('.header-notificacoes');
+    const notificacoes = header.querySelector('.header-notificacoes');
     const sino = notificacoes.querySelector('.header-notificacoes-sino');
     const contagem = sino.querySelector('.header-notificacoes-contagem');
     const lista = notificacoes.querySelector('.header-notificacoes-lista');
     const confirmarEmail = lista.querySelector('.header-confirmar-email');
     const botaoConfirmacoes = header.querySelector('.header-confirmacoes');
+    const avisoVazio = lista.querySelector('.header-notificacoes-vazia');
+    const avisos = new Map();
+    for (const item of lista.querySelectorAll('[data-aviso]')) {
+        const check = document.createElement('button');
+        check.type = 'button';
+        check.className = 'header-notificacao-check';
+        check.setAttribute('aria-label', 'Marcar como vista: ' + item.textContent.trim());
+        check.setAttribute('aria-pressed', 'false');
+        check.innerHTML = '<i class="fas fa-check" aria-hidden="true"></i>';
+        check.addEventListener('click', () => {
+            check.setAttribute('aria-pressed', String(check.getAttribute('aria-pressed') !== 'true'));
+            atualizarNotificacoes();
+        });
+        item.append(check);
+        avisos.set(item.dataset.aviso, { item, check, identificador: null });
+    }
+
+    function atualizarAviso(tipo, identificador) {
+        const aviso = avisos.get(tipo);
+        if (aviso.identificador !== identificador) {
+            aviso.identificador = identificador;
+            aviso.check.setAttribute('aria-pressed', 'false');
+        }
+        aviso.item.hidden = identificador === null;
+        atualizarNotificacoes();
+    }
+
     function mostrarNotificacoes(aberto) {
         lista.hidden = !aberto;
         sino.setAttribute('aria-expanded', String(aberto));
         if (aberto) {
             const ancora = sino.getBoundingClientRect();
             const limite = document.documentElement.clientWidth - lista.offsetWidth - 8;
-            lista.style.left = Math.max(8, Math.min(limite, ancora.left)) + 'px';
+            lista.style.left = Math.max(8, Math.min(limite, ancora.right - lista.offsetWidth)) + 'px';
             lista.style.top = ancora.bottom + 7 + 'px';
         }
     }
     function atualizarNotificacoes() {
-        const total = Array.from(lista.children).filter(item => !item.hidden).length;
-        notificacoes.hidden = !total;
-        backup.hidden = controles.hidden && !total;
+        const ativos = [...avisos.values()].filter(({ item }) => !item.hidden);
+        const total = ativos.filter(({ check }) => check.getAttribute('aria-pressed') !== 'true').length;
+        notificacoes.hidden = controles.hidden && ativos.length === 0;
+        backup.hidden = controles.hidden;
+        avisoVazio.hidden = ativos.length > 0;
+        contagem.hidden = total === 0;
         contagem.textContent = total;
-        sino.setAttribute('aria-label', total === 1 ? 'Notificações, 1 pendente' : `Notificações, ${total} pendentes`);
-        if (!total) mostrarNotificacoes(false);
+        sino.setAttribute('aria-label', total ? `Notificações, ${total} não vistas` : 'Notificações');
+        if (notificacoes.hidden) mostrarNotificacoes(false);
     }
     sino.addEventListener('click', () => mostrarNotificacoes(lista.hidden));
     window.addEventListener('resize', () => {
@@ -111,8 +141,7 @@ function inicializarLogica(header) {
     function atualizarConfirmacoes() {
         clearTimeout(relogioConfirmacoes);
         const fim = fimDaPausa(areaDasConfirmacoes());
-        botaoConfirmacoes.parentElement.hidden = !fim;
-        atualizarNotificacoes();
+        atualizarAviso('confirmacoes', fim ? JSON.stringify([obterEstado().usuario?.uid, areaDasConfirmacoes(), fim]) : null);
         if (fim) relogioConfirmacoes = setTimeout(atualizarConfirmacoes, fim - Date.now() + 50);
     }
     botaoConfirmacoes.addEventListener('click', async () => {
@@ -134,11 +163,9 @@ function inicializarLogica(header) {
     const tempo = backup.querySelector('.header-backup-tempo');
     const carregando = backup.querySelector('.header-backup-carregando');
     const enviar = backup.querySelector('.header-backup-enviar');
-    const status = backup.querySelector('.header-backup-status');
     enviar.addEventListener('click', sincronizarAgora);
     onIdTokenChanged(auth, user => {
-        confirmarEmail.parentElement.hidden = !user?.email || user.emailVerified;
-        atualizarNotificacoes();
+        atualizarAviso('email', user?.email && !user.emailVerified ? user.uid + ':' + user.email : null);
     });
     window.addEventListener('focus', async () => {
         if (confirmarEmail.parentElement.hidden || window.location.hash === '#/confirmar-email') return;
@@ -150,122 +177,131 @@ function inicializarLogica(header) {
     });
     observarSincronizacao(estado => {
         controles.hidden = !estado;
-        status.hidden = !estado;
-        atualizarNotificacoes();
+        enviar.hidden = !estado;
+        atualizarAviso('sincronizacao', estado?.pendente ? estado.uid : null);
         if (!estado) return;
         tempo.textContent = estado.tempo;
         carregando.hidden = !estado.processando;
         tempo.setAttribute('aria-label', 'Próximo backup em ' + estado.tempo);
-        enviar.textContent = estado.saldo == null ? 'Sincronizar agora' : `Sincronizar agora · ${estado.saldo}/5`;
         enviar.disabled = !estado.disponivel;
-        if (status.textContent !== estado.mensagem) status.textContent = estado.mensagem;
-        status.title = estado.mensagem;
     });
-    const btnSeletor = header.querySelector('#btn-seletor');
-    const dropdown = header.querySelector('#dropdown-personagens');
-    const nomePersonagemAtivo = header.querySelector('#nome-personagem-ativo');
-    const nomeUsuarioHeader = header.querySelector('#nome-usuario-header');
-    const btnUsuarioHeader = header.querySelector('#btn-usuario-header');
-    const avatar = btnUsuarioHeader.querySelector('img');
-    const avatarPadrao = btnUsuarioHeader.querySelector('i');
+    inicializarPerfil(header);
+}
+
+function inicializarPerfil(header) {
+    const perfil = header.querySelector('.header-perfil');
+    const menu = perfil.querySelector('#header-menu-perfil');
+    const botaoPerfil = perfil.querySelector('#btn-usuario-header');
+    const nomeUsuario = perfil.querySelector('#nome-usuario-header');
+    const avatar = botaoPerfil.querySelector('img');
+    const avatarPadrao = botaoPerfil.querySelector('i');
+    const linkPerfil = menu.querySelector('a');
+    const sistemas = menu.querySelector('#header-sistemas');
+    const personagens = menu.querySelector('#header-personagens');
+    const botaoSistemas = sistemas.previousElementSibling;
+    const botaoPersonagens = personagens.previousElementSibling;
+
     avatar.onload = () => { avatar.hidden = false; avatarPadrao.hidden = true; };
     avatar.onerror = () => { avatar.hidden = true; avatarPadrao.hidden = false; };
 
-    const atualizarCabecalho = estado => {
-        const foto = estado.usuario?.fotoUrl || '';
+    function mostrarLista(botao, lista, aberta) {
+        lista.hidden = !aberta;
+        botao.setAttribute('aria-expanded', String(aberta));
+    }
+
+    function mostrarMenu(aberto) {
+        mostrarLista(botaoPerfil, menu, aberto);
+        mostrarLista(botaoSistemas, sistemas, false);
+        mostrarLista(botaoPersonagens, personagens, false);
+    }
+
+    function preencherLista(lista, itens, mensagem, criarBotao) {
+        lista.replaceChildren(...itens.map(criarBotao));
+        if (itens.length) return;
+        const aviso = document.createElement('div');
+        aviso.className = 'dropdown-empty';
+        aviso.textContent = mensagem;
+        lista.append(aviso);
+    }
+
+    function atualizarSeletores(estado) {
+        botaoPersonagens.hidden = !estado.sistemaAtivo;
+        if (botaoPersonagens.hidden) mostrarLista(botaoPersonagens, personagens, false);
+        if (!sistemas.hidden) {
+            preencherLista(sistemas, estado.sistemas, 'Nenhum sistema disponível.', sistema => {
+                const botao = criarItemPersonagem(sistema.nome, 'fa-book', 'sistema-item');
+                botao.classList.toggle('selected', estado.sistemaAtivo === sistema.id);
+                botao.onclick = () => {
+                    mostrarLista(botaoSistemas, sistemas, false);
+                    mostrarLista(botaoPersonagens, personagens, false);
+                    definirSistemaAtivo(sistema.id);
+                    botaoPersonagens.focus();
+                };
+                return botao;
+            });
+        }
+        if (!personagens.hidden) {
+            const fichas = estado.personagens.filter(item => item.sistemaId === estado.sistemaAtivo);
+            preencherLista(personagens, fichas, 'Nenhum personagem neste sistema.', personagem => {
+                const botao = criarItemPersonagem(personagem.nome, 'fa-user', 'personagem-item');
+                botao.classList.toggle('active', estado.personagemAtivo?.id === personagem.id);
+                botao.onclick = () => {
+                    definirPersonagemAtivo(personagem);
+                    mostrarMenu(false);
+                    botaoPerfil.focus();
+                };
+                return botao;
+            });
+        }
+    }
+
+    function atualizarPerfil(estado) {
+        const usuario = estado.usuario;
+        const foto = usuario?.fotoUrl || '';
         if (foto !== (avatar.getAttribute('src') || '')) {
             avatar.hidden = true;
             avatarPadrao.hidden = false;
-            if (foto) avatar.setAttribute('src', foto);
+            if (foto) avatar.src = foto;
             else avatar.removeAttribute('src');
         }
-        if (estado.usuario) {
-            nomeUsuarioHeader.textContent = estado.usuario.nome || estado.usuario.email?.split('@')[0] || 'Perfil';
-            // Se estiver logado, o botão leva para o perfil
-            btnUsuarioHeader.setAttribute('href', '#/perfil');
-        } else {
-            nomeUsuarioHeader.textContent = 'Entrar';
-            // Se não estiver logado, o botão leva para o login
-            btnUsuarioHeader.setAttribute('href', '#/login');
-        }
+        nomeUsuario.textContent = usuario ? usuario.nome || usuario.email?.split('@')[0] || 'Perfil' : 'Entrar';
+        botaoPerfil.setAttribute('aria-label', usuario ? 'Menu do perfil' : 'Entrar');
+        if (!usuario && !menu.hidden) mostrarMenu(false);
+        if (!menu.hidden) atualizarSeletores(estado);
+    }
 
-        if (estado.personagemAtivo) {
-            nomePersonagemAtivo.textContent = estado.personagemAtivo.nome;
-        } else {
-            nomePersonagemAtivo.textContent = 'Nenhum selecionado';
+    atualizarPerfil(obterEstado());
+    observarEstado(atualizarPerfil);
+    botaoPerfil.addEventListener('click', () => {
+        const estado = obterEstado();
+        if (!estado.usuario) {
+            window.location.hash = '#/login';
+            return;
         }
-
-        if (!dropdown.classList.contains('hidden')) {
-            renderizarDropdown(dropdown, nomePersonagemAtivo);
-        }
-    };
-    atualizarCabecalho(obterEstado());
-    observarEstado(atualizarCabecalho);
-
-    btnSeletor.addEventListener('click', (e) => {
-        e.stopPropagation();
-        dropdown.classList.toggle('hidden');
-        
-        if (!dropdown.classList.contains('hidden')) {
-            sistemaSelecionado = null; 
-            renderizarDropdown(dropdown, nomePersonagemAtivo);
-        }
+        mostrarMenu(menu.hidden);
+        if (!menu.hidden) atualizarSeletores(estado);
     });
-
-    document.addEventListener('click', (e) => {
-        if (!header.contains(e.target)) {
-            dropdown.classList.add('hidden');
-        }
+    botaoSistemas.addEventListener('click', () => {
+        mostrarLista(botaoSistemas, sistemas, sistemas.hidden);
+        mostrarLista(botaoPersonagens, personagens, false);
+        atualizarSeletores(obterEstado());
     });
-}
-
-function renderizarDropdown(dropdown, labelAtivo) {
-    const estado = obterEstado();
-    
-    if (!estado.usuario) {
-        dropdown.innerHTML = `<div class="dropdown-empty">Faça login para ver personagens.</div>`;
-        return;
-    }
-
-    const personagens = estado.personagens || [];
-
-    if (personagens.length === 0) {
-        dropdown.innerHTML = `<div class="dropdown-empty">Nenhum personagem criado.</div>`;
-        return;
-    }
-
-    const sistemas = [...new Set(personagens.map(personagem => personagem.sistema))].sort();
-    const grupoSistemas = document.createElement('div');
-    grupoSistemas.className = 'dropdown-sistemas-wrapper';
-    dropdown.replaceChildren(grupoSistemas);
-
-    for (const sistema of sistemas) {
-        const botao = criarItemPersonagem(sistema, 'fa-book', 'sistema-item');
-        botao.classList.toggle('selected', sistemaSelecionado === sistema);
-        botao.onclick = () => {
-            sistemaSelecionado = sistema;
-            renderizarDropdown(dropdown, labelAtivo);
-        };
-        grupoSistemas.append(botao);
-    }
-
-    if (!sistemaSelecionado) return;
-    const divisoria = document.createElement('div');
-    divisoria.className = 'dropdown-divider';
-    const grupoPersonagens = document.createElement('div');
-    grupoPersonagens.className = 'dropdown-personagens-wrapper';
-    dropdown.append(divisoria, grupoPersonagens);
-
-    for (const personagem of personagens.filter(item => item.sistema === sistemaSelecionado)) {
-        const botao = criarItemPersonagem(personagem.nome, 'fa-user', 'personagem-item');
-        botao.classList.toggle('active', estado.personagemAtivo?.id === personagem.id);
-        botao.onclick = () => {
-            definirPersonagemAtivo(personagem);
-            dropdown.classList.add('hidden');
-            sistemaSelecionado = null;
-        };
-        grupoPersonagens.append(botao);
-    }
+    botaoPersonagens.addEventListener('click', () => {
+        mostrarLista(botaoPersonagens, personagens, personagens.hidden);
+        mostrarLista(botaoSistemas, sistemas, false);
+        atualizarSeletores(obterEstado());
+    });
+    linkPerfil.addEventListener('click', () => mostrarMenu(false));
+    document.addEventListener('click', evento => {
+        if (!menu.hidden && !evento.composedPath().includes(perfil)) mostrarMenu(false);
+    });
+    window.addEventListener('hashchange', () => mostrarMenu(false));
+    perfil.addEventListener('keydown', evento => {
+        if (evento.key !== 'Escape' || menu.hidden) return;
+        evento.preventDefault();
+        mostrarMenu(false);
+        botaoPerfil.focus();
+    });
 }
 
 function criarItemPersonagem(nome, icone, classe) {

@@ -1,25 +1,21 @@
 import { observarAutenticacao } from '../autenticacao/autenticacao.js';
 import { auth } from '../firebase/config.js';
 import { enviarPendencias, temAlteracoes } from '../armazenamento/biblioteca.js';
-import { lerSaldoManual } from './firestore.js';
+import { lerSaldoManual, limiteManual } from './firestore.js';
 import { adiarTentativa, avancarTempo, formatarTempo, lerTempo, reiniciarTempo } from './relogio.js';
 import { abrirDialogo, mostrarAviso } from '../../componentes/dialogos/dialogos.js';
 import { mostrarNotificacao } from '../../componentes/notificacoes/notificacoes.js';
 
-const calendario = new Intl.DateTimeFormat('en-CA', {
-    timeZone: 'America/Sao_Paulo', year: 'numeric', month: '2-digit', day: '2-digit'
-});
 const ouvintes = new Set();
-let uid, amostra, saldo, dia, ocupada, mensagem, confirmando;
-let pedidoSaldo = 0;
+let uid, amostra, ocupada, confirmando;
 
 function atualizar() {
     const estado = uid ? {
         tempo: formatarTempo(lerTempo(uid).restante),
         processando: Boolean(ocupada),
-        saldo,
-        disponivel: navigator.onLine && !ocupada && !confirmando && saldo !== 0 && temAlteracoes(uid),
-        mensagem: mensagem || (temAlteracoes(uid) ? 'Salvo neste navegador' : 'Sem alterações pendentes')
+        uid,
+        pendente: temAlteracoes(uid),
+        disponivel: navigator.onLine && !ocupada && !confirmando
     } : null;
     for (const ouvinte of ouvintes) ouvinte(estado);
 }
@@ -29,19 +25,13 @@ export function observarSincronizacao(ouvinte) {
     atualizar();
 }
 
-async function atualizarSaldo(conta) {
-    const pedido = ++pedidoSaldo;
+async function consultarSaldo(conta) {
     try {
-        const restantes = await lerSaldoManual(conta);
-        if (uid !== conta || pedido !== pedidoSaldo) return;
-        saldo = Math.max(0, restantes);
+        return Math.max(0, await lerSaldoManual(conta));
     } catch (erro) {
         console.error('[sincronizacao] saldo indisponível:', erro);
-        if (uid !== conta || pedido !== pedidoSaldo) return;
-        saldo = null;
+        return null;
     }
-    atualizar();
-    return saldo;
 }
 
 async function sincronizar(manual) {
@@ -54,8 +44,7 @@ async function sincronizar(manual) {
         const pendente = temAlteracoes(conta);
         if (manual && !pendente) return;
         ocupada = true;
-        mensagem = pendente ? 'Sincronização em nuvem está acontecendo agora' : 'Verificando alterações…';
-        if (pendente) mostrarNotificacao(mensagem, '', 'aviso');
+        if (pendente) mostrarNotificacao('Sincronização em nuvem está acontecendo agora', '', 'aviso');
         atualizar();
         try {
             const [resultado] = await Promise.all([
@@ -63,29 +52,17 @@ async function sincronizar(manual) {
                 new Promise(resolve => setTimeout(resolve, 500))
             ]);
             if (conta !== uid || !resultado) return;
-            if (manual && resultado.restantes != null) {
-                pedidoSaldo++;
-                saldo = resultado.restantes;
+            if (resultado.total > 0 && temAlteracoes(conta)) {
+                mostrarNotificacao('Backup parcial concluído', 'Há mais alterações salvas neste navegador.', 'aviso');
             }
-            const restam = temAlteracoes(conta);
-            if (resultado.total > 0) {
-                if (restam) mostrarNotificacao('Backup parcial concluído', 'Há mais alterações salvas neste navegador.', 'aviso');
-                else mostrarNotificacao('Dados sincronizados', '', 'sucesso');
-            }
-            mensagem = restam ? 'Há alterações pendentes'
-                : resultado.total > 0 ? 'Dados sincronizados' : 'Sem alterações para sincronizar';
             if (!manual) reiniciarTempo(conta);
         } catch (erro) {
             console.error('[sincronizacao]', erro);
             if (conta !== uid) return;
             if (!manual) adiarTentativa(conta);
-            if (erro.code === 'backup/limite-manual') {
-                pedidoSaldo++;
-                saldo = 0;
-                mensagem = 'Você usou as cinco sincronizações manuais de hoje.';
-                return;
-            }
-            mensagem = erro.code === 'backup/conflito'
+            const mensagem = erro.code === 'backup/limite-manual'
+                ? 'Você usou todas as sincronizações manuais de hoje.'
+                : erro.code === 'backup/conflito'
                 ? 'Conflito com outro dispositivo. Dados locais preservados.'
                 : erro.code === 'backup/nome-ocupado'
                     ? erro.message
@@ -114,24 +91,25 @@ async function sincronizar(manual) {
 
 export async function sincronizarAgora() {
     const conta = uid;
-    if (!conta || !navigator.onLine || ocupada || confirmando || !temAlteracoes(conta)) return;
+    if (!conta || !navigator.onLine || ocupada || confirmando) return;
     confirmando = true;
     atualizar();
     try {
-        const disponiveis = await atualizarSaldo(conta);
+        const disponiveis = await consultarSaldo(conta);
         if (conta !== uid) return;
         if (disponiveis == null) {
             await mostrarAviso('Não foi possível consultar seu saldo de sincronizações. As alterações continuam salvas neste navegador. Confira a conexão e se as regras do Firestore foram publicadas.');
             return;
         }
-        if (!disponiveis) {
-            await mostrarAviso('Você usou as cinco sincronizações manuais de hoje. O saldo volta à meia-noite de Brasília.');
+        const resumo = `Sincronizações manuais hoje: ${limiteManual - disponiveis} feitas, ${disponiveis} restantes.`;
+        if (!disponiveis || !temAlteracoes(conta)) {
+            await mostrarAviso(resumo);
             return;
         }
         const confirmado = await abrirDialogo({
             titulo: 'Sincronizar com a nuvem',
-            mensagem: `Você realmente deseja sincronizar as informações agora?\nVocê tem ${disponiveis} de 5 sincronizações manuais disponíveis hoje.`,
-            confirmar: 'Sincronizar agora'
+            mensagem: `Sincronizar as alterações com a nuvem?\n${resumo}`,
+            confirmar: 'Sincronizar'
         });
         if (confirmado && conta === uid) await sincronizar(true);
     } finally {
@@ -160,44 +138,23 @@ function marcarTempo() {
     };
     if (navigator.locks) void navigator.locks.request('codex-relogio:' + conta, contar);
     else contar();
-
-    const hoje = calendario.format(new Date());
-    if (dia !== hoje) {
-        dia = hoje;
-        saldo = null;
-        void atualizarSaldo(conta);
-    }
 }
 
 export function iniciarSincronizacao() {
     observarAutenticacao(usuario => {
         uid = usuario?.uid;
         amostra = Date.now();
-        dia = calendario.format(new Date());
-        saldo = null;
-        mensagem = '';
         ocupada = false;
         confirmando = false;
-        if (uid && navigator.onLine) void atualizarSaldo(uid);
         atualizar();
     });
-    window.addEventListener('codex-biblioteca', () => {
-        if (!ocupada) mensagem = '';
-        atualizar();
-    });
+    window.addEventListener('codex-biblioteca', atualizar);
     window.addEventListener('storage', evento => {
-        if (uid && evento.key === 'codex_biblioteca:' + uid) {
-            if (!ocupada) mensagem = '';
-            atualizar();
-        }
-    });
-    window.addEventListener('focus', () => {
-        if (uid && navigator.onLine && !confirmando) void atualizarSaldo(uid);
+        if (uid && evento.key === 'codex_biblioteca:' + uid) atualizar();
     });
     window.addEventListener('offline', () => { amostra = null; atualizar(); });
     window.addEventListener('online', () => {
         amostra = Date.now();
-        if (uid) void atualizarSaldo(uid);
         atualizar();
     });
     window.addEventListener('pagehide', () => { amostra = null; });

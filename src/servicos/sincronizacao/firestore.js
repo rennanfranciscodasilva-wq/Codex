@@ -2,7 +2,7 @@ import { doc, getDocFromServer, runTransaction, serverTimestamp, Timestamp } fro
 import { auth, db } from '../firebase/config.js';
 import { chaveNomeNaLista, criadoEmDoModelo, erroNomeOcupado } from '../armazenamento/modelos.js';
 
-const limiteManual = 5;
+export const limiteManual = 5;
 const hora = 3_600_000;
 const dia = 24 * hora;
 

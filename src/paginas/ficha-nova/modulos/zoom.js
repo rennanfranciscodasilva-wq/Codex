@@ -21,10 +21,17 @@ export function iniciarZoom(pagina, wrapper) {
     }
 
     function aplicarZoom(novoZoom, x, y, origemX = x, origemY = y) {
+        novoZoom = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, novoZoom));
+        if (novoZoom === estadoZoom) {
+            area.scrollLeft += origemX - x;
+            area.scrollTop += origemY - y;
+            return;
+        }
+
         const anterior = wrapper.getBoundingClientRect();
         const pontoX = (origemX - anterior.left) / estadoZoom;
         const pontoY = (origemY - anterior.top) / estadoZoom;
-        estadoZoom = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, novoZoom));
+        estadoZoom = novoZoom;
         atualizarZoom();
 
         const atual = wrapper.getBoundingClientRect();
@@ -79,11 +86,28 @@ export function iniciarZoom(pagina, wrapper) {
 
     let toque;
     let pinca;
+    let pincaPendente;
+    let quadroPinca = null;
     const medidaPinca = ([a, b]) => ({
         x: (a.clientX + b.clientX) / 2,
         y: (a.clientY + b.clientY) / 2,
         distancia: Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY)
     });
+
+    function aplicarPincaPendente() {
+        const atual = pincaPendente;
+        pincaPendente = null;
+        if (!atual) return;
+        if (pinca.distancia > 0 && atual.distancia > 0) {
+            aplicarZoom(estadoZoom * atual.distancia / pinca.distancia, atual.x, atual.y, pinca.x, pinca.y);
+        }
+        pinca = atual;
+    }
+
+    function limparQuadroPinca() {
+        if (quadroPinca !== null) cancelAnimationFrame(quadroPinca);
+        quadroPinca = null;
+    }
 
     function iniciarToque(dedo) {
         toque = { id: dedo.identifier, x: dedo.clientX, y: dedo.clientY, arrastando: false };
@@ -91,6 +115,8 @@ export function iniciarZoom(pagina, wrapper) {
 
     espaco.addEventListener('touchstart', evento => {
         if (evento.touches.length === 2) {
+            limparQuadroPinca();
+            aplicarPincaPendente();
             toque = null;
             pinca = medidaPinca(evento.touches);
         } else if (evento.touches.length === 1 && !evento.target.closest('.folha-borda, .folha-regua, .painel-borda, .bloco-borda, .painel-alca-arrasto, .bloco-alca-arrasto, .bloco-titulo-alca')) {
@@ -100,11 +126,13 @@ export function iniciarZoom(pagina, wrapper) {
 
     espaco.addEventListener('touchmove', evento => {
         if (pinca && evento.touches.length === 2) {
-            const atual = medidaPinca(evento.touches);
-            if (pinca.distancia > 0 && atual.distancia > 0) {
-                aplicarZoom(estadoZoom * atual.distancia / pinca.distancia, atual.x, atual.y, pinca.x, pinca.y);
+            pincaPendente = medidaPinca(evento.touches);
+            if (quadroPinca === null) {
+                quadroPinca = requestAnimationFrame(() => {
+                    quadroPinca = null;
+                    aplicarPincaPendente();
+                });
             }
-            pinca = atual;
             if (evento.cancelable) evento.preventDefault();
             return;
         }
@@ -123,6 +151,8 @@ export function iniciarZoom(pagina, wrapper) {
     }, { passive: false });
 
     espaco.addEventListener('touchend', evento => {
+        limparQuadroPinca();
+        aplicarPincaPendente();
         if (pinca && evento.touches.length === 2) {
             pinca = medidaPinca(evento.touches);
             return;
@@ -134,6 +164,8 @@ export function iniciarZoom(pagina, wrapper) {
     });
 
     espaco.addEventListener('touchcancel', () => {
+        limparQuadroPinca();
+        pincaPendente = null;
         pinca = null;
         toque = null;
     });

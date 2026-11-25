@@ -1,4 +1,5 @@
 import { gerarId } from './estado.js';
+import { lerArquivoCodex } from './formato-json.js';
 
 function listarBlocos(layout) {
     return layout.paginas.flatMap(pagina =>
@@ -152,32 +153,7 @@ function identificarEstrutura(modelo) {
     });
 }
 
-function validarBloco(bloco) {
-    if (bloco.modelo != null && typeof bloco.modelo !== 'string') return false;
-    if (bloco.formula == null) return true;
-    return Array.isArray(bloco.formula) && bloco.formula.every(item =>
-        item && (item.tipo === 'campo' || (item.tipo === 'operador' &&
-            ['+', '-', '*', '/', '×', '÷'].includes(item.valor))));
-}
-
 function lerModelo(arquivo) {
-    const idValido = id => typeof id === 'string' && /^[\w-]+$/.test(id);
-    if (arquivo?.app !== 'CODEX' || typeof arquivo.nomeSistema !== 'string' ||
-        !Array.isArray(arquivo.paginas) || !arquivo.paginas.length) {
-        throw new Error('Escolha um arquivo de ficha exportado pelo Codex.');
-    }
-    const ids = new Set();
-    const validarItens = (itens, validarConteudo) => Array.isArray(itens) && itens.every(item => {
-        if (!item || !idValido(item.id) || ids.has(item.id)) return false;
-        ids.add(item.id);
-        return validarConteudo(item);
-    });
-    const valido = validarItens(arquivo.paginas, pagina =>
-        validarItens(pagina.paineis, painel => validarItens(painel.blocos, validarBloco)));
-    if (!valido) {
-        throw new Error('O arquivo contém páginas, campos ou blocos inválidos.');
-    }
-
     const imagem = arquivo.imagemAjustes;
     return {
         id: gerarId('sist_'),
@@ -191,7 +167,7 @@ function lerModelo(arquivo) {
             posY: Number.isFinite(imagem?.posY) ? imagem.posY : 0
         },
         layout: {
-            paginas: structuredClone(arquivo.paginas),
+            paginas: arquivo.paginas,
             paginaAtivaId: arquivo.paginas[0].id,
             animacaoAtiva: arquivo.animacaoAtiva ?? true,
             modoLayout: arquivo.modoLayout || 'livre'
@@ -201,6 +177,7 @@ function lerModelo(arquivo) {
 }
 
 export function importarModelo(arquivo, armazenamento = localStorage) {
+    arquivo = lerArquivoCodex(arquivo);
     const modelo = lerModelo(arquivo);
     const valoresOriginais = extrairValores(modelo.layout);
     for (const bloco of listarBlocos(modelo.layout)) {

@@ -13,6 +13,8 @@ const estadoInicial = {
     usuario: null,          // { uid, email, nome, fotoUrl, ultimaTrocaNome }
     rotaAtual: '/',
     rotaAnterior: null,
+    sistemas: [],
+    sistemaAtivo: null,
     personagens: [],        // Lista de personagens do usuário
     personagemAtivo: null   // O personagem selecionado no cabeçalho
 };
@@ -27,6 +29,8 @@ observarAutenticacao(async (userFirebase) => {
     if (userFirebase) {
         // 1. Define o usuário básico primeiro (para o site não travar enquanto busca)
         definirEstado({
+            sistemas: [],
+            sistemaAtivo: null,
             personagens: [],
             personagemAtivo: null,
             usuario: {
@@ -103,6 +107,8 @@ observarAutenticacao(async (userFirebase) => {
         // Se deslogar, limpa o usuário E os personagens
         definirEstado({ 
             usuario: null,
+            sistemas: [],
+            sistemaAtivo: null,
             personagens: [],
             personagemAtivo: null
         });
@@ -146,7 +152,12 @@ export function observarEstado(callback) {
  * Função específica para definir o personagem ativo.
  */
 export function definirPersonagemAtivo(personagem) {
-    definirEstado({ personagemAtivo: personagem });
+    definirEstado({ personagemAtivo: personagem, sistemaAtivo: personagem?.sistemaId ?? estado.sistemaAtivo });
+}
+
+export function definirSistemaAtivo(sistemaId) {
+    if (sistemaId === estado.sistemaAtivo) return;
+    definirEstado({ sistemaAtivo: sistemaId, personagemAtivo: null });
 }
 
 /**
@@ -175,10 +186,13 @@ function atualizarPersonagensDaBiblioteca() {
         const personagens = fichas.map(ficha => ({
             id: ficha.id,
             nome: ficha.nomePersonagem || 'Sem nome',
+            sistemaId: ficha.sistemaId,
             sistema: nomes.get(ficha.sistemaId) || 'Sem sistema'
         }));
         const ativo = personagens.find(personagem => personagem.id === estado.personagemAtivo?.id) || null;
-        definirEstado({ personagens, personagemAtivo: ativo });
+        const sistemaAtivo = sistemas.some(sistema => sistema.id === estado.sistemaAtivo)
+            ? estado.sistemaAtivo : null;
+        definirEstado({ sistemas, sistemaAtivo, personagens, personagemAtivo: ativo });
     } catch (erro) {
         console.warn('[estado] Não foi possível ler os personagens:', erro);
     }

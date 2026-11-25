@@ -1,15 +1,7 @@
 import './ajustes.css';
+import { urlDeImagem } from './url.js';
 
-export function urlDeImagem(valor) {
-    try {
-        const texto = valor.trim();
-        const semProtocolo = /^[\w-]+(?:\.[\w-]+)+(?:[/:?#]|$)/.test(texto);
-        const url = new URL(semProtocolo ? 'https://' + texto : texto);
-        return ['http:', 'https:'].includes(url.protocol) ? url.href : '';
-    } catch {
-        return '';
-    }
-}
+export { urlDeImagem };
 
 export function configurarPreviaImagem(input, quadro, img, controles, status) {
     let enderecoAtual = '';

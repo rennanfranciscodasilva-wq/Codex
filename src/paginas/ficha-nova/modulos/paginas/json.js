@@ -6,6 +6,7 @@ import { mostrarAviso } from '../../../../componentes/dialogos/dialogos.js';
 import { armazenamentoBiblioteca, prepararBiblioteca } from '../../../../servicos/armazenamento/biblioteca.js';
 import { estado } from './estado.js';
 import { importarModelo } from './modelo-importado.js';
+import { lerArquivoCodex } from './formato-json.js';
 
 export function configurarCarregamentoModelo(botao) {
     if (!botao) return;
@@ -21,10 +22,10 @@ export function configurarCarregamentoModelo(botao) {
         if (!arquivo) return;
         botao.disabled = true;
         try {
-            const texto = await arquivo.text();
+            const dados = JSON.parse(await arquivo.text());
             await prepararBiblioteca({ atualizar: true });
             if (!botao.isConnected) return;
-            const ficha = importarModelo(JSON.parse(texto), armazenamentoBiblioteca);
+            const ficha = importarModelo(dados, armazenamentoBiblioteca);
             window.location.hash = `#/ficha/ficha-nova?id=${ficha.id}`;
         } catch (erro) {
             mostrarAviso(erro instanceof SyntaxError ? 'O arquivo não contém uma ficha válida do Codex.' : erro.message);
@@ -83,7 +84,13 @@ export function configurarJSON() {
             ...metadadosSistema // Adiciona nome, desc, foto do sistema
         };
         
-        const jsonString = JSON.stringify(dados, null, 2);
+        let jsonString;
+        try {
+            jsonString = JSON.stringify(lerArquivoCodex(dados), null, 2);
+        } catch (erro) {
+            mostrarAviso(erro.message);
+            return;
+        }
         const blob = new Blob([jsonString], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
         
